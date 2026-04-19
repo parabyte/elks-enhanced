@@ -1,0 +1,60 @@
+.TH LS 1
+.SH NAME
+ls \- list the contents of a directory
+.SH SYNOPSIS
+\fBls\fP [\fB\-aAFiltSrR1U\fP] [\fIname\fP...]
+.SH DESCRIPTION
+For each file argument, list it.  For each directory argument, list its
+contents.  The current working directory is listed when no files are named.
+Information is printed multicolumn on terminals, single column if the output
+is redirected.  The options control what information is shown and how.
+.PP
+Files whose names start with a dot are by default not listed.
+.SS OPTIONS
+.TP
+.B \-a
+All entries are listed, even
+.B .
+and
+.B ..
+.TP
+.B \-A
+List all entries, but not
+.B .
+and
+.B ..
+.TP
+.B \-F
+Mark directories with a '\fB/\fP', executables with a '\fB*\fP', \s-2UNIX\s+2
+domain sockets with a '\fB=\fP', named pipes with a '\fB|\fP' and symbolic
+links with a '\fB@\fP' behind the name.
+.TP
+.B \-i
+I-node number printed in the first column.
+.TP
+.B \-l
+Long listing: mode, links, owner, group, size and time.
+.TP
+.B \-t
+Sort by modified time, latest first.
+.TP
+.B \-S
+Sort by size, largest first.
+.TP
+.B \-r
+Reverse the sort order.
+.TP
+.B \-R
+List directory trees recursively.
+.TP
+.B \-1
+Print in one column.
+.TP
+.B \-U
+Do not sort output.
+.SH "SEE ALSO"
+.BR du (1),
+.BR stat (2).
+.SH AUTHOR
+Kees J. Bot <kjb@cs.vu.nl>
+Greg Haerr

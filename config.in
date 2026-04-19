@@ -1,0 +1,27 @@
+#
+# ELKS Main
+#
+
+mainmenu_name "ELKS Main"
+
+#
+# ELKS Kernel
+#
+
+mainmenu_option next_comment
+	comment 'Kernel & Hardware'
+	source elks/config.in
+
+endmenu
+
+#
+# ELKS Userland (commands)
+#
+
+source elkscmd/config.in
+
+#
+# ELKS Images
+#
+
+source image/config.in

@@ -1,0 +1,312 @@
+# ELKSCMD install Makefile
+
+ifndef TOPDIR
+$(error TOPDIR is not defined, ELKS not configured yet)
+endif
+
+# include selected config file for installation instructions
+include $(CONFIG)
+
+# Installation commands
+INSTALL=install
+LN=ln
+
+# Application Package List
+PACKAGE=$(TOPDIR)/elkscmd/Applications
+EXTPACKAGE=$(TOPDIR)/elkscmd/ExtApplications
+# Install destination
+DESTDIR=$(TOPDIR)/target
+TAGS=
+# Old-style installation
+INSTDIRS=
+export INSTALL LN DESTDIR
+
+ifdef CONFIG_APP_TAGS
+	TAGS += "$(CONFIG_APP_TAGS)"
+endif
+
+#
+# Install apps by source directory
+#
+ifdef CONFIG_APP_ASH
+	TAGS += :ash|
+endif
+
+ifdef CONFIG_APP_BUSYELKS
+	TAGS += :busyelks|
+endif
+
+ifdef CONFIG_APP_DISK_UTILS
+	TAGS += :diskutil|
+	ifeq ($(CONFIG_APP_DISK_UTILS), y)
+		TAGS += :be-diskutil|
+	endif
+endif
+
+ifdef CONFIG_APP_FILE_UTILS
+	TAGS += :fileutil|
+	ifeq ($(CONFIG_APP_FILE_UTILS), y)
+		TAGS += :be-fileutil|
+	endif
+endif
+
+ifdef CONFIG_APP_ELVIS
+	TAGS += :elvis|
+endif
+
+ifdef CONFIG_APP_UIP
+	TAGS += :net|
+endif
+
+ifdef CONFIG_APP_MINIX1
+	TAGS += :minix1|
+	ifeq ($(CONFIG_APP_MINIX1), y)
+		TAGS += :be-minix1|
+	endif
+endif
+
+ifdef CONFIG_APP_MINIX2
+	TAGS += :minix2|
+endif
+
+ifdef CONFIG_APP_MINIX3
+	TAGS += :minix3|
+	ifeq ($(CONFIG_APP_MINIX3), y)
+		TAGS += :be-minix3|
+	endif
+endif
+
+ifdef CONFIG_APP_MISC_UTILS
+	TAGS += :miscutil|
+	ifeq ($(CONFIG_APP_MISC_UTILS), y)
+		TAGS += :be-miscutil|
+	endif
+endif
+
+ifdef CONFIG_APP_TUI
+	TAGS += :tui|
+endif
+
+ifdef CONFIG_APP_BASIC
+	TAGS += :basic|
+endif
+
+ifdef CONFIG_APP_OTHER
+	TAGS += :other|
+endif
+
+ifdef CONFIG_APP_SASH
+	TAGS += :sash|
+endif
+
+ifdef CONFIG_APP_SCREEN
+	TAGS += :screen|
+endif
+
+ifdef CONFIG_APP_CRON
+	TAGS += :cron|
+endif
+
+ifdef CONFIG_APP_SH_UTILS
+	TAGS += :shutil|
+	ifeq ($(CONFIG_APP_SH_UTILS), y)
+		TAGS += :be-shutil|
+	endif
+endif
+
+ifdef CONFIG_APP_SYS_UTILS
+	TAGS += :sysutil|
+endif
+
+ifdef CONFIG_APP_TEST
+	TAGS += :test|
+endif
+
+#
+# Install apps by image size
+#
+ifdef CONFIG_APPS_360K
+	TAGS = :boot|:360k|
+ifdef CONFIG_APPS_COMPRESS
+	TAGS += :360c|
+endif
+endif
+
+ifdef CONFIG_APPS_720K
+	TAGS = :boot|:360k|:720k|:net|
+endif
+
+ifdef CONFIG_APPS_1200K
+	TAGS = :boot|:360k|:720k|:1200k|:net|
+ifdef CONFIG_APPS_COMPRESS
+	TAGS += :360c|:1200c|:1440k|
+endif
+endif
+
+ifdef CONFIG_APPS_1232K
+	TAGS = :boot|:360k|:720k|:1200k|:1232k|
+ifdef CONFIG_APPS_COMPRESS
+	# does not include :1200c
+	TAGS += :360c|:1232c|
+endif
+endif
+
+ifdef CONFIG_APPS_1440K
+	TAGS = :boot|:360k|:720k|:1200k|:1440k|:net|
+ifdef CONFIG_APPS_COMPRESS
+	# does not include :1232c
+	TAGS += :360c|:1200c|:1440c|
+endif
+endif
+
+ifdef CONFIG_APPS_2880K
+    # :128k|:192k| rom apps not included
+	TAGS = :boot|:init|:ash|:sash|:net|:360k|:360c|:720k|:1200k|:1200c|:1232k|:1232c|:1440k|:1440c|:2880k|
+ifndef CONFIG_APPS_FTRACE
+	CONFIG_APP_MAN_PAGES=y
+endif
+endif
+
+ifdef CONFIG_APPS_HD
+    TAGS = :*|
+endif
+
+ifdef CONFIG_APP_DROPBEAR
+	TAGS += :dropbear|
+endif
+
+ifdef CONFIG_APP_BEARSSL
+	TAGS += :bearssl|
+endif
+
+#
+# System startup
+ifdef CONFIG_SYS_DEFSHELL_SASH
+	TAGS += :defsash|
+endif
+
+ifndef CONFIG_SYS_NO_BININIT
+	TAGS += :init|
+endif
+
+TAGS += :end
+
+###############################################################################
+#
+# Install selected files.
+
+.PHONY: install
+
+# use bash instead of /bin/sh for curly brace expansion
+SHELL=/bin/bash
+install:
+	@echo "TAGS=$(TAGS)" | tr -d ' '
+	awk /`echo "$(TAGS)" | tr -d ' '`/{print} $(PACKAGE) | sed '/^#/d' > Filelist
+	@while IFS= read -r line; \
+	do \
+		file=`echo $$line | cut -d" " -f 1`; \
+		dir=`echo $$line | cut -d" " -f 2`; \
+		link=no; \
+		if [ "$${dir:0:3}" == ":::" ]; \
+		then \
+			instdir=$${dir:3}; \
+			link=yes; \
+		else \
+			if [ "$${dir:0:2}" == "::" ]; \
+			then \
+				instdir=$${dir:2}; \
+			else \
+				instdir=bin; \
+			fi; \
+		fi; \
+		echo install $$file to $$instdir; \
+		if [ ! -e $$file ]; \
+		then \
+			echo "File specified in $(PACKAGE) not found: $$file"; \
+			exit 1; \
+		else \
+			if [ "$$link" == "yes" ]; \
+			then \
+				echo ln -s $$(basename $$file) $$instdir; \
+				ln -s $$(basename $$file) $(DESTDIR)/bin/$$instdir; \
+			else \
+				[ ! -d $$file ] && mkdir -p $$(dirname $(DESTDIR)/$$instdir); \
+				[ -f $$file ] && $(INSTALL) $$file $(DESTDIR)/$$instdir; \
+			fi; \
+		fi \
+	done < Filelist
+	rm Filelist
+ifdef CONFIG_APP_BUSYELKS
+	$(MAKE) -C busyelks links
+endif
+# install external apps
+	awk /`echo "$(TAGS)" | tr -d ' '`/{print} $(EXTPACKAGE) | sed '/^#/d' > Filelist
+	@while IFS= read -r line; \
+	do \
+		file=../extapps/`echo $$line | cut -d" " -f 1`; \
+		dir=`echo $$line | cut -d" " -f 2`; \
+		link=no; \
+		if [ "$${dir:0:3}" == ":::" ]; \
+		then \
+			instdir=$${dir:3}; \
+			link=yes; \
+		else \
+			if [ "$${dir:0:2}" == "::" ]; \
+			then \
+				instdir=$${dir:2}; \
+			else \
+				instdir=bin; \
+				[ ! -d $(DESTDIR)/$$instdir ] && mkdir -p $(DESTDIR)/$$instdir; \
+			fi; \
+		fi; \
+		echo install $$file to $$instdir; \
+		if [ ! -e $$file ]; \
+		then \
+			echo "SKIPPED $$file (file not found)"; \
+		else \
+			if [ "$$link" == "yes" ]; \
+			then \
+				echo ln -s $$(basename $$file) $$instdir; \
+				ln -s $$(basename $$file) $(DESTDIR)/bin/$$instdir; \
+			else \
+				[ ! -d $$file ] && mkdir -p $$(dirname $(DESTDIR)/$$instdir); \
+				[ -f $$file ] && $(INSTALL) $$file $(DESTDIR)/$$instdir; \
+			fi; \
+		fi \
+	done < Filelist
+	rm Filelist
+	for DIR in $(INSTDIRS); do $(MAKE) -C $$DIR install || exit 1; done
+ifdef CONFIG_APPS_HD
+# install DCC via external shell script for now
+	if [ -e $(TOPDIR)/extapps/dcc/src/C/c88 ]; \
+	then \
+		cd $(TOPDIR)/extapps/dcc/src; \
+		$(TOPDIR)/extapps/dcc/src/copyc88.sh; \
+	fi
+endif
+ifdef CONFIG_APP_MAN_PAGES
+	mkdir -p $(DESTDIR)/lib/man1
+	cp -rp man/man1 $(DESTDIR)/lib
+	-compress -b 12 $(DESTDIR)/lib/man1/*
+	mkdir -p $(DESTDIR)/lib/man2
+	cp -rp man/man2 $(DESTDIR)/lib
+	-compress -b 12 $(DESTDIR)/lib/man2/*
+	mkdir -p $(DESTDIR)/lib/man3
+	cp -rp man/man3 $(DESTDIR)/lib
+	-compress -b 12 $(DESTDIR)/lib/man3/*
+	mkdir -p $(DESTDIR)/lib/man4
+	cp -rp man/man4 $(DESTDIR)/lib
+	-compress -b 12 $(DESTDIR)/lib/man4/*
+	mkdir -p $(DESTDIR)/lib/man5
+	cp -rp man/man5 $(DESTDIR)/lib
+	-compress -b 12 $(DESTDIR)/lib/man5/*
+	mkdir -p $(DESTDIR)/lib/man7
+	cp -rp man/man7 $(DESTDIR)/lib
+	-compress -b 12 $(DESTDIR)/lib/man7/*
+	mkdir -p $(DESTDIR)/lib/man8
+	cp -rp man/man8 $(DESTDIR)/lib
+	-compress -b 12 $(DESTDIR)/lib/man8/*
+endif
+
+
+###############################################################################

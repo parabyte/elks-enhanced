@@ -1,0 +1,142 @@
+# Kernel configuration
+
+comment 'Just accept the defaults unless you know what you are doing'
+
+mainmenu_option next_comment
+	comment 'System'
+
+	choice 'Select system' \
+		"IBM-PC CONFIG_ARCH_IBMPC \
+		 8018X	CONFIG_ARCH_8018X \
+		 NECV25	CONFIG_ARCH_NECV25 \
+		 PC-98	CONFIG_ARCH_PC98 \
+		 WonderSwan CONFIG_ARCH_SWAN \
+		 SOLO86	CONFIG_ARCH_SOLO86" IBM-PC
+
+	comment 'Platform'
+
+	if [ "$CONFIG_ARCH_IBMPC" = "y" ]; then
+
+		bool 'Compaq DeskPro Hardware (fast mode)' CONFIG_HW_COMPAQFAST n
+		bool 'MK-88 Hardware (IRQ 3 keyboard)' CONFIG_HW_MK88 n
+
+		comment 'Devices'
+
+		bool 'Serial port FIFO' CONFIG_HW_SERIAL_FIFO y
+
+	elif [ "$CONFIG_ARCH_8018X" = "y" ]; then
+
+		comment 'Devices'
+		hex 'RTC (AT compatible) I/O address' CONFIG_8018X_RTC 0x200
+
+		comment 'INTx pins (0=disabled)'
+		int 'INT0 Logical IRQ' CONFIG_8018X_INT0 0
+		int 'INT1 Logical IRQ' CONFIG_8018X_INT1 12
+		int 'INT0 Logical IRQ' CONFIG_8018X_INT2 0
+		int 'INT0 Logical IRQ' CONFIG_8018X_INT3 0
+		int 'INT0 Logical IRQ' CONFIG_8018X_INT4 0
+
+		define_bool CONFIG_CONSOLE_DIRECT   n
+		define_bool CONFIG_CONSOLE_8018X    y
+
+	elif [ "$CONFIG_ARCH_NECV25" = "y" ]; then
+
+		comment 'Devices'
+		hex 'RTC (AT compatible) I/O address' CONFIG_NECV25_RTC 0x200
+
+		define_bool CONFIG_CONSOLE_DIRECT   n
+		define_bool CONFIG_CONSOLE_NECV25   y
+
+	elif [ "$CONFIG_ARCH_SOLO86" = "y" ]; then
+
+		comment 'Devices'
+
+	elif [ "$CONFIG_ARCH_PC98" = "y" ]; then
+
+		comment 'Devices'
+
+	elif [ "$CONFIG_ARCH_SWAN" = "y" ]; then
+
+		comment 'Devices'
+
+	fi
+
+endmenu
+
+mainmenu_option next_comment
+	comment 'Kernel settings'
+
+	bool 'Boot options in /bootopts'          CONFIG_BOOTOPTS     y
+	bool 'Use Async I/O in kernel'            CONFIG_ASYNCIO      n
+	bool 'Calculate process CPU usage'        CONFIG_CPU_USAGE    y
+	bool 'Real time clock in localtime'       CONFIG_TIME_RTC_LOCALTIME n
+	string 'Compiled-in TZ= timezone string'  CONFIG_TIME_TZ      ''
+	bool 'System tracing (set on for development)' CONFIG_TRACE   n
+	bool 'Use INT 0Fh in idle loop for timer' CONFIG_TIMER_INT0F  n
+	bool 'Use INT 1Ch from BIOS for timer'    CONFIG_TIMER_INT1C  n
+
+	if [ "$CONFIG_ARCH_IBMPC" = "y" ] || [ "$CONFIG_ARCH_8018X" = "y" ] || [ "$CONFIG_ARCH_NECV25" = "y" ] \
+	|| [ "$CONFIG_ARCH_SWAN" = "y" ] || [ "$CONFIG_ARCH_SOLO86" = "y" ]; then
+		bool 'Build kernel as ROM-bootable'   CONFIG_ROMCODE      n
+    fi
+
+    bool 'Far text kernel'	                CONFIG_FARTEXT_KERNEL y
+
+endmenu
+
+if [ "$CONFIG_ROMCODE" = "y" ]; then
+    mainmenu_option next_comment
+	comment 'ROM-CODE kernel-loader'
+
+	comment 'Absolute segment locations for code in target system ROM'
+	hex 'Setup code (0x60 ROM)'	CONFIG_ROM_SETUP_CODE	0xe000
+	hex 'Kernel code (64k ROM)'	CONFIG_ROM_KERNEL_CODE	0xe060
+
+	comment 'Absolute segment locations for data in target system RAM'
+	hex 'Setup data (0x20 RAM)'	CONFIG_ROM_SETUP_DATA	0x0060
+	hex 'Kernel data (64k RAM)'	CONFIG_ROM_KERNEL_DATA	0x0080
+
+	comment 'Information for ROM-Image generator'
+	hex 'Start address of ROM (for offset in image-file)'	CONFIG_ROM_BASE 0xe000
+	int 'Area with BIOS Checksum in kbytes (normally 64)'	CONFIG_ROM_CHECKSUM_SIZE 64
+	bool 'Make image-file bootable by reset' 		CONFIG_ROM_BOOTABLE_BY_RESET n
+	if [ "$CONFIG_ROM_BOOTABLE_BY_RESET" = "y" ]; then
+	    hex 'Address jumped after reset (offset in image)'	CONFIG_ROM_RESET_ADDRESS 0x0003
+	    bool 'Add startup module to image (BIOS-functions)'	CONFIG_ROM_ADD_BIOS_IMAGE n
+	    if [ "$CONFIG_ROM_ADD_BIOS_IMAGE" = "y" ]; then
+		string 'Name of module' 			CONFIG_ROM_BIOS_MODULE "bios/bioscode.bin"
+		hex 'Module code segment address'		CONFIG_ROM_BIOS_MODULE_ADDR 0xf000
+	    fi
+	fi
+	comment 'Generate debug code and information'
+	bool 'ROM-CODE debug information'			CONFIG_ROM_DEBUG
+    endmenu
+
+    mainmenu_option next_comment
+	comment 'EPROM Simulator'
+
+	bool 'Use EPROM Simulator after make'			CONFIG_ROM_USE_SIMULATOR n
+	if [ "$CONFIG_ROM_USE_SIMULATOR" = "y" ]; then
+	    string 'Program call'				CONFIG_ROM_SIMULATOR_PROGRAM "/usr/bin/simu -t18 Image"
+	fi
+    endmenu
+fi
+
+# Networking support
+
+source elks/net/config.in
+
+# Filesystem support
+
+source elks/fs/config.in
+
+# Drivers configuration
+
+mainmenu_option next_comment
+	comment 'Drivers'
+
+	source elks/arch/i86/drivers/block/config.in
+	source elks/arch/i86/drivers/char/config.in
+	source elks/arch/i86/drivers/net/config.in
+
+endmenu

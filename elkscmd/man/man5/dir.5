@@ -1,0 +1,44 @@
+.TH DIR 5
+.SH NAME
+dir \- directory layout
+.SH SYNOPSIS
+.nf
+.ft B
+#include <dirent.h>
+.SH DESCRIPTION
+The directories of the MINIX and FAT file systems are arrays of the
+following structure defined in <dirent.h>:
+.PP
+.nf
+.ta +5n +15n +15n
+#define MAXNAMLEN	26		   /* 14 for MINIX, 26 for FAT */
+struct dirent {
+	ino_t	d_ino;	        /* I-node number */
+	unsigned short d_namlen;
+	char	d_name[MAXNAMLEN+1];   /* File name */
+};
+.fi
+.DT
+.PP
+The
+.B d_ino
+field is the inode number of the file named by
+.BR d_name .
+.B D_ino
+is zero if the directory slot isn't allocated.  This number is the same as
+.B st_ino
+returned by
+.BR stat (2)
+unless the entry is mounted on.
+.B D_name
+is the name of up to 26 characters, null-terminated.
+Any character other than null or '\fB/\fP' is allowed.
+.PP
+See
+.BR directory (3)
+for a portable way to access directories, ELKS and MINIX 3 are probably the last systems
+with these old V7 format directories.
+.SH "SEE ALSO"
+.BR directory (3).
+.SH AUTHOR
+Kees J. Bot (kjb@cs.vu.nl)

@@ -1,0 +1,142 @@
+Config Option			Directory		Comments
+----------------------	--------------	------------------------------------------------------------
+# shells
+CONFIG_APP_ASH			ash/			Default shell, installs as /bin/sh. Early BASH compatible.
+										Std builtins: cd, chdir, '.', source, echo, eval, exec, exit,
+											export, readonly, getops, hash, jobid, jobs, read,
+											set, setvar, shift, trap, ':', true, false, umask, unset, wait
+										Scripting builtins: break, continue, return
+										No non-std builtins.
+
+CONFIG_APP_SASH			sash/			Good shell for slow floppy systems. Installs as /bin/sash.
+										Edit /etc/passwd to specify /bin/sash on login.
+										Sash has some standard and large number of useful builtins.
+										Not BASH-compatible and no scripting, however it will call /bin/sh
+										for seamless BASH shell script execution.
+										Std builtins: alias, unalias, cd, exec, exit, source, setenv,
+											prompt, umask
+										Builtins: 
+											chown, chgrp, cp, echo, ln, ls, mkdir, mkdir, mknod, printenv,
+											pwd, sync, rm, rmdir, sync, mv, mount, umount,
+											dd, ed, grep, more, kill, tar, touch
+										Other builtins: help, quit
+
+# New config option
+CONFIG_APP_COREUTILS	core_utils/		Core utilities, Installed in /bin. Sources moved from other directories
+										Already included in sash (but sources to be merged):
+											chown, chgrp, cp, echo, ln, ls, mkdir, mkdir, mknod, printenv,
+											pwd, sync, rm, rmdir, sync, mv, mount, umount,
+											dd, ed, grep, more, kill, tar, touch
+										Not yet included in sash (but to be added):
+											cat, date, env
+										Move from sys_utils: clock, getty, init, login, mount, umount
+										Move from file_utils:
+											cat, chgrp, chmod, chown, cp, dd, ln, mkdir, mknod,
+											more, mv, rm, rmdir, sync, touch
+										Move from minix1: grep
+										Move from minix2: env
+										Move from minix3: 
+										Move from misc_utils: ed, tar
+										Move from sh_utils: date, echo, false, printenv, pwd, true
+
+# Selectable Application categories
+CONFIG_APP_SH_UTILS		sh_utils/		Shell utilities from Alistair Riddoch.
+										Rewritten from GNU shutils 1.12 and sash.
+										Installs in /bin: basename, date, dirname, echo, false, logname, mesg,
+											printenv, pwd, stty, test, tr, true, which, whoami, xargs, yes
+										Note: uname and write not compiled.
+
+CONFIG_APP_SYS_UTILS	sys_utils/		System utilities from various origins.
+										Installs in /bin: chmem, clock, getty, init, kill, knl, login, man,
+											meminfo, mount, passwd, poweroff, ps, reboot, shutdown, umount, who,
+											unreal16
+										Not compiled: exitemu, insmod, min_init, rdev, utent(lib routine)
+										Some manual pages present.
+
+CONFIG_APP_FILE_UTILS	file_utils/		File utilities from Alistair Riddoch.
+										Rewritten from GNU fileutils 3.14 and sash.
+										Installs in /bin: cat, chgrp, chmod, chown, cmp, cp, dd,
+										l, ln, ls, mkdir, mkfifo, mknod, more, mv, rm, rmdir, sync, touch
+										Not installed: grep
+
+CONFIG_APP_DISK_UTILS	disk_utils/		Disk utilities from early 1990s.
+										Installs in /bin: fdisk, fsck, mkfs, partype, ramdisk
+
+CONFIG_APP_MISC_UTILS	misc_utils/		Miscellaneous utilities from various sources, including sash.
+										Installs in /bin: ed, miniterm, tar, od, hd, kilo, time, tty,
+										uuencode, uudecode
+										Not installed: compress, uncompress, zcat
+
+CONFIG_APP_MINIX1		minix1/			MINIX utilities, part 1.
+										Installs in /bin: banner, cksum, cut, decomp16, du, fgrep, grep,
+											proto, sum, uniq, wc
+
+CONFIG_APP_MINIX2		minix2/			MINIX utilities, part 2.
+										Installs in /bin: env, lp, pwdauth, synctree, tget
+										Not built: eject, install, lpd, man(also in sys_utils), mt
+
+CONFIG_APP_MINIX3		minix3/			MINIX utilities, part 3.
+										Installs in /bin: cal, diff, file, find, head, sed, sort, tail, tee
+
+# busyelks
+CONFIG_APP_BUSYELKS		busyelks/		Not selected by default. When selected, B options occur on:
+											file_utils, sh_utils, disk_utils, minix1, minix3, misc_utils.
+										Installs /bin/busyelks, and symlinks to following depending on B options:
+											basename, cal, cat, chgrp, chmod, chown, chksum, cmp,
+											cp, cut, date, dd, diff, dirname, du, echo, ed, fdisk, find.
+# Other commands
+CONFIG_APP_ELVIS		elvis/			Elvis vi editor, installs as /bin/vi.
+
+CONFIG_APP_NANOX		nano-X/			Nano-X Graphical Window System v0.86 from 1999.
+										Too many programs to fit on 1440k floppy
+										Installs /bin/landmine
+										Builds but doesn't install: demo, demo2, nclock
+										Doesn't build: nterm, world
+
+CONFIG_APP_OTHER		bc/				Calculator
+
+CONFIG_APP_OTHER		mtools/			Early MSDOS mtools v1.6.2 from 1989, with man pages.
+										Installs into /bin: mcopy, mdel, mdir, mkdfs, mmd, mrd, mread,
+											mren, mtype, mwrite
+CONFIG_APP_OTHER		prems/			Compression library and compress/gzip lookalike.
+										Installs /bin/pres. flparc not installed.
+
+# Not compiling or broken commands
+CONFIG_APP_BYACC		byacc/			Berkely Yacc. Not selectable so never compiles.
+
+CONFIG_APP_M4			m4/				Macro processor, including man page
+
+CONFIG_APP_SCREEN		screen/			Text multi-screen support.
+
+CONFIG_APP_CRON		    cron/			Daemon to schedule program execution.
+
+CONFIG_APP_TEST			test/			Various test programs, not selected by default.
+
+CONFIG_APP_LEVEE		levee/			Levee vi editor, broken, not installed.
+
+CONFIG_APP_XVI			xvi/			vi editor, won't compile, not installed.
+
+# Internet stack
+CONFIG_APP_UIP			ktcp/			ELKS uIP stack. Installs /bin/uip
+CONFIG_UIP_MAX_CONNECTIONS	ktcp/uip-conf.h	uIP TCP connection table size
+CONFIG_UIP_MAX_LISTENPORTS	ktcp/uip-conf.h	uIP listen port table size
+CONFIG_UIP_UDP			ktcp/uip-conf.h	Enable uIP UDP support
+CONFIG_UIP_BROADCAST		ktcp/uip-conf.h	Enable IPv4 broadcast delivery inside uIP
+CONFIG_UIP_UDP_CONNS		ktcp/uip-conf.h	uIP UDP connection table size
+CONFIG_UIP_DHCPC		ktcp/			Build the upstream uIP DHCP client
+CONFIG_UIP_DHCP_LIGHT		ktcp/			Use the reduced-footprint uIP DHCP client
+CONFIG_UIP_RESOLV		ktcp/			Build the upstream uIP DNS resolver framework
+CONFIG_UIP_RESOLV_ENTRIES	ktcp/			uIP DNS resolver cache size
+CONFIG_APP_FTP			inet/ftp/		Installs /bin/ftp, /bin/ftpd
+CONFIG_APP_HTTPD		inet/httpd/		Installs /bin/httpd and /var/www/index.html
+CONFIG_APP_NET_TOOLS	inet/nettools/	Installs /bin/netstat, /bin/nslookup, /etc/resolv.cfg
+CONFIG_APP_TELNET		inet/telnet/	Installs /bin/telnet
+CONFIG_APP_TELNETD		inet/telnetd/	Installs /bin/telnetd
+CONFIG_APP_TINYIRC		inet/tinyirc/	Installs /bin/tinyirc
+CONFIG_APP_URLGET		inet/urlget/	Installs /bin/urlget
+
+# embedded target tools
+                        romprg/			8018X ROM flash programmer
+
+# Other directories in elkscmd/
+rootfs_template/						Root filesystem template for static files not built in elkscmd/

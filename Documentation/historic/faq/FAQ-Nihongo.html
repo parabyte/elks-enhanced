@@ -1,0 +1,506 @@
+<HTML>
+<HEAD>
+<TITLE>Japanese ELKS FAQ</TITLE>
+<BASE HREF="http://elks.sf.net/faq/">
+<META NAME="Author" CONTENT="Brian Candler">
+<META NAME="KeyWords" CONTENT="elks,faq,linux,kernel,8086">
+</HEAD>
+<BODY BGCOLOR="#C0D0E0">
+
+Character set: ISO-2022-JP(JIS)
+
+<HR>
+
+<H1 ALIGN="CENTER">ELKS FAQ</H1>
+
+これは Linux-8086としても知られている ELKSについての何度も繰りかえされる質問
+に対する答えのリストです。
+
+<P>
+この FAQは Brian Candelerさんのオリジナルを元に Alister Riddochさんがメンテナン
+スを行っています。アップデートは
+<A HREF="mailto:ajr@ecs.soton.ac.uk">ajr@ecs.soton.ac.uk</A>.
+に送って下さい。最新版は
+<A HREF="http://www.ecs.soton.ac.uk/elks">
+http://www.ecs.soton.ac.uk/elks</A>.
+に在ります。
+注！ ELKSは開発の初期段階なのでこの情報はすぐ陳腐化しますよ。
+<P>
+他の情報は ELKSホームページ
+<A HREF="http://www.uk.linux.org/ELKS-Home/index.html">http://www.uk.linux.org/ELKS-Home/index.html</A>.
+ で見て下さい
+<P>
+メーリングリストに参加するには 本文に 
+<B>subscribe linux-8086</B>とだけ書いて
+majordomo@vger.kernel.org に送って下さい。
+
+メーリングリストのアーカイブは 
+<A HREF="http://epocha.pd.mcs.net/Linux8086/">
+http://epocha.pd.mcs.net/Linux8086/</A>.
+又は
+<A HREF="http://www.cyberpass.net/~dummy/robert/archives/linux-8086/">
+http://www.cyberpass.net/~dummy/robert/archives/linux-8086/</a> which
+に在ります。
+<P>
+注！ ELKSは Linuxでは在りません、ですからこのメーリングリストは Linuxに
+関する質問にはふさわしく在りませよ。
+<A HREF="news:comp.os.linux.misc">comp.os.linux.misc</A>
+等に送ってね。
+
+<H2>セクション 1 概要</H2>
+
+<UL>
+<LI><A HREF="#1.1">Q1.1. ELKSって何?</A>
+<LI><A HREF="#1.2">Q1.2. ELKSと Linuxの違いは?</A>
+<LI><A HREF="#1.3">Q1.3. ELKSはすぐ使える?</A>
+<LI><A HREF="#1.4">Q1.4. ELKSは 8088プロセッサーで動く?</A>
+</UL>
+
+<H2>セクション 2 コンパイルとインストール</H2>
+
+<UL>
+<LI><A HREF="#2.1">Q2.1.  ソースコードはどこに在りますか?</A>
+<LI><A HREF="#2.2">Q2.2.  ELKSのカーネルはどのように作りますか?</A>
+<LI><A HREF="#2.3">Q2.3.  /usr/include/linux/vm86.h が見つからないとのエラーが出ました。</A>
+<LI><A HREF="#2.4">Q2.4.  ELKSの "init"はどのように作りますか?</A>
+<LI><A HREF="#2.5">Q2.5.  rootファイルシステムはどのように作るの?</A>
+<LI><A HREF="#2.6">Q2.6.  XTと 360Kディスクドライブが在るのですがどうすれば良いですか?</A>
+<LI><A HREF="#2.7">Q2.7.  bootイメージのルートデバイスを 変える方法は?</A>
+<LI><A HREF="#2.8">Q2.8.  ハードディスクへのインストール方法は?</A>
+</UL>
+
+<H2>セクション 3 ELKSを使う</H2>
+
+<UL>
+<LI><A HREF="#3.1">Q3.1.  Linuxで bccのバイナリーは動きますか?</A>
+<LI><A HREF="#3.2">Q3.2.  DOSEMU上で ELKSはブートしますか?</A>
+</UL>
+
+<H2>セクション 4 未解答の質問</H2>
+<p>
+
+<HR><H2>セクション 1 概要</H2>
+
+<H3>
+<A NAME="1.1">Q1.1. ELKSって何?</A>
+</H3>
+
+ELKSは組み込み用途可能な Linuxカーネルのサブセットで Linuxから派生した小さな
+カーネルを作るプロジェクト( UNIX V7相当のシステムコールを持つカーネル)で少な
+いメモリー、非力なプロセッサーでも動作可能です。当初の目標はインテル 8086と
+80286の 16bitプロテクトモードです。
+このようなハードウェアで動くカーネルは組み込み機器に役立ち、高性能な最新の
+CPUの無い第三世界や、様々なパームトップ機に使えます。
+<P>
+更なる情報、プロジェクトの目標、進行状況は
+<A HREF="http://www.uk.linux.org/Linux8086.html">ELKS home page</A>.
+で確認出来ます。
+
+<H3>
+<A NAME="1.2">Q1.2. ELKSと Linixの違いは?</A>
+</H3>
+
+ELKSは Linuxから派生したもので、一個人が理解可能なサイズですから学習用途に使
+えますよ。まだ開発の初期段階なので、スワップ、シェアドライブラリー、パラレル
+、シリアルI/O、ネットワーク等が未実装です。今はブートが可能で、仮想コンソール
+、minixファイルシステムフロッピーのマウント、いくつかの小さなプログラムの実行
+が出来ます。
+
+<H3>
+<A NAME="1.3">Q1.3. ELKSはすぐ使える?</A>
+</H3>
+
+まだです。Linux機を使い、ソースをダウンロードして 8086コードをクロスコンパイ
+ルする必要が在ります。現バージョンのELKSの bootイメージ、rootディスクイメー
+ジは在ります。でも多くのプラットフォームでテストする必要が在ります。
+Michael Stratesさんは bootと rootイメージを一つにまとめる作業を行って下さいま
+した。
+
+<H3>
+<A NAME="1.4">Q1.4. ELKSは 8088プロセッサーで動く?</A>
+</H3>
+
+8088は 16bitではなく 8bitの拡張データバスを持つことです(それで遅いよ)。
+もちろんELKSは動きます。
+
+<HR><H2>セクション 2 コンパイルとインストール</H2>
+
+<H3>
+<A NAME="2.1">Q2.1.  ソースコードはどこに在りますか?</A>
+</H3>
+
+<A HREF="ftp://linux.mit.edu/pub/ELKS">ftp://linux.mit.edu/pub/ELKS</A>
+がプライマリーサイトです。ELKSと Dev86のある他のサイトは以下の通りです。
+<p>
+<A HREF="ftp://ftp.ecs.soton.ac.uk/pub/elks/">
+ftp://ftp.ecs.soton.ac.uk/pub/elks/</A><BR>
+<A HREF="ftp://cam053212.student.utwente.nl/pub/8086-nix/ELKS/">
+ftp://cam053212.student.utwente.nl/pub/8086-nix/ELKS/</A><BR>
+<A HREF="ftp://tsx-11.mit.edu/pub/linux/ALPHA/linux-16/">
+ftp://tsx-11.mit.edu/pub/linux/ALPHA/linux-16/</A><BR>
+<A HREF="ftp://src.doc.ic.ac.uk/packages/linux/tsx-11-mirror/ALPHA/linux-16/">
+ftp://src.doc.ic.ac.uk/packages/linux/tsx-11-mirror/ALPHA/linux-16/</A><BR>
+<A HREF="ftp://ftp.amscons.com/pub/mirrors/ELKS">
+ftp://ftp.amscons.com/pubi/mirrors/ELKS</A><BR>
+<p>
+もし別のサイトをご存じでしたらメインテナーまで連絡して下さい。
+<H3>
+<A NAME="2.2">Q2.2.  ELKSのカーネルはどのように作りますか?</A>
+</H3>
+<TT>dev86/Dev86-0.0.13.4.tar.gz</TT> と <TT>kernel/elks-0.0.67/elks-0.0.67.tar.gz</TT>
+(もしくは最新バージョン)をダウンロードし /usr/src に解凍して下さい。
+
+<PRE>
+    tar -xvzf Dev86-0.0.13.tar.gz -C /usr/src
+    tar -xvzf elks-0.0.67.tar.gz -C /usr/src
+</PRE>
+開発環境は /usr/src/linux-86に、カーネルのソースは /usr/src/elksに展開され
+ます。 次ぎに <B>bcc</B>コンパイラを含むツール類を作成します。
+<PRE>
+    cd /usr/src/linux-86
+    make install
+</PRE>
+それからカーネルをコンパイルします。
+<PRE>
+    cd /usr/src/elks
+    # カーネルを作る。
+    make config
+    make dep
+    make
+</PRE>
+make configは linuxカーネルの物と似た振る舞いをします。デフォルトの設定のま
+まで多くのシステムで動くでしょう。貴方自身の行っている事が良く理解出来ていな
+いうちはオプションの変更はしないで下さい。
+
+(もし gccを使って linuxカーネルを作った事が有るなら elksカーネルの makeの
+速さに驚きますよ! :-) 最終的に "Image"と呼ばれるフロッピーディスクイメージが
+出来ます。フォーマットされたフロッピーディスクにコピーし、ブートして下さい。
+
+<PRE>
+    dd if=Image of=/dev/fd0
+</PRE>
+or
+<PRE>
+    make disk
+</PRE>
+これでこのディスクからブート出来ます。あとはマウントするルートフロッピー
+ディスクを作ります。bccを使い、"init"プログラムをコンパイルし、root minix
+ファイルシステムを作る必要があります。以下を読み進めて下さい。
+<H3>
+<A NAME="2.3">Q2.3.  /usr/include/linux/vm86.h が見つからないとのエラーが出ました。</A>
+</H3>
+
+<TT>/usr/include/sys/vm86.h</TT> の <TT>#include &lt;linux/vm86.h&gt;</TT> を <TT>#include &lt;asm/vm86.h&gt;</TT>
+   に変更して下さい。
+
+<H3>
+<A NAME="2.4">Q2.4.  ELKSの "init"はどのように作りますか?</A>
+</H3>
+
+ELKSカーネルがブートすれば /bin/initが動き出します。
+<p>
+現バージョンの "init"は linux.mit.eduにもある tiny-utilsパッケージに含まれる
+ものです。カーネルコードが最近変更になり /bin/shの代わりに /bin/initがロード
+されるようになりました。
+<p>
+カーネル0.0.67は kernel/elks-0.0.67/elkscmd.tar.gzに initと login(パスワード
+チェックなし)を含むユーティリィティーのセットが在ります。そのコンパイルとイン
+ストール法は
+<PRE>
+    bcc -0 -O -s init.c -o init
+    bcc -0 -O -s login.c -o login
+</PRE>
+として実行ファイルを作り、ルートディスクの /binディレクトリーにコピーして下
+さい。loginプログラムは /etc/passwdと /etc/groupファイル、それと /bin/sh(も
+しくは /etc/passwdのシェルのエントリーに記されているシェル)が必要です。
+<p>
+コンパイラオプションの<code>-0</code> (数値の"ゼロ")は8086コードを生成し、<code>-O</code> (大文字の"オ
+ー")はコードの最適化を有効にし、<code>-ansi</code> は ANSIファンクションプロトタイプを有効
+にし、<code>-s</code> はバイナリーコードからシンボルを除きます。
+<p>
+カーネル0.0.56から sash(スタンドアローン シェル)が使え、多くの人に /bin/shの
+代わりに使われています。elkscmd.tr.gzに含まれています。/etc/passwdと /etc/gr
+oupは linuxの物をコピーすると良いでしょう。ls -lが使えます。また sashのエラー
+レポートが /usr/lib/liberror.txtに残されます。　
+<H3>
+<A NAME="2.5">Q2.5.  rootファイルシステムはどのように作るの?</A>
+</H3>
+
+いくつかの物を含んだ  minixフロッピーを作らねばなりません。/bin/に initと lo
+ginと sh、/etc/には passwdと group、/dev/には initの為の３つの ttysが必要です
+。
+<BR><I>注! /dev/ttyは Linuxが標準で使う（５、０）とは異なりますよ。</I>
+<pre>
+    mkdir /usr/src/root86
+    cd /usr/src/root86
+    mkdir dev
+    cd dev
+    mknod tty c 4 0
+    mknod tty2 c 4 1
+    mknod tty3 c 4 2
+    mknod fd0 b 3 128
+    cd ..
+    mkdir bin
+    cd bin
+    cp &lt;path-to-elkscmd-init&gt; init
+    cp &lt;path-to-elkscmd-login&gt; login
+    cp &lt;path-to-elkscmd-sash&gt; sh
+    cd ..
+    mkdir etc
+    cd etc
+    cp &lt;path-to-skeleton-passwd&gt; passwd
+    cp &lt;path-to-skeleton-group&gt; group
+    cd ..
+    fdformat /dev/fd0H1440      # if floppy not yet formatted
+    mkfs -t minix -n14 /dev/fd0 1440
+    mount -t minix /dev/fd0 /a  # need a mount point "/a"
+    cp -pR /usr/src/root86/* /a
+    umount /a
+</pre>
+いくつかのディストリビューションでは /dev/fd0H1440のかわりに /dev/fd0u1440を
+使います。<p>
+パスワードはまだサポートされていないので passwdファイルからパスワードを削除
+して下さい。<p>
+もし2.2.xカーネルで mount-2.5kが使えるならハードディスクにループバックファイルシ
+ステムを使ってディスクイメージを作れます。そうしたらフロッピーにダンプして
+下さい。<p>
+<pre>
+    dd if=/dev/zero of=root.image bs=18k count=80
+    losetup /dev/loop0 root.image
+    mkfs -t minix /dev/loop0 1440
+    mount -t minix /dev/loop0 /a
+    ...
+    umount /a
+    dd if=root.image of=/dev/fd0
+</pre>
+ELKS.0.53から 1.44M以外のフロッピーも使えます。上の方法でサイズを適宜おきか
+えて下さい。1.2Mのドライブで 360Kの書き込みが可能です。360Kのドライブでブー
+トしたいのなら必要でしょう。
+<H3>
+<A NAME="2.6">Q2.6.  XT と 360Kディスクドライブが在るのですがどうすれば良いですか?</A>
+</H3>
+
+目的のマシンが 360Kドライブがついているときなど 別のマシンで bootとroot
+イメージを使うときはちょっとした注意が必要です。360Kドライブ(5.25"DD)は
+40トラックですし 1.2MB(5.25"HD)は 80トラックです。1.2MBドライブは 360Kの
+ディスクを読めますが、書き込めません。
+<P>
+一つの方法として 360Kのドライブを Linux PCの２つめのドライブとし
+<TT>fdformat /dev/fd1d360</TT> とフォーマットしてからファイルシステムを作ります。<P>
+それから DOSで "rawrite"を使い イメージファイルを作り直します。
+
+<H4>Boot disks</H4>
+
+'Image'ファイルはどのタイプのフロッピーにも書き込めますし、正しくブート
+します。必要な事は 'rawrite'を使い、目的のディスクを作ることだけです。
+<P>
+Root disksは自動検出されるようになりました。ですから、もう 1.44Mb以外のサイズ
+にコンパイルし直す必要はありません。
+
+<H4>Root disks</H4>
+
+ファイルシステムのサイズを 360Kに置き換え mkfsコマンドを実行し 360Kの
+ルートイメージが出来たら必要なファイルをこのディスクにコピーして下さい。
+そしてアンマウントし、次の様にディスクイメージを作ります。
+<PRE>
+        dd if=/dev/fd0 of=root.image bs=1k count=360
+</PRE>
+'rawrite'をする前に作っておいて下さい。ループバックファイルシステムを使っ
+たのならこの操作は不必要です。
+
+<H4>RAMの制限</H4>
+
+バージョン0.0.44は、640K RAMを前提としていました。しかしながら 640K以下で起きる
+DEF_INITSEGと DEF_SETUPSEGの問題は以降のバージョンでは修正されていますので、何も
+変更する必要はありません。
+
+<H3>
+<A NAME="2.7">* Q2.7.  bootイメージのルートデバイスを 変える方法は?</A>
+</H3>
+バージョン0.0.62のブートディスクは 2つ目のフロッピードライブをルートディス
+クとして使うようにコンパイルされてました。なぜなら wait_for_keypress()ファン
+クションが壊れてしまうからです。<p>
+もし "root disk mount failing on device 03c0
+"(03c0でルートディスクのマウントに失敗しました。)とメッセージが出たら 16進
+コードエディターでブートイメージの中の始めの方に有る C003hを捜し、8003hに
+替えて下さい。(c003hはインテル式の記述では 03c0となります。)
+これは多くのバージョンで動きます。けれども別のバージョンではどのアドレスに相
+当するか定かではありません。
+<A HREF="mailto:jose@cnct.com">jose@cnct.com</A> 
+さんの報告によれば 0.0.62のブートイメージでは 0adfと0adeとの事で
+した。
+<H3>
+<A NAME="2.8">* Q2.8.  ハードディスクへのインストール方法は?</A>
+
+
+</H3>
+バージョン0.0.65から ELKSルートディスクをハードディスクにインストール出来るよ
+うに成り、それを使うようにブートフロッピーを作れます。まだいくつかのバグがあ
+りますが、ルートフロッピーより便利でしょう。<P>
+まず fdiskを使い区画(パーティション)を作ります。いくつかのバージョンの fdisk
+が使えますが今のルートディスクのみ hd?1-4をサポートしています。
+もし DOSの基本区画があれば DOSの fdiskでは 2つ目の基本区画は作れません。
+ELKS 0.0.67のルートディスクにある fdiskはまだ枯れていませんが私のシステムでは
+問題なく使えています。<p>
+区画分けが済んだら bootと rootフロッピーを使い ELKSを立ち上げて mkfsを使いフ
+ァイルシステムを作って下さい。これは ELKSの fdiskを使いファイルシステムを作ろ
+うとしている区画の正しいデバイス名を知る為の安全な方法です。<pre>
+    mkfs /dev/hd?? &lt;size&gt;
+</pre>
+hd??は正しい区画番号を、sizeの所は キロバイト単位を入れて下さい。<size>は 32M
+以上は使えません。
+例として IDEドライブでスレーブに接続されたディスクの最初の区画に 20Mのファイ
+ルシステムを作るときは<pre>
+    mkfs /dev/hdb1 20000
+</pre>
+<P>
+これでマウントポイント /mntにマウントするには<pre>
+    mount /dev/hd?? /mnt とします。
+</pre>
+新しい区画のルートディレクトリは少しミスがあり /mntからは "ls -l"が使えません
+なぜ mkfsが少し間違ったファイルシステムを作るのか私には分かりませんが、その
+上で作業してます。<p>
+以下の様に新しいファイルシステムに基本的なディレクトリを作ります。<pre>
+
+    mkdir /mnt/bin
+    mkdir /mnt/dev
+    mkdir /mnt/usr
+    mkdir /mnt/usr/lib
+    mkdir /mnt/mnt
+    mkdir /mnt/etc
+    mkdir /mnt/root
+    mkdir /mnt/home
+    mkdir /mnt/home/user?....
+</pre>
+<p>
+次に基本的なファイルを移します。まともなシステムにするにはよりおおくのファイ
+ルが必要でしょうけれども、ここは基本となるものだけですが結構役立ちます。<pre>
+    cp /bin/init /mnt/bin/init
+    cp /bin/login /mnt/bin/login
+    cp /bin/sh /mnt/bin/sh
+    cp /bin/ls /mnt/bin/ls
+    cp /bin/pwd /mnt/bin/pwd
+    cp /bin/mount /mnt/bin/mount
+    cp /bin/umount /mnt/bin/umount
+    cp /bin/cp /mnt/bin/cp
+    cp /etc/passwd /mnt/etc/passwd
+    cp /etc/group /mnt/etc/group
+    cp /usr/lib/liberror.txt /mnt/usr/lib/liberror.txt
+</pre><p>
+最後に基本的なデバイスを作ります。<pre>
+    mknod /mnt/dev/tty c 4 0
+    mknod /mnt/dev/tty2 c 4 1
+    mknod /mnt/dev/tty3 c 4 2
+    mknod /mnt/dev/fd0 b 3 128
+    mknod /mnt/dev/fd1 b 3 192
+    mknod /mnt/dev/hda b 3 0
+    mknod /mnt/dev/hda1 b 3 1
+    mknod /mnt/dev/hda2 b 3 2
+    mknod /mnt/dev/hda3 b 3 3
+    mknod /mnt/dev/hda4 b 3 4
+    mknod /mnt/dev/hdb b 3 64
+    mknod /mnt/dev/hdb1 b 3 65
+    mknod /mnt/dev/hdb2 b 3 66
+    mknod /mnt/dev/hdb3 b 3 67
+    mknod /mnt/dev/hdb4 b 3 68
+</pre><p>
+そしたらアンマウントしましょう。<pre>
+    umount /dev/hd??
+</pre><p>
+次に正しいデバイスを指定した新しいカーネルをコンパイルし直す必要があります。
+これは ELKSカーネルソースにある include/linuxmt/config.hを編集し、ROOT_DEVの
+0x380を区画の番号に変えます。最後の２つの数値は区画の番号を１６進表記したマイ
+ナー番号です。
+-例- hdb3のマイナー番号は 67、これは１６進表記では４３です。ですから ROOT_DEV
+の数値は 0x343となります。<p>
+新しいカーネルフロッピーディスクを作る為に
+Type<pre>
+    make disk と入力して下さい
+</pre>
+そしてこの新しいブートディスクで ELKSを立ちあげて下さい。新しくルートがマウン
+トされます。警告メッセージがでますが通常どうりに動きます。でもフロッピーディ
+スクのものより速いですよ。ルートディレクトリは完璧ではないけれど別のディレク
+トリに移れますし、その他の点もいつもどうり動きます。
+
+<H2>セクション 3  ELKSを使う</H2>
+
+
+<H3>
+<A NAME="3.1">Q3.1.  Linuxで bccのバイナリーは動きますか?</A>
+</H3>
+はい。カーネルモジュールをロードする事により ELKSバイナリーを直接実行出来ます
+。これは ELKS上でプログラムを開発するより手軽ですし、Linux機でテスト出来ます
+。（とは言ってもあなたのプログラムがカーネル未実装のコードを使ってもELKSでは
+動きませんが。）
+<PRE>
+    cd /usr/src/linux-86/elksemu
+    make module
+    insmod binfmt_elks.o
+</PRE>
+リブートする度に 'insmod'と入力する必要が有る事に注意して下さい。
+/usr/src/linux-86/testsに試せる bccのサンプルプログラムがいくつか在ります。
+('wc'等)
+<P>
+モジュール作成時に "modversions.h: no such file or directory"のエラーが出たら
+Makefileから次の行を削除して下さい。
+<PRE>
+MODCFLAGS=-D__KERNEL__ -Wall -Wstrict-prototypes -O2 -fomit-frame-pointer \
+          -fno-strength-reduce -pipe -m486 -DCPU=486 -DMODULE -DMODVERSIONS
+</PRE>
+
+<H3>
+<A NAME="3.2">Q3.2.  DOSEMU上で ELKSはブートしますか?</A>
+</H3>
+はい。Linux 2.0.7の dosemu 0.63.1.36で ELKSはブート出来ます。多分他の組みあわ
+せでも良いでしょう。フロッピーブートを行う為に dosもしくは xdosで -Aフラグを
+使い <tt>/etc/dosemu</tt>にフロッピーディスクドライブの設定をします。
+<PRE>
+    floppy { device /dev/fd0 threeinch }  
+</PRE>
+
+<H2>
+セクション 4  未解答の質問
+</H2>
+
+これらの質問の答えを歓迎いたします。
+  
+<UL>
+<LI>DOSからLOADLIN.EXEで Linuxがブート出来るように ELKSも出来ますか？
+<A HREF="mailto:bsittler@mnt.edu">Benjamin C. W. Sittler</A> さんがそれが出来る 
+<A HREF="http://www.geocities.com/SiliconValley/Lakes/4535/">BootELKS</A>,
+を作りました。
+<LI>私のパームトップ機には RAMドライブが在ります。ELKS で使えますか？
+    <I>(ELKSに msdosfsがあればよいと思うのですが...)</I>
+<LI>bootと rootフロッピーディスクを一つにまとめられますか？
+<PRE>
+> From: Bar-David Yedidya
+>
+> 今日私は LILOを使い root/bootディスクを一つにまとめました。動いたよ！
+> フロッピーディスクに /bootを作り、Imageをコピーし、boot.bをします。
+> フロッピーディスクの /etcにこれらを加えた lilo.confを置きます。
+> boot=/dev/fd0
+> compact
+> image=/boot/Image
+>         label=lin16
+>
+> did lilo -r /mnt
+> and Hopla!
+> 私はまだ Linuxと linux-16のブートコードをカーネルのソースで見比べていませ
+> んが、同じ動作だと思いますし、liloが動く理由と思います。
+</PRE>
+最近のバージョンの(0.0.46以降)ELKSでは壊れるとの報告が在ります。
+<I>386以前のマシンでも動くのでしょうか？</I>
+<p>Chad Pageさんは次のバージョンでシングルディスクで動くように作業していま
+す。
+</UL>
+<p>
+
+<HR>
+<ADDRESS>
+<A HREF="mailto:ajr@ecs.soton.ac.uk">Alistair Riddoch</A> /
+last updated 15th July 1997
+</ADDRESS>
+Japanese translation by
+<A HREF="mailto:tadd@fsinet.or.jp">Tadayoshi Kubo</A>
+</BODY>
+</HTML>

@@ -1,0 +1,125 @@
+# Makefile for the ELKS uIP daemon
+BASEDIR=..
+include $(BASEDIR)/Makefile-rules
+
+SHELL		= /bin/sh
+
+UIP_MAX_CONNECTIONS := $(strip $(CONFIG_UIP_MAX_CONNECTIONS))
+ifeq ($(UIP_MAX_CONNECTIONS),)
+UIP_MAX_CONNECTIONS = 16
+endif
+
+UIP_MAX_LISTENPORTS := $(strip $(CONFIG_UIP_MAX_LISTENPORTS))
+ifeq ($(UIP_MAX_LISTENPORTS),)
+UIP_MAX_LISTENPORTS = 10
+endif
+
+UIP_BUFFER_SIZE := $(strip $(CONFIG_UIP_BUFFER_SIZE))
+ifeq ($(UIP_BUFFER_SIZE),)
+UIP_BUFFER_SIZE = 1514
+endif
+
+ifeq ($(strip $(CONFIG_UIP_UDP)),y)
+UIP_UDP_ENABLED = 1
+else
+UIP_UDP_ENABLED = 0
+endif
+
+UIP_BROADCAST_CFG := $(strip $(CONFIG_UIP_BROADCAST))
+ifeq ($(UIP_BROADCAST_CFG),)
+UIP_BROADCAST_CFG = y
+endif
+
+ifeq ($(UIP_BROADCAST_CFG),y)
+UIP_BROADCAST_ENABLED = 1
+else
+UIP_BROADCAST_ENABLED = 0
+endif
+
+UIP_UDP_CONNS := $(strip $(CONFIG_UIP_UDP_CONNS))
+ifeq ($(UIP_UDP_CONNS),)
+UIP_UDP_CONNS = 8
+endif
+
+UIP_DHCPC_CFG := $(strip $(CONFIG_UIP_DHCPC))
+ifeq ($(UIP_DHCPC_CFG),)
+UIP_DHCPC_CFG = y
+endif
+
+ifeq ($(UIP_DHCPC_CFG),y)
+UIP_DHCPC_ENABLED = 1
+UIP_DHCPC_UDP_CONNS = 1
+UIP_DHCPC_SRCS = uip/apps/dhcpc/dhcpc.c
+else
+UIP_DHCPC_ENABLED = 0
+UIP_DHCPC_UDP_CONNS = 0
+UIP_DHCPC_SRCS =
+endif
+
+UIP_DHCP_LIGHT_CFG := $(strip $(CONFIG_UIP_DHCP_LIGHT))
+ifeq ($(UIP_DHCP_LIGHT_CFG),)
+UIP_DHCP_LIGHT_CFG = y
+endif
+
+ifeq ($(UIP_DHCP_LIGHT_CFG),y)
+UIP_DHCP_LIGHT_FLAG = -DUIP_CONF_DHCP_LIGHT
+else
+UIP_DHCP_LIGHT_FLAG =
+endif
+
+UIP_RESOLV_CFG := $(strip $(CONFIG_UIP_RESOLV))
+ifeq ($(UIP_RESOLV_CFG),)
+UIP_RESOLV_CFG = y
+endif
+
+ifeq ($(UIP_RESOLV_CFG),y)
+UIP_RESOLV_ENABLED = 1
+UIP_RESOLV_UDP_CONNS = 1
+UIP_RESOLV_SRCS = uip/apps/resolv/resolv.c
+else
+UIP_RESOLV_ENABLED = 0
+UIP_RESOLV_UDP_CONNS = 0
+UIP_RESOLV_SRCS =
+endif
+
+UIP_RESOLV_ENTRIES := $(strip $(CONFIG_UIP_RESOLV_ENTRIES))
+ifeq ($(UIP_RESOLV_ENTRIES),)
+UIP_RESOLV_ENTRIES = 4
+endif
+
+UIP_UDP_TOTAL_CONNS := $(shell expr $(UIP_UDP_CONNS) + $(UIP_DHCPC_UDP_CONNS) + $(UIP_RESOLV_UDP_CONNS))
+
+LOCALFLAGS	= -I. -Iuip -Iuip/apps/dhcpc -Iuip/apps/resolv \
+		  -DUIP_CONF_MAX_CONNECTIONS=$(UIP_MAX_CONNECTIONS) \
+		  -DUIP_CONF_MAX_LISTENPORTS=$(UIP_MAX_LISTENPORTS) \
+		  -DUIP_CONF_BUFFER_SIZE=$(UIP_BUFFER_SIZE) \
+		  -DUIP_CONF_UDP=$(UIP_UDP_ENABLED) \
+		  -DUIP_CONF_BROADCAST=$(UIP_BROADCAST_ENABLED) \
+		  -DUIP_CONF_UDP_EXTERNAL_CONNS=$(UIP_UDP_CONNS) \
+		  -DUIP_CONF_UDP_CONNS=$(UIP_UDP_TOTAL_CONNS) \
+		  -DUIP_CONF_DHCPC=$(UIP_DHCPC_ENABLED) \
+		  -DUIP_CONF_RESOLV=$(UIP_RESOLV_ENABLED) \
+		  -DUIP_CONF_RESOLV_ENTRIES=$(UIP_RESOLV_ENTRIES) \
+		  $(UIP_DHCP_LIGHT_FLAG)
+
+CFILES		= uip_main.c slip.c tcpdev.c udpdev.c netconf.c deveth.c \
+		  timer.c vjhc.c uip/uip.c uip/uip_arp.c \
+		  $(UIP_DHCPC_SRCS) $(UIP_RESOLV_SRCS)
+
+OBJS		= $(CFILES:.c=.o)
+
+##############################################################################
+
+all:	uipd
+
+uipd:	$(OBJS)
+	$(LD) $(LDFLAGS) -maout-heap=33792 -maout-stack=3072  -o uipd $(OBJS) $(LDLIBS)
+
+install: uipd
+	$(INSTALL) uipd $(DESTDIR)/bin/uip
+
+clean: 
+	$(RM) $(OBJS) uipd
+
+dep:
+	makedepend $(CFILES)

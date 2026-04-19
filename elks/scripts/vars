@@ -1,0 +1,81 @@
+#!/bin/bash
+
+function analyse() {
+    sed 's/\#.*$//' | tr -cs '0-9_A-Za-z' '\n' | grep ^CONFIG_ | grep -v '_$'
+}
+
+function count() {
+    fgrep -w "$1" | cut -d : -f 1 | uniq | wc -l
+}
+
+function files() {
+    find * -type f ! -name CHANGELOG ! -name RELNOTES "$@"
+}
+
+function footer() {
+    cat <<-.eof
+	~~~  ~~~  ~~~  ~~~  ~~~  ~~~  ~~~~~~~~~~~~~~~~~~~~~~
+	$1 found.
+
+.eof
+}
+
+function header() {
+    cat <<-.eof
+	varhelp 1.0.0 configuration and help variable analyser
+	Copyright (C) 2002, Riley Williams <Riley@Williams.Name>
+	Released under the GNU General Public Licence, version 2 only.
+
+	`date '+Last run on %A, %d %B %Y at %T %Z.'`
+
+	Hlp   C   Asm  Cfg  Oth  Sum  Configuration Variable
+	~~~  ~~~  ~~~  ~~~  ~~~  ~~~  ~~~~~~~~~~~~~~~~~~~~~~
+.eof
+}
+
+function help() {
+    local HELPFILE=config/Configure.help
+
+    if [ ! -f "${HELPFILE}" ]; then
+	echo 0
+    else
+	grep "^$1"'$' < "${HELPFILE}" | wc -l
+    fi
+}
+
+function list() {
+    files -name "$1" -print0 | xargs -0 grep ^
+}
+
+function process() {
+    header
+    vars | sort | uniq | tally
+}
+
+function tally() {
+    local N=0 IN_C IN_S INHELP INCFG OTHER TOTAL
+
+    while read VAR ; do
+	INHELP=`help "${VAR}"`
+	IN_C=`list '*.[ch]' | count "${VAR}"`
+	IN_S=`list '*.[Ss]' | count "${VAR}"`
+	INCFG=`list '*.in' | count "${VAR}"`
+	TOTAL=`list '*' | count "${VAR}"`
+	OTHER=$[${TOTAL}-${INHELP}-${IN_C}-${IN_S}-${INCFG}]
+	printf '%3d  %3d  %3d  %3d  %3d  %3d  %s\n' \
+		${INHELP} ${IN_C} ${IN_S} ${INCFG} ${OTHER} ${TOTAL} "${VAR}" \
+	    | sed 's/ 0 /   /g'
+	N=$[$N+1]
+    done
+    footer $N
+}
+
+function vars() {
+    local FILE
+
+    files | while read FILE ; do
+	analyse < "${FILE}"
+    done
+}
+
+process 2>&1 | tee ${1:-varlist.tmp}

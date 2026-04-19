@@ -1,0 +1,15 @@
+#
+# Networking configuration
+#
+
+mainmenu_option next_comment
+    comment 'Networking Support'
+
+    bool 'Socket support'                              CONFIG_SOCKET           y
+
+    if [ "$CONFIG_SOCKET" = "y" ]; then
+        bool '  TCP/IP sockets'                        CONFIG_INET             y
+        bool '  UNIX sockets'                          CONFIG_UNIX             y
+    fi
+
+endmenu

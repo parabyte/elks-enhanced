@@ -1,0 +1,37 @@
+#
+# Block device driver configuration
+#
+mainmenu_option next_comment
+    comment 'Block device drivers'
+
+	bool '  BIOS floppy drive support'	CONFIG_BLK_DEV_BFD	y
+	bool '  Direct hw floppy support'	CONFIG_BLK_DEV_FD	n
+	bool '  Floppy drive track caching'	CONFIG_TRACK_CACHE	y
+	bool '  BIOS preset floppy types'	CONFIG_BLK_DEV_BFD_HARD n
+	bool '  BIOS hard drive support'	CONFIG_BLK_DEV_BHD	y
+	bool '  IDE hard drive CHS probe'	CONFIG_IDE_PROBE	y
+	if [ "$CONFIG_BLK_DEV_FD" == "y" ]; then
+		define_bool CONFIG_ASYNCIO y
+	fi
+
+	comment 'Additional block devices'
+
+	bool 'RAM disk support'			CONFIG_BLK_DEV_RAM	y
+	if [ "$CONFIG_BLK_DEV_RAM" == "y" ]; then
+		hex 'Preload RAM disk segment address' CONFIG_RAMDISK_SEGMENT 0
+		int 'Preload RAM disk sectors' CONFIG_RAMDISK_SECTORS 128
+	fi
+	choice 'SSD disk driver' \
+		"None CONFIG_BLK_DEV_SSD_NONE \
+		Test CONFIG_BLK_DEV_SSD_TEST \
+		SDCard CONFIG_BLK_DEV_SSD_SD" None
+
+	if [ "$CONFIG_BLK_DEV_SSD_SD" == "y" ] && [ "$CONFIG_ARCH_NECV25" == "y" ]; then
+      bool 'Interface SD card with hardware SPI'	CONFIG_HW_SPI	y
+	fi
+
+	bool 'ATA-CF drive support'	        CONFIG_BLK_DEV_ATA_CF	n
+
+    comment 'Block device options'
+    bool 'Character access to block devices'	CONFIG_BLK_DEV_CHAR	y
+endmenu

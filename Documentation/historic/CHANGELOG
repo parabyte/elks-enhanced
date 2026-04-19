@@ -1,0 +1,2585 @@
+This file is used to record changes made to the CVS database. Please add to
+the top of this file before committing any changes. Please use the header
+format provided for each entry, noting that the text on each line should not
+be longer than the lines of dashes.
+
+Al Riddoch.
+
+Contributor           Email address                     CHANGELOG entries found
+~~~~~~~~~~~~~~~~~~~~  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~  ~~~~~~~~~~~~~~~~~~~~~~~
+Alan Cox              alan@redhat.com                   17 Jun 2001-18 Jun 2001
+Alastair Bridgewater  nyef@softhome.net                 19 Nov 1998- 6 Dec 1998
+Alistair Riddoch      alriddoch@zepler.org              25 Sep 1998-17 Jun 2001
+Arnaud Launay         asl@launay.org                    15 Jul 1999-17 Oct 2001
+Christian Mardmuller  chm@kdt.de                        10 Nov 1999-29 Feb 2000
+Christoph Plattner    Christoph.Plattner@dot.at         31 Jan 2000- 2 Feb 2000
+Claudio Matsuoka      claudio@conectiva.com
+Daniele Giacomini     daniele@swlibero.org		20 Sep 2004
+David Murn            scuffer@hups.apana.org.au         11 Nov 1998-15 Nov 1999
+Eduardo Habkost	      ehabkost@conectiva.com.br		01 Jun 2004
+Giles Russell                                           22 Nov 1999
+Greg Haerr                                              14 Jul 1999-20 Jul 1999
+Harry Kalogirou       HarKal@gmx.net                    20 Jun 2001- 2 Jan 2003
+Jacek Lipkowski       sq5bpf@acid.ch.pw.edu.pl          20 Jan 2002
+Jay Barr                                                27 Oct 2002
+Ken Martwick          kenm@efn.org                      12 May 2002
+M Warner Losh         imp@village.org                   20 Jan 2002
+Manuel Novoa III      mjn3@codepoet.org                 18 Jun 2002-25 Jun 2002
+Mario Frasca                                            20 Jan 2000-14 Feb 2000
+Miguel Bolanos	      mike@linuxlabs.com		20 Sep 2004
+Paul Nasrat           pauln@truemesh.com                29 Oct 2001-12 Jul 2002
+Per Olofsson          MagerValp@cling.gu.se             25 Feb 2000
+Peter L Vachuska      pvachusk@nconnect.net             13 Aug 2001
+Richard Wallman       murkygoth@murkygoth.uklinux.net    2 Apr 2002
+Riley Williams        Riley@Williams.Name               16 Nov 1998-13 Jul 2003
+Roman Festchook       roma@polesye.net                  27 Oct 2001
+Simon Weijgers        simon@weijgers.com                16 Sep 1998-15 Nov 1999
+Simon Wood                                               6 Jan 2000-12 Jan 2000
+Thomas McWilliams     tgm9999@yahoo.com                 27 Aug 1999- 2 Apr 2001
+Tommy McCabe 	      rocketjet314@yahoo.com		31 May 2004
+
+-------------------------------------------------------------------------------
+
+Thu Feb 16 17:03:00 EST 2012	Jody Bruchon <jody@jodybruchon.com>	
+	* Removed elksfs. It was a copy of the MINIX fs and no tools
+	  exist to make such a filesystem.
+
+Thu Nov 23 21:35:28 EST 2006	Segin <segin2005@gmail.com>
+	* Changed name for the submenu for selecting charater
+	  device drivers to note the fact that that submenu is broken;
+	  attempting to enter it will have lxdialog die horribly.
+
+Wed Nov  8 17:49:52 EST 2006	Segin <segin2005@gmail.com>
+
+	* Changed ELKS init sequence to check all locations for 'init'
+	  that the Linux kernel does. This is to follow more 
+	  "traditional" behaviour.
+
+Sun Aug 20 21:51:25 UTC 2006	Claudio Matsuoka <claudio@mandriva.com>
+
+	* Allow loading Minix executables with total size larger than
+	  64KB, such as ash (70140 bytes). Currently the total size
+	  minus 32 bytes of header was limited to 16-bit.
+
+	* Set tty1 back to minor 0. This is different from Linux
+	  numbering, but it's necessary to have current ELKS virtual
+	  terminals working. This and the executable size change put
+	  ELKS back in usable state, allowing logins in the first VT
+	  and executing a shell.
+
+Mon Sep 20 23:27:23 CST 2004	Daniele Giacomini <daniele@swlibero.org>
+
+	* Added italian keys support, Miguel Bolanos cleaned the original
+	  file code.
+
+Wed Jun  9 17:27:52 BRT 2004	Eduardo Habkost <ehabkost@conectiva.com.br>
+
+	* fix for my last fix: s/rp_cmd/rq_cmd/
+
+Thu Jun 03 21:47:13 CST 2004    Claudio Matsuoka <claudio@conectiva.com>
+
+	* fixed format specifiers to correctly displaysegment sizes as unsigned
+	  values, and to display debug messages correctly.
+
+Thu Jun 03 07:48:25 CST 2004	Eduardo Habkost <ehabkost@conectiva.com.br>
+
+	* Fixed wrong struct field name for arch/i86/drivers/block/doshd.c
+	* Several fixes ro arch/i86/mm/user.c
+
+Web Jun 02 14:16:57 CST 2004    Claudio Matsuoka <claudio@conectiva.com>
+
+	* Added an extra fix to Eduardos memcpy fix.
+
+Tue Jun 01 21:00:03 CST 2004	Eduardo Habkost ehabkost@conectiva.com.br
+
+	* Fix memcpy_{to,from}fs, adding code to save the contents of SI and DI
+
+Mon May 31 07:39:47 CST 2004	Tommy McCabe <rocketjet314@yahoo.com>
+
+	* Fix wrong assignment (typo?) on printk
+	* Fix order of LD parameters on arch/i86/Makefile
+	* Use #ifdef rightly on setup.S
+	* Fix init to use tty0, not tty1 as system console.
+
+===============================================================================
+
+Sun Jul 13 04:24:44 BST 2003	Riley Williams <Riley@Williams.Name>
+
+	* This is ELKS 0.1.3-pre1
+
+Sat Jul 12 12:24:36 BST 2003	Riley Williams <Riley@Williams.Name>
+
+	* Rewrote kernel/printk.c to allow printk() to correctly print out
+	  signed values.
+	* Rewrote kernel/printk.c to produce a less verbose panic() dump,
+	  and also to increase the number of lines of stack trace to 10.
+	* Various spelling corrections to printk() messages.
+
+===============================================================================
+
+Thu Jan 02 16:12:36 EET 2003	Harry Kalogirou <harkal@gmx.net>
+
+        * Better select hash.
+	* This is ELKS 0.1.2
+
+-------------------------------------------------------------------------------
+
+Fri Nov 01 01:52:44 EET 2002	Harry Kalogirou <harkal@gmx.net>
+
+        * Changed the position of ds in the _registers struct.
+        * Added support for loading the new ELKS executable format. This is 
+          actualy the big header a.out format. The how things work is
+          explained in the Documentation/bin_formats.txt file.
+        * Optimized sys_execve() not to reload the code segment from disk
+          when it is doing shared code segment.
+        * Added the mm_resize() function that resizes a memory hole.
+        * Implemented a sys_brk() that actualy enlarges the heap of the
+          process.
+        * Removed FLOAT_HOLES related code from malloc.c
+        * Stack overflow check for new the new process memory setup.
+        * Removed CONFIG_EXEC_MINIX. We support minix executables by default
+        * Rearranged memory manager related config menus
+        * Added the CONFIG_EXEC_ELKS to control the inclusion of code to
+          support the new executable format.
+
+-------------------------------------------------------------------------------
+
+Sun Oct 27 20:32:59 EET 2002	Harry Kalogirou <harkal@gmx.net>
+
+        * Removed non-entity MSDOS exe file support code
+        * Removed the "big header" minix suppord from exec.c
+          since we never use it.
+
+Sun Oct 27 20:08:36 EET 2002	Jay Barr
+
+        * Fixed get_pid() in fork.c to correctly wrap the pid
+          numbers
+
+Sat Oct 26 20:38:26 EEST 2002	Harry Kalogirou <harkal@gmx.net>
+        
+        * Removed panic from sys_socket() when unsupported protocol
+          is requested.
+        * Fixed inet_create() to fail if there is no ktcp running.
+
+Sat Oct 26 12:59:19 EEST 2002	Harry Kalogirou <harkal@gmx.net>
+
+	* Signal check when returing from a task switch, so that
+	  processes that don't make system calls can get signals.
+	* Fixed scheduler not to task switch to the idle task then
+	  there are other processes running. As a result now we have
+	  much less task switches.
+
+Fri Oct 25 16:58:14 EEST 2002	Harry Kalogirou <harkal@gmx.net>
+
+	* Removed all the OLD_SCHED code
+	* Fixed add_timer() in sched.c to always re-enable interrupts
+
+Wed Oct 23 10:20:10 EEST 2202	Harry Kalogirou <harkal@gmx.net>
+
+	* Applied fix for the assembly checksum routine in ip.c.
+	  Bug found and solved by Jay Barr.
+
+===============================================================================
+
+Sat Aug 10 23:40:20 EEST 2002	Harry Kalogirou <harkal@gmx.net>
+
+	* This is ELKS 0.1.1
+
+Fri Aug  9 19:51:39 BST 2002	Riley Williams <Riley@Williams.Name>
+
+	* Reformatted Documentation/Configure.help to hopefully ensure
+	  that all help text fits within the correct margins.
+	* Also converted a few comments from Germanish spellings to
+	  standard British English spellings in the process.
+
+-------------------------------------------------------------------------------
+
+Tue Jul 30 01:30:23 EEST 2002	Harry Kalogirou <harkal@gmx.net>
+
+	* Added optimized assembly version of the checksum functions
+	  in TCP/IP stack. Saved 608 bytes and checksumming is around
+	  five times faster.
+
+Sun Jul 28 18:32:52 EEST 2002	Harry Kalogirou <harkal@gmx.net>
+
+	* Added TCP/IP header compression to SLIP (CSLIP)
+
+Tue Jul 16 22:43:37 BST 2002	Riley Williams <Riley@Williams.Name>
+
+	* Committed new header file with boot flag details that was omitted
+	  by accident in the previous commit. Sorry.
+
+Tue Jul 16 12:00:00 BST 2002	Riley Williams <Riley@Williams.Name>
+
+	* Converted various '#ifdef DEBUG / printk() / #endif' blocks
+	  into debug() blocks, simplifying code layout. Also mapped some
+	  "#if 0 / printk() / #endif" blocks to debug() blocks.
+	* Corrected calculation of hard drive size.
+	* Finished removing the "Roor location" menu by removing all of
+	  the relevant configuration variables from the help system.
+	* Rationalised configuration variables. The compiler will now set
+	  the root flags to indicate that the root partition is mounted
+	  read-only by default, the same as Linux does. In addition, some
+	  configuration variables that were simply aliases of others have
+	  been replaced by the variables they are aliases of. All of the
+	  remaining configuration variables actually occur within the
+	  configuration system, and all except three SiBO configuration
+	  variables also occur within the configuration help system.
+	* Standardised syntax of return statements throughout source.
+	* Updated script to list configuration variables and map how many
+	  of each typo of files each variable occurs with.
+	* Verified that current codebase both compiles and boots on my
+	  286 based laptop.
+
+Sat Jul 13 19:56:01 EEST 2002	Harry Kalogirou <harkal@gmx.net>
+
+	* Added support for post-compilation change of the root device.
+	  The device is now set with the "rdev" command.
+	* Removed the "Root location" menu in the configuration as it's
+	  not needed any more.
+
+Sat Jul 13 06:51:45 BST 2002	Riley Williams <Riley@Williams.Name>
+
+	* Inverted configuration options to be more logical.
+
+	  CONFIG_HW_NO_FLOPPY_DRIVE	=> CONFIG_HW_FLOPPY_DRIVE
+	  CONFIG_HW_NO_FPU		=> CONFIG_HW_FPU
+	  CONFIG_HW_NO_HARD_DRIVE	=> CONFIG_HW_HARD_DRIVE
+	  CONFIG_HW_NO_KEYBOARD_BIOS	=> CONFIG_HW_KEYBOARD_BIOS
+	  CONFIG_HW_NO_PS2_MOUSE	=> CONFIG_HW_PS2_MOUSE
+	  CONFIG_HW_NO_SEEK_FOR_FLOPPY	=> CONFIG_HW_USE_INT13_FOR_DISKPARMS
+	  CONFIG_HW_NO_VGA		=> CONFIG_HW_VGA
+
+	* Verified that current codebase both compiles and boots on my
+	  286 based laptop.
+
+===============================================================================
+
+Fri Jul 12 19:53:43 BST 2002	Riley Williams <Riley@Williams.Name>
+
+	* This is ELKS 0.1.1-pre3
+
+	* Verified that Paul's patch fixes the problem that prevented
+	  ktcp working.
+	* Verified that current codebase both compiles and boots on my
+	  286 based laptop.
+
+Fri Jul 12 19:32:16 EEST 2002	Paul Nasrat <pauln@truemesh.com>
+
+	* Moved the definition of _rs_ops outside of a block excluded
+	  by "#ifdef CONFIG_CONSOLE_SERIAL" command.
+
+	* KTCP NOW WORKS !!!
+
+-------------------------------------------------------------------------------
+
+Wed Jun 26 04:11:35 BST 2002	Riley Williams <Riley@Williams.Name>
+
+	* Clarified error messages in fs/minix/bitmap.c as some were
+	  rather too cryptic.
+	* Clarified size reports in arch/i86/tools/build.c to remove
+	  unnecessary 'd' suffix to some numbers.
+	* Verified that current codebase both compiles and boots on my
+	  286 based laptop, with the exception that ktcp still fails.
+
+		*** NOTE - KTCP DOES NOT CURRENTLY WORK ***
+
+Tue Jun 25 15:52:23 EST 2002	Manuel Novoa III <mjn3@codepoet.org>
+
+	* Optimised code in elks/fs/minix/bitmap.c to reduce size.
+
+		*** NOTE - KTCP DOES NOT CURRENTLY WORK ***
+
+Mon Jun 24 07:22:08 BST 2002	Riley Williams <Riley@Williams.Name>
+
+	* Rewrote scripts/vars command so it actually works.
+	* Changed elks/Makefile and elks/Makefile-rules to use CFG_SHELL
+	  instead of CONFIG_SHELL to prevent false hits by scripts/vars.
+	* Changed scripts/Configure and scripts/Menuconfig to use
+	  CFG_H and CFG_IN rather than CONFIG_H and CONFIG_IN as local
+	  variables to prevent false hits by scripts/vars.
+	* Rationalise ELKS configuration options. Specifically, label
+	  all currently unimplemented options as being unimplemented.
+	* Create a full set of configuration options to describe the
+	  possible memory configurations.
+	* Added help texts for several currently undescribed options.
+	* Listed configuration options that are the second or later
+	  options in choice statements (and thus do not need to have
+	  associated help texts) at the end of the help file.
+
+		*** NOTE - KTCP DOES NOT CURRENTLY WORK ***
+
+Sun Jun 23 09:25:38 BST 2002	Riley Williams <Riley@Williams.Name>
+
+	* Added discrete configuration options to describe system
+	  memory state.
+	* Rationalised existing memory configuration variable names:
+
+	CONFIG_MEM_EXTENDED_MEMORY		CONFIG_XMS_IRQ15
+	CONFIG_MEM_EXTENDED_MEMORY_SIZE 	CONFIG_XMS_SIZE
+
+	* Updated various [Cc]onfig.in files to state the correct
+	  default values for all options. In theory, defconfig is
+	  no longer needed, but I haven't removed it yet.
+
+		*** NOTE - KTCP DOES NOT CURRENTLY WORK ***
+
+Sat Jun 22 09:53:24 BST 2002	Riley Williams <Riley@Williams.Name>
+
+	* Tweaked arch/i86/drivers/block/doshd.c to correctly display
+	  the size of the various hard drives found.
+	* Determined that the problem that stops ktcp in its tracks is
+	  a panic caused by the stty command that precedes the ktcp
+	  command in the rc.sysinit file. Reported this to HarKal.
+	* Verified that current codebase both compiles and boots on my
+	  286 based laptop, with the exception that ktcp still fails.
+
+		*** NOTE - KTCP DOES NOT CURRENTLY WORK ***
+
+Fri Jun 21 00:27:05 BST 2002	Riley Williams <Riley@Williams.Name>
+
+	* Updated routine to find source of functions to produce a
+	  more user-friendly output format.
+	* Removed redundant line from kernel/Makefile as it is appended
+	  to the said file by the `make dep` step anyway.
+
+		*** NOTE - KTCP DOES NOT CURRENTLY WORK ***
+
+Tue Jun 18 22:01:16 EST 2002	Manuel Novoa III <mjn3@codepoet.org>
+
+	* Further optimised ELKS source reducing the compiled codesize
+	  for the standard `make defconfig` configuration down to a size
+	  of 58,784 bytes code, 7,596 bytes data and 51,268 bytes BSS.
+
+		*** NOTE - KTCP DOES NOT CURRENTLY WORK ***
+
+Tue Jun 18 13:12:30 EST 2002	Manuel Novoa III <mjn3@codepoet.org>
+
+	* Found and reverted bug introduced by Riley when splinting the
+	  ELKS kernel. This does NOT fix the KTCP problem.
+	* Optimised ELKS source, reducing the compiled codesize for the
+	  standard `make defconfig` configuration from its previous size
+	  of 61,488 bytes code, 7,940 bytes data and 51,276 bytes BSS
+	  to 59,568 bytes code, 7,664 bytes data and 51,268 bytes BSS.
+
+		*** NOTE - KTCP DOES NOT CURRENTLY WORK ***
+
+Thu Jun  6 22:17:00 BST 2002	Riley Williams <Riley@Williams.Name>
+
+	* Redid fix to deal with over-long kernel version names, and
+	  made sure there is plenty of room for future expansion in
+	  all of the fields in that structure.
+	* Verified that current codebase both compiles and boots on my
+	  286 based laptop, with the exception that ktcp still fails.
+
+		*** NOTE - KTCP DOES NOT CURRENTLY WORK ***
+
+Tue Jun  4 21:10:13 BST 2002	Riley Williams <Riley@Williams.Name>
+
+	* Updated Documentation/function.lst to reflect the current
+	  definitions of the various functions.
+
+Tue Jun  4 19:43:50 BST 2002	Riley Williams <Riley@Williams.Name>
+
+	* Added debugging to arch/i856/drivers/char/tcpdev.c to try
+	  to locate the KTCP panic problem. Didn't help, but left the
+	  debugging in ready for future use if needed.
+	* Verified that current codebase both compiles and boots on my
+	  286 based laptop, with the exception that ktcp still fails.
+
+		*** NOTE - KTCP DOES NOT CURRENTLY WORK ***
+
+Tue Jun  4 17:45:06 BST 2002	Riley Williams <Riley@Williams.Name>
+
+	* Verified that all source files that make up the actual kernel
+	  source tree are clean to `splint -weak` with the exception of
+	  the following, which still have some issues to deal with:
+
+		arch/i86/drivers/char/serial.c
+		arch/i86/mm/init.c
+		kernel/printk.c
+		net/ipv4/af_inet.c
+
+	  The issue with kernel/printk.c is concerned with telling the
+	  splint checker that printk() and panic() have a variable
+	  number of parameters. The issues with the other three source
+	  files are concerned with type mismatches that are not simple
+	  to solve.
+
+	* Verified that current codebase both compiles and boots on my
+	  286 based laptop, with the exception that ktcp still fails.
+
+		*** NOTE - KTCP DOES NOT CURRENTLY WORK ***
+
+===============================================================================
+
+Mon Jun  3 23:03:46 BST 2002	Riley Williams <Riley@Williams.Name>
+
+	* This is ELKS 0.1.1-pre2
+
+	* Completed ANSI'fication of many more source files.
+	* Verified that current codebase both compiles and boots on my
+	  286 based laptop. However, one of the ANSI'fication changes
+	  obviously broke ktcp as that command now panics the kernel.
+
+		*** NOTE - KTCP DOES NOT CURRENTLY WORK ***
+
+Mon Jun  3 13:07:28 BST 2002	Riley Williams <Riley@Williams.Name>
+
+	* Verified that all C source files including #asm...#endasm
+	  sections have those sections excluded for SPLINT purposes
+	  with #ifndef S_SPLINT_S...#endif conditionals.
+	* Added new command `make fixme` to locate all FIXME comments
+	  in the ELKS source tree.
+
+Mon Jun  3 10:59:54 BST 2002	Riley Williams <Riley@Williams.Name>
+
+	* Killed dependencies accidentally committed in previous tweak.
+	* Updated TODO list to reflect the fact that 0.1.0 has been
+	  released.
+
+Mon Jun  3 00:43:09 BST 2002	Riley Williams <Riley@Williams.Name>
+
+	* Oops - Committed tweaks from previous patch that somehow
+	  got omitted then.
+	* Verified that arch/i86/kernel/*.[ch] is clean as far as the
+	  `make splint` command is concerned.
+	* Verified that current codebase both compiles and boots on my
+	  286 based laptop. Noted that since I started ANSI'fying the
+	  ELKS kernel source, the compiled kernel has shrunk by over
+	  3k in size.
+
+-------------------------------------------------------------------------------
+
+Fri May 31 23:28:44 BST 2002	Riley Williams <Riley@Williams.Name>
+
+	* Made selection of root device n include/linuxmt/config.h
+	  simpler and ensured nodes are synchronised with majors in
+	  include/linuxmt/major.h rather than having the numbers
+	  duplicated in these two files.
+
+Thu May 30 23:45:40 BST 2002	Riley Williams <Riley@Williams.Name>
+
+	* Added new header arch/asm.h with definitions specific to the
+	  use of the SPLINT tool with sections of C code containing
+	  the asm() function.
+	* Added a document (still being written) on the Minix file
+	  system and how it works.
+
+Thu May 30 16:00:37 BST 2002	Riley Williams <Riley@Williams.Name>
+
+	* Standardised on clr_irq() and set_irq() macros throughout
+	  the source tree. clri() would have been acceptable, but
+	  seti() is the Search for Extra-Terrestial Intelligence, so
+	  is misleading in this context. The current mixture of using
+	  both cli() and i_cli() for one, and both sti() and i_sti()
+	  for the other was confusing.
+
+Thu May 30 10:57:30 BST 2002	Riley Williams <Riley@Williams.Name>
+
+	* Completed ANSI'fication of elks/fs subtree.
+	* Verified that current codebase both compiles and boots on my
+	  286 based laptop.
+
+===============================================================================
+
+Thu May 30 07:22:17 BST 2002	Riley Williams <Riley@Williams.Name>
+
+	* This is ELKS 0.1.1-pre1
+
+	* Reverted to elks/fs/minix subdirectory from 0.1.0 kernel release.
+	* Re-ANSI'fied elks/fs/minix subdirectory.
+	* ANSI'fied elks/net subdirectory.
+	* Verified that current codebase both compiles and boots on my
+	  286 based laptop - AT LAST !!!
+
+Wed May 29 23:27:51 BST 2002	Riley Williams <Riley@Williams.Name>
+
+	* Modified {get,put}_fs_{byte,word,long} to use void * pointers.
+	* Updated debug() messages.
+
+Tue May 28 18:30:02 BST 2002	Riley Williams <Riley@Williams.Name>
+
+	* Added list of functions and their prototypes to the ELKS
+	  kernel documentation.
+	* Added script to simplify updating of the above item.
+
+Sun May 26 23:58:26 BST 2002	Riley Williams <Riley@Williams.Name>
+
+	* Reverted thinko in earlier patch.
+
+Sun May 26 10:25:01 BST 2002	Riley Williams <Riley@Williams.Name>
+
+	* Fixed thinko in wrt_disk.img simplification. It now compiles.
+	* Converted open_file in file.s to take filename as parameter.
+
+Sat May 25 21:30:35 BST 2002	Riley Williams <Riley@Williams.Name>
+
+	* Simplified configuration of SiBO wrt_disk.img utility. The two
+	  configuration parameters are now in a separate tools.h header
+	  file, and both wrt_disk.c and file.s make use of the values in
+	  this header file to achieve the required task.
+	* Made wrt_disk.img use an unsigned long int for the address var
+	  rather than the two separate unsigned short ints that were in
+	  use previously.
+
+Wed May 15 16:00:08 EEST 2002	Harry Kalogirou <harkal@gmx.net>
+
+	* Invert the "Is this system call valid" condition in strace.c
+	  so it actually works.
+	* Added parameters to strace for sys_signal().
+	* Fixed the BSS zeroing in exec.c. This caused a lot of serious
+	  problems to programs that assumed a zeroed BSS. "ash" was one
+	  of them.
+
+Mon May 13 22:47:47 BST 2002	Riley Williams <Riley@Williams.Name>
+
+	* Standardised macros for debugging printk's - the function names
+	  are now debug() for just a string, and debug[1-9]() where there
+	  are parameters to be decoded. The ONLY exception is the memory
+	  handlers which use debugmem() and debugmem[1-9] respectively.
+	  All are skipped if DEBUG is not defined, and the memory macros
+	  are also skipped if DEBUGMM is not defined.
+	* Verified that current codebase both compiles and boots on my
+	  286 based laptop.
+
+Sun May 12 08:32:51 PDT 2002	Ken Martwick <kenm@efn.org>
+
+	* Reverted removal of '#include <sys/sysmacros.h>' header line
+	  from arch/i86/tools/build.c that stopped it from compiling
+	  on Slackware systems.
+
+Sun May  5 23:28:40 BST 2002	Riley Williams <Riley@Williams.Name>
+
+	* Removed unused INODE_VERSION macros from include header files
+	  as they conflicted with each other.
+
+Sun May  5 23:11:33 BST 2002	Riley Williams <Riley@Williams.Name>
+
+	* Verified that fs/elksfs/*.c is clean as far as `splint -weak`
+	  is concerned. This also eliminated a fair chunk of redundant
+	  code in the form of static functions that are only called if
+	  BLOAT_FS is defined. However, as this section is not included
+	  in the default configuration, this has probably not reduced
+	  the code size, although this stands a better chance of actually
+	  compiling after this cleanup.
+	* Verified that current codebase both compiles and boots on
+	  my 286 based laptop.
+
+Sun May  5 20:41:02 BST 2002	Riley Williams <Riley@Williams.Name>
+
+	* Verified that fs/minix/*.c is clean as far as `splint -weak`
+	  is concerned. This also eliminated a fair chunk of redundant
+	  code in the form of static functions that are only called if
+	  BLOAT_FS is defined.
+	* Verified that current codebase both compiles and boots on my
+	  286 based laptop.
+
+Sun May  5 17:22:53 BST 2002	Riley Williams <Riley@Williams.Name>
+
+	* Verified that fs/romfs/inode.c is now clean as far as
+	  `splint -weak` is concerned, fixing several bugs in the
+	  process, and also eliminating a fair chunk of redundant
+	  code (three static functions that were only called if
+	  BLOAT_FS was defined, but which were compiled in anyway).
+	* Verified that current codebase both compiles and boots on
+	  my 286 based laptop.
+
+Sun May  5 10:59:11 BST 2002	Riley Williams <Riley@Williams.Name>
+
+	* After much hassle and several false starts, reverted changes
+	  I'd made as part of the ANSI'fication procedure. Sorry all.
+	* Verified that current codebase both compiles and boots on my
+	  286 based laptop.
+
+Wed May  1 23:25:40 BST 2002	Riley Williams <Riley@Williams.Name>
+
+	* Clarified structures in various include/*/*.h header files.
+	* Dealt with FIXME comment in include/linuxmt/msdos.h file.
+	* Verified that all include/*/*.h header files are now clean
+	  as far as `splint -strict` is concerned.
+	* Verified that current codebase both compiles and boots on my
+	  286 based laptop.
+
+===============================================================================
+
+Tue Apr 30 22:17:52 EEST 2002 Harry Kalogirou <harkal@gmx.net>
+
+	* This is ELKS 0.1.0, the first beta of ELKS!
+
+Mon Apr 29 22:15:30 BST 2002	Riley Williams <Riley@Williams.Name>
+
+	* Following advice from Alan Cox and Christoph Plattner,
+	  corrected sys_open() entries in init/main.c and verified
+	  that the said file is now clean as far as `splint -weak`
+	  is concerned.
+
+Mon Apr 29 15:18:52 EEST 2002	Harry Kalogirou <harkal@gmx.net>
+
+	* Removed the "raw keyboard mode" from the configuration,
+	  since it does nothing.
+	* "meta device drivers", "direct floppy", "direct HDD" and
+	  "286 support" are now available only in experimental.
+	* "old XT HDD support" available only in unimplemented.
+	* Updated the English FAQ.
+
+Mon Apr 29 00:49:41 BST 2002	Riley Williams <Riley@Williams.Name>
+
+	* Verified that all fs/*.c files other than fs/super.c are clean
+	  as far as `splint -weak` is concerned. This does NOT include
+	  those files in subdirectories of that directory.
+	* Verified that current codebase both compiles and boots on my
+	  286 based laptop.
+
+Sun Apr 28 22:55:56 BST 2002	Riley Williams <Riley@Williams.Name>
+
+	* Enabled init_timer() and add_timer() routines. For some reason,
+	  they were #if 0'd out of the source code, but references still
+	  existed in routines that were not so treated.
+	* Detailed location of FIXME comments in `make lint` output.
+
+Sun Apr 28 21:54:19 BST 2002	Riley Williams <Riley@Williams.Name>
+
+	* Removed redundant kill_proc function, as it is implemented
+	  under the name kill_process instead.
+	* Verified that all kernel/*.c files other than kernel/printk.c
+	  are clean as far as `splint -weak` is concerned.
+	* Detected a bug in init/main.c where sys_open is called with
+	  only two parameters when three are expected. Inserted FIXME
+	  comment summarising the problem as I can't currently fix it.
+	* Fixed one bug in serial console - it tried to open /dev/ttys0
+	  when the actual device is /dev/ttyS0 instead.
+	* Verified that all arch/i86/kernel/*.[ch] files are clean as
+	  far as `sprint -weak` is concerned.
+	* Verified that current codebase both compiles and boots on my
+	  286 based laptop.
+
+Sun Apr 28 14:49:59 BST 2002	Riley Williams <Riley@Williams.Name>
+
+	* Rephrased comments in arch/i86/kernel/process.c to avoid
+	  compiler bug.
+	* Corrected definition of loff_t type from __u32 to __s32 as
+	  it is regularly used with negative values.
+	* Fixed bug in Harry's swap code that prevented the kernel from
+	  compiling if swap was disabled.
+	* Verified that current codebase both compiles and boots on my
+	  286 based laptop.
+
+Sun Apr 28 12:30:32 BST 2002	Riley Williams <Riley@Williams.Name>
+
+	* Verified that all include/{arch,linuxmt}/*.h files are clean
+	  as far as `splint -weak` is concerned.
+	* Changed prototypes for functions in arch/i86/mm/user.c such
+	  that all size fields use size_t parameters rather than the
+	  unholy mix of {signed,unsigned} {short,long} integers that
+	  were previously used.
+
+Sat Apr 27 22:54:16 EEST 2002	Harry Kalogirou <harkal@gmx.net>
+
+	* Added swap creation ioctl in mem.c. Swap is activated with
+	  the "swapon" utility in elkscmd package, and currently can
+	  not be deactivated.
+
+Sat Apr 27 18:31:43 BST 2002	Riley Williams <Riley@Williams.Name>
+
+	* Modified `make lint` to warn regarding /*@ignore@*/ sections.
+
+Sat Apr 27 15:12:56 EEST 2002	Harry Kalogirou <harkal@gmx.net>
+
+	* Some more corrections to the mm after the ANSI'fication.
+	* Bug fix in swap_strategy()
+
+Sat Apr 27 00:49:08 BST 2002	Riley Williams <Riley@Williams.Name>
+
+	* Tweaked include/linuxmt/string.h such that the definitions
+	  therein match those on the GNU man pages for those functions.
+	* Tweaked arch/i86/lib/bitops.c to match the revised prototypes
+	  used above.
+	* Ensured that the ELKS kernel compiles, and also that it boots
+	  on my i80286 based laptop computer.
+
+Sat Apr 27 00:16:36 BST 2002	Riley Williams <Riley@Williams.Name>
+
+	* Labelled virtual memory swapping support as experimental, and
+	  made it invisible unless CONFIG_EXPERIMENTAL is enabled.
+
+Fri Apr 26 22:25:57 BST 2002	Riley Williams <Riley@Williams.Name>
+
+	* Applied `make lint` to include/arch directory and cleaned up
+	  or tagged as acceptable all bugs listed therein under the
+	  -strict setting of splint, with the sole exception that in
+	  include/arch/system.h the function load_regs is defined with
+	  a signle parameter whose type is never declared.
+	* Applied `make lint` to include/linuxmt directory and cleaned
+	  up or tagged as acceptable all bugs listed therein under the
+	  -strict setting of splint, with the exception of those found
+	  in include/linuxmt/{mm,tqueue}.h which have still to be done.
+
+Fri Apr 26 20:01:37 BST 2002	Riley Williams <Riley@Williams.Name>
+
+	* Applied `make lint` to include/arch directory.
+	* Fixed the bugs found in include/arch/io.h which several other
+	  header files import.
+	* Discovered that isti() is a reserved name, so changed it to
+	  i_sti() throughout the ELKS source tree. Also changed icli()
+	  to i_cli() throughout the ELKS source tree for consistency.
+	* Fixed all bugs found in include/arch/stat.h with -weak set.
+	* Fixed most of the bugs found in include/arch/system.h with the
+	  only remaining bug being that the type __ptasks appears never
+	  to be defined in the source tree. This is the ONLY remaining
+	  bug in this directory as far as `make lint` is concerned.
+	* Removed duplicate declaration of get_ss() from header file
+	  include/arch/segment.h and added prototypes for declarations.
+
+Fri Apr 26 15:21:58 EEST 2002	Harry Kalogirou <harkal@gmx.net>
+
+	* Cleanups in fork.c and use of register variables.
+	* Fixed tcpdev to be opened only by root.
+	* Corrected the sys_knlvsn() system call.
+	* Cleanups in sched.c
+
+Fri Apr 26 14:28:42 BST 2002	Riley Williams <Riley@Williams.Name>
+
+	* Official thanks to HarKal for finding the bug I introduced
+	  during my ANSI'fication of the ELKS source tree.
+
+Fri Apr 26 12:35:31 EEST 2002	Harry Kalogirou <harkal@gmx.net>
+
+	* Reverted a change Riley made during the ANSI'fication of
+	  the memory manager code that made any allocation of memory
+	  imposible.
+	* Added typedef of sig_t in signal.h to make the kernel
+	  compilable again after Riley's ANSI'fication of signal.c
+
+Thu Apr 25 23:59:40 BST 2002	Riley Williams <Riley@Williams.Name>
+
+	* After downloading and installing the splint C code checker
+	  (available from http://www.splint.org/ on the Internet), I
+	  implemented the `make lint` command in the Makefiles to go
+	  through the entire source tree and check all C source files
+	  that do not contain #asm ... #endasm sections. This tweaks
+	  the Makefile to implement the global `make lint` command.
+	* Applied `make lint` to the arch/i86/drivers/char/KeyMaps/
+	  directory and confirmed that the header files herein are
+	  all clean.
+	* Applied `make lint` to the kernel/ directory.
+	* Fixed some of the more obvious bugs to kernel/exit.c found.
+	* Discovered that the varargs structure used in kernel/printk.c
+	  is not accepted by splint.
+	* Fixed some of the more obvious bugs to kernel/signal.c found.
+	* Fixed some of the more obvious bugs to kernel/time.c found.
+	  At the -weak detection level, this file is clean.
+
+Thu Apr 25 19:05:24 BST 2002	Riley Williams <Riley@Williams.Name>
+
+	* Committed the results of applying `make indent` to the
+	  arch/i86/drivers/char directory.
+
+Thu Apr 25 08:38:13 BST 2002	Riley Williams <Riley@Williams.Name>
+
+	* Created placeholder files for the routines that are currently
+	  common to many of the source files in arch/i86/drivers/char/
+	  and tweaked arch/i86/drivers/char/Makefile to include these
+	  files in the compilation process.
+
+Wed Apr 24 23:19:32 BST 2002	Riley Williams <Riley@Williams.Name>
+
+	* Added missing parameter to chq_addch calls in two source files.
+
+Wed Apr 24 20:12:29 BST 2002	Paul Nasrat <pauln@truemesh.com>
+
+	* Tweak to Makefile to stop it overwriting the config.in script
+	  that mkcfg creates.
+	* Tweak to mkcfg script to correctly create both the config.in
+	  script and the keymaps.h header file as it is supposed to.
+
+Wed Apr 24 18:40:12 BST 2002	Riley Williams <Riley@Williams.Name>
+
+	* Actually added mkcfg script referred to in previous commit.
+
+Wed Apr 24 16:14:33 EEST 2002	Harry Kalogirou <harkal@gmx.net>
+
+	* Commited a very important chunk I left out with my last
+	  commit, conserning map_buffer() function.
+	* Correct data segment rellocation after a schedule(), called
+	  at the end of an interrupt.
+
+Wed Apr 24 11:25:14 BST 2002	Riley Williams <Riley@Williams.Name>
+
+	* Standardised prototypes for AddQueue function.
+	* Standardised prototypes for AnsiCmd function.
+	* Standardised prototypes for ClearRange function.
+	* Standardised prototypes for KeyboardInit function.
+	* Standardised prototypes for namecompare function.
+	* Standardised prototypes for PositionCursor function.
+	* Standardised prototypes for ScrollDown function.
+	* Standardised prototypes for ScrollUp function.
+	* Standardised prototypes for Vt52Cmd function.
+	* Standardised prototypes for Vt52CmdEx function.
+	* Standardised prototypes for WriteChar function.
+
+Wed Apr 24 00:14:04 BST 2002	Riley Williams <Riley@Williams.Name>
+
+	* ANSI'fied function prototypes in the arch/i86/drivers/block subtree.
+	* Applied `make indent` rule to the arch/i86/drivers/block subtree.
+	* Verified that the kernel compiles with the above changes applied.
+
+Tue Apr 23 17:27:03 BST 2002	Riley Williams <Riley@Williams.Name>
+
+	* ANSI'fied function prototypes in the arch/i86/drivers/char subtree.
+	* Applied `make indent` rule to the arch/i86/drivers/char subtree.
+	* Verified that the kernel compiles with the above changes applied.
+
+Tue Apr 23 16:35:53 BST 2002	Riley Williams <Riley@Williams.Name>
+
+	* Simplified keyboard keycodes to auto-include all keycode header
+	  files currently defined. With this change, the ONLY steps needed
+	  to add another keycode table is to drop the relevant header file
+	  in the arch/i86/drivers/char/KeyMaps/ directory, with the correct
+	  comment line at the top, and the keymap will be included both in
+	  the configuration system and in the code itself. Also, if the map
+	  is for more than one language and a separate copy of this comment
+	  line is provided for each language, then all language options are
+	  automatically included, as currently happens with the BE/FR file.
+	* Accidentally omitted mkcfg script when committing this. Sorry.
+	* Updated TODO document.
+
+Tue Apr 23 01:27:03 BST 2002	Riley Williams <Riley@Williams.Name>
+
+	* ANSI'fied function prototypes in the arch/i86/sibo subtree.
+	* Applied `make indent` rule to the arch/i86/sibo subtree.
+	* ANSI'fied function prototypes in the arch/i86/tools subtree.
+	* Applied `make indent` rule to the arch/i86/tools subtree.
+	* Verified that the kernel compiles with the above changes applied.
+
+Mon Apr 22 23:11:38 BST 2002	Riley Williams <Riley@Williams.Name>
+
+	* ANSI'fied function prototypes in the arch/i86/mm subtree.
+	* Applied `make indent` rule to the arch/i86/mm subtree.
+	* Verified that the kernel compiles with the above changes applied.
+
+Mon Apr 22 18:22:01 BST 2002	Riley Williams <Riley@Williams.Name>
+
+	* ANSI'fied function prototypes in the arch/i86/boot subtree.
+	* Applied `make indent` rule to the arch/i86/boot subtree.
+	* Split system call table out of arch/i86/kernel/strace.c into
+	  separate header file arch/i86/kernel/strace.h and labelled this
+	  not to be reformatted by the `make indent` command.
+	* ANSI'fied function prototypes in the arch/i86/kernel subtree.
+	* Applied `make indent` rule to the arch/i86/kernel subtree.
+	* Verified that the kernel compiles with the above changes applied.
+
+Mon Apr 22 11:50:00 BST 2002	Riley Williams <Riley@Williams.Name>
+
+	* ANSI'fied function prototypes in the scripts subtree, with the sole
+	  exception being the ksymoops.cc code as that code is written in C++
+	  which I am not familiar enough with to touch.
+	* Applied `make indent` rule to the scripts subtree. This also omits
+	  the ksymoops.cc code for the simple reason that the indent program
+	  only understands C and not C++.
+	* Verified that the kernel compiles with the above changes applied.
+
+Sun Apr 21 22:54:03 BST 2002	Riley Williams <Riley@Williams.Name>
+
+	* ANSI'fied function prototypes in the init subtree.
+	* Applied `make indent` rule to the init subtree.
+	* ANSI'fied function prototypes in the net subtree.
+	* Applied `make indent` rule to the net subtree.
+	* Verified that the kernel compiles with the above changes applied.
+
+Sun Apr 21 20:54:00 BST 2002	Riley Williams <Riley@Williams.Name>
+
+	* Fixed failure of `make indent` when run in the base directory.
+	  Many thanks to HarKal for pointing this problem out, as it
+	  was not apparent on my system.
+
+Sun Apr 21 12:31:22 EEST 2002	Harry Kalogirou <harkal@gmx.net>
+
+	* Added mm_get_usage() to mm.c
+	* Added a new ioctl to /dev/mem responding with memory information.
+	* Changed next and prev in schedule() to register. Also removed the
+	  warning comment about corrupting the wait queues.
+	* Some changes to the swapper code.
+
+Sat Apr 20 16:28:30 EEST 2002	Harry Kalogirou <harkal@gmx.net>
+
+	* Added swap support. Currently the code is only for "developers"
+	  since swap devices and sizes are hardcoded. The swapping strategy
+	  also needs tweaking.
+
+Fri Apr 19 22:44:45 EEST 2002	Harry Kalogirou <harkal@gmx.net>
+
+	* Fixed ramdisk driver to read/write to buffers anywhere in RAM.
+
+Fri Apr 19 22:24:28 BST 2002	Riley Williams <Riley@Williams.Name>
+
+	* ANSI'fied function prototypes in the kernel subtree.
+	* Applied `make indent` rule to the kernel subtree.
+	* ANSI'fied function prototypes in the lib subtree.
+	* Applied `make indent` rule to the lib subtree.
+	* Verified that the kernel compiles with the above changes applied.
+
+Fri Apr 19 17:38:04 BST 2002	Riley Williams <Riley@Williams.Name>
+
+	* ANSI'fied function prototypes in the fs subtree.
+	* Applied `make indent` rule to the fs subtree.
+	* ANSI'fied function prototypes in the include subtree.
+	* Applied `make indent` rule to the include subtree.
+	* Verified that the kernel compiles with above changes applied.
+
+Thu Apr 18 23:15:09 BST 2002	Riley Williams <Riley@Williams.Name>
+
+	* Added scripts/reindent to reindent all *.c files in current
+	  directory that are NOT listed on the command line, using a
+	  standard set of indentation parameters.
+	* Added `make indent` command to reindent all *.c files using
+	  a standard indentation scheme. The scheme chosen is the GNU
+	  indentation scheme tweaked to my personal preferences, with
+	  any .indent.pro files ignored and all relevant options given
+	  on the command line used.
+	* Added new NOINDENT makevar to state code files not to be
+	  reformatted by `make indent` - usually because they include
+	  '#asm' statements, which indent doesn't handle at all well.
+	* Resolved ambiguities discovered by a test application of the
+	  new `make indent` command detailed above. These ambiguities
+	  were primarily caused by the current coding format omitting
+	  spaces either side of the assignment operator, and resulted
+	  in the sequences '=*', '=-' and '=&' appearing regularly.
+	  These sequences can have either of two different meanings,
+	  as follows:
+
+		Symbol		Meaning 1	Meaning 2
+		~~~~~~		~~~~~~~~~	~~~~~~~~~
+
+		X =* Y		X = (X * Y)	X = (*Y)
+		X =- Y		X = (X - Y)	X = (-Y)
+		X =& Y		X = (X & Y)	X = (&Y)
+
+	  In each case, the two meanings produce completely different
+	  results in most cases, and which option gets selected is
+	  compiler-dependent. Since meaning 1 is depretiated nowadays,
+	  all current compilers SHOULD select meaning 2, but there is
+	  no guarantee that this takes place.
+
+	NOTE: The ELKS source has NOT been reformatted at this point.
+
+Wed Apr 17 14:40:58 EEST 2002 Harry Kalogirou <harkal@gmx.net>
+
+	* Optimization of the serial interrupt code.
+	* Saved 135 bytes by using register variables in af_inet.c
+
+Sun Apr 14 12:41:54 BST 2002	Riley Williams <Riley@Williams.Name>
+
+	* Patch to give temporary file .tmp extension.
+
+Sun Apr 14 12:07:24 BST 2002	Paul Nasrat <pauln@truemesh.com>
+
+	* Applied patch to enable SIBO port to compile.
+
+Tue Apr  2 21:11:14 BST 2002	Richard Wallman <murkygoth@murkygoth.uklinux.net>
+
+	* Applied workaround for apparent ordering requirement to
+	  $DIALOG command in Menuconfig script.
+
+-------------------------------------------------------------------------------
+
+Thu Mar 28 23:06:53 GMT 2002	Riley Williams <Riley@Williams.Name>
+
+	* Add options to select root device.
+
+Thu Mar  7 14:47:03 EET 2002	Harry Kalogirou <harkal@gmx.net>
+
+	* Added MSS tcp option transmition.
+	* Fixed do_fork() bug, it was leaving dummy tasks on the
+	  task table under memory shortage.
+
+===============================================================================
+
+Mon Mar  4 01:04:28 EET 2002	Harry Kalogirou <harkal@gmx.net>
+
+	* This is ELKS 0.1.0-pre4
+
+	* TCP/IP accept bug.
+	* Reduced the TIME_WAIT expire from 2mins to 30 secs.
+	  This helps keep down the number of active TCP control blocks.
+	* Fixed final "write config file" dialog in menuconfig.
+
+Sun Feb 24 14:50:29 GMT 2002	Riley Williams <rhw@MemAlpha.cx>
+
+	* Made ELKS not rely on the Linux kernel source being present for
+	  the error values, by importing the Linux 2.5.5 errno.h files
+	  into the ELKS tree. Also standardised the way this header file
+	  is included.
+
+Sun Feb 24 12:01:54 GMT 2002	Riley Williams <rhw@MemAlpha.cx>
+
+	* Fixed #else and #endif to not fox the bcc -ansi option.
+	* Reformatted scripts/Configure in a consistent style.
+	* Reformatted scripts/Menuconfig in a consistent style.
+
+Wed Feb 20 12:27:08 GMT 2002	Riley Williams <rhw@MemAlpha.cx>
+
+	* Added syscall to return kernel version string. This can be
+	  omitted by using a configuration option, but only enlarges
+	  the kernel by 16 bytes if included. The configuration option
+	  defaults to NOT including this support. When it is disabled,
+	  the kernel prints its version during system boot, but when
+	  it is enabled, that no longer happens and the startup script
+	  is expected to do this instead if such is required.
+
+	  For those interested in the configuration option, it can be
+	  found under "Kernel Hacking" and is easily identifiable.
+
+Tue Feb 19 22:04:46 GMT 2002	Riley Williams <rhw@MemAlpha.cx>
+
+	* Added support for printk format using %% to print % chars.
+	* Allowed master syscall table to include conditional entries.
+	  This is a tweak to the arch/i86/kernel/mkentry.sh script.
+	* Updated strace's idea of syscall table to match reality.
+
+Thu Feb  7 00:03:17 GMT 2002	Riley Williams <rhw@MemAlpha.cx>
+
+	* Reformatted doshd.c to standardise indentation. Also corrected
+	  spelling and grammar in comments in this file. No other changes.
+
+Tue Feb  5 18:28:49 GMT 2002	Riley Williams <rhw@MemAlpha.cx>
+
+	* Removed redundant flag in Makefile-rules LDFLAGS assignment.
+	* Cleaned up messages in `make dep` and `make nodep` commands.
+	* Fixed bug that prevented strace.c from compiling. Somebody had
+	  assigned the same values to different options in the primary
+	  SWITCH statement in strace.c and this fix consists of ensuring
+	  that all of these values are unique.
+	* Fixed typo that prevented some of the tools from compiling.
+
+NOTE:	* Found bugs that prevented meta.c from compiling. Produced hack
+	  that let this file compile, but this is NOT the proper fix.
+	  Will somebody please sort out the lines labelled FIXME therein!
+
+Sun Jan 27 02:37:33 EET 2002	Harry Kalogirou <harkal@gmx.net>
+
+	* Made the code aware that the serial tty devices minor numbers
+	  was changed. 
+
+Sat Jan 26 10:08:44 GMT 2002	Riley Williams <rhw@MemAlpha.cx>
+
+	* Corrected typos in arch/i86/drivers/char/mem.c
+
+Fri Jan 25 14:31:14 GMT 2002	Riley Williams <rhw@MemAlpha.cx>
+
+	* Fixed two more assembler sources with strange comment markers.
+
+Wed Jan 23 00:56:51 GMT 2002	Riley Williams <rhw@MemAlpha.cx>
+
+	* Made autoconf.h auto-created in all cases where it is needed.
+	  This includes those cases in the elkscmd package.
+	* Remove contents of elksfs.h header if elksfs not enabled.
+
+Sun Jan 20 06:45:50 MST 2002	M Warner Losh <imp@village.org>
+
+	* Allow elks to build on systems where gnumake isn't installed
+	  as make and bash isn't installed as /bin/bash or /bin/sh !!!
+
+Sun Jan 20 12:15:18 GMT 2002	Riley Williams <rhw@MemAlpha.cx>
+
+	* Version number display actually committed.
+	* Formatting clean-ups in Menuconfig script.
+	* Two Makefiles were excluded from `make nodep` due to a typo,
+	  so fixed it to include them as well.
+	* Updated arch/i86/defconfig to reflect reality.
+	* Removed autoconf.h from CVS as it's generated by compiler.
+
+Sun Jan 20 01:09:25 EET 2002	Jacek Lipkowski <sq5bpf@acid.ch.pw.edu.pl>
+
+	* Menuconfig non compilable fix.
+	* Better version number display for menuconfig.
+
+Fri Jan 18 23:22:10 GMT 2002	Riley Williams <rhw@MemAlpha.cx>
+
+	* Updated TODO list from suggestions received.
+
+Mon Jan 14 16:18:21 GMT 2002	Riley Williams <rhw@MemAlpha.cx>
+
+	* OOPS: Previous commit accidentally omitted a patch - applied.
+	* Complete dependency checking - `make nodep` skipped two of the
+	  Makefiles due to a spelling mistake.
+	* Arranged for `make test` to produce comparable distributions
+	  before and after the compilation run - previously, the after
+	  distribution always included the dependencies and the before
+	  distribution did not.
+
+Sun Jan 13 22:37:14 GMT 2002	Riley Williams <rhw@MemAlpha.cx>
+
+	* Move serial ports from device minors 4-7 to 64-67 to allow for
+	  more virtual terminals (currently limited by the minors for
+	  the serial ports).
+	* Made `make clean` actually clean up *.a files.
+	* Fixed warning in scripts/lxdialog/dialog.c about invalid syntax
+	  of #include line.
+
+-------------------------------------------------------------------------------
+
+Wed Dec 26 17:09:16 GMT 2001	Riley Williams <rhw@MemAlpha.cx>
+
+	* Brought include/autoconf.h in the repository up to date
+	  with respect to what is generated - but is this file meant to
+	  be in the repository in the first place?
+
+Wed Dec 12 22:52:34 GMT 2001	Riley Williams <rhw@MemAlpha.cx>
+
+	* Renamed variables used in Makefile-rules to generalise it for use
+	  in non-ELKS systems, as follows:
+
+		ELKSDIR => BASEDIR
+		ELKSSTD => USEBCC
+
+Mon Dec 10 18:52:25 GMT 2001	Riley Williams <rhw@MemAlpha.cx>
+
+	* Updated TODO file at HarKal's request.
+
+Sun Dec  9 10:54:34 GMT 2001	Riley Williams <rhw@MemAlpha.cx>
+
+	* Documented existence of `make me` and `make test` commands that
+	  simplify testing of patches. They were originally included as
+	  part of my testing the harmonisation of the compilation tools,
+	  and were committed by mistake, but have been left in as they
+	  are so useful. Refer to Documentation/Development-notes.txt for
+	  notes for new developers.
+	* Simplified elks/scripts/lxdialog/Makefile where it locates the
+	  curses or ncurses include headers.
+	* Confirmed that updating from the CVS archive and immediately
+	  doing `make test` completes without any error messages.
+
+Sun Dec  9 00:00:28 GMT 2001	Riley Williams <rhw@MemAlpha.cx>
+
+	* Simplified `name clean` and `make {no,}dep` displays.
+
+Thu Nov 29 00:44:13 GMT 2001	Riley Williams <rhw@MemAlpha.cx>
+
+	* Fixed error in comments in Makefile-rules to match what the
+	  `make clean` command actually does.
+	* Added wish-list for software we'd like to see ported to ELKS to
+	  the end of the ELKS TODO list.
+
+===============================================================================
+
+Tue Nov 27 14:18:57 EET 2001	Harry Kalogirou <harkal@gmx.net>
+
+	* This is ELKS 0.1.0-pre3
+
+Tue Nov 27 13:57:20 EET 2001	Harry Kalogirou <harkal@gmx.net>
+
+	* Fixed CRLF files as pointed out by Paul Nasrat.
+
+Tue Nov 27 03:40:07 EET 2001	Harry Kalogirou <harkal@gmx.net>
+
+	* Fixed the TIME_WAIT leftover TCP control blocks issue.
+	* Added user timeout to TCP/IP.
+
+Mon Nov 26 15:19:36 EET 2001	Harry Kalogirou <harkal@gmx.net>
+
+	* Fixed back the fixed sys_lseek(). It seems that libc expects
+	  the return value to be passed through one of the parameters.
+
+===============================================================================
+
+Fri Nov 24 02:31:18 EET 2001	Harry Kalogirou <harkal@gmx.net>
+
+	* This is ELKS 0.1.0-pre2 !!!
+
+Fri Nov 23 19:34:28 EET 2001	Harry Kalogirou <harkal@gmx.net>
+
+	* Fixed sys_lseek() to correctly return the resulting offset
+	  location.
+	* Made inet aware of CONFIG_SOCK_CLIENTONLY.
+
+Fri Nov 23 15:36:00 EET 2001	Harry Kalogirou <harkal@gmx.net>
+
+	* Fixed the "minix header" bug.
+
+Fri Nov 23 02:32:35 EET 2001	Harry Kalogirou <harkal@gmx.net>
+
+	* Fixed do_fork(). It was not freeing the previously allocated code
+	  segment when the allocation of the data segment was failing.
+	* Fixed zero tcp window issues.
+
+Wed Nov 21 01:37:32 EET 2001	Harry Kalogirou <harkal@gmx.net>
+
+	* Major fix in inet code.
+	* Removed the CONFIG_SOCK_STREAMONLY config variable.
+	* Updated the help for CONFIG_SOCK_CLIENTONLY variable.
+	* Fixed the CONFIG_SOCK_CLIENT effect.
+	* Made inet sockets the default config.
+	* Made inet status report the default.
+	* Updated the help for CONFIG_CHAR_DEV_RS variable.
+
+Sat Nov 19 17:26:40 EET 2001	Harry Kalogirou <harkal@gmx.net>
+
+	* Reorder of some commands in inet code.
+
+Tue Nov 20 21:39:03 GMT 2001	Paul Nasrat <pnasrat@uk.now.com>
+
+	* Removed rogue space that stopped compile.
+
+===============================================================================
+
+Tue Nov 20 00:34:21 GMT 2001	Riley Williams <rhw@MemAlpha.cx>
+
+	* THIS IS ELKS RELEASE 0.1.0-PRE1 !!!
+
+	* Removed unused config variable CONFIG_IBMPC_RAINBOW pending any
+	  decision on whether to port to this system.
+	* Verified that all standard make commands now work using the
+	  standardised ruleset.
+
+Sun Nov 18 18:55:53 GMT 2001	Riley Williams <rhw@MemAlpha.cx>
+
+	* All temporary files now have *.tmp format names.
+	* Created new `setdir` script to simplify the `make dist` command.
+	  This gets rid of a nasty bug.
+	* If `make dep` and `make nodep` find that the resulting Makefile
+	  is unchanged, they retain it.
+	* Moved `make dist` dir to be under the same directory that the ELKS
+	  base directory is under rather than under the ELKS base directory
+	  itself.
+	* Verified that all config variable renames stated in this CHANGELOG
+	  document had actually been committed to the CVS archive.
+
+===============================================================================
+
+Sat Nov 17 18:03:45 GMT 2001	Riley Williams <rhw@MemAlpha.cx>
+
+	* THIS IS ELKS RELEASE 0.0.90 !!!
+
+Sat Nov 17 18:03:45 GMT 2001	Riley Williams <rhw@MemAlpha.cx>
+
+	* Fixed bug in `make dist` - it missed an important file out!
+
+Sat Nov 17 12:14:01 GMT 2001	Riley Williams <rhw@MemAlpha.cx>
+
+	* Tweaked config variables as follows:
+
+		CONFIG_BE_KEYMAP	CONFIG_KEYMAP_BE
+		CONFIG_DE_KEYMAP	CONFIG_KEYMAP_DE
+		CONFIG_DV_KEYMAP	CONFIG_KEYMAP_DV
+		CONFIG_ES_KEYMAP	CONFIG_KEYMAP_ES
+		CONFIG_FR_KEYMAP	CONFIG_KEYMAP_FR
+		CONFIG_SE_KEYMAP	CONFIG_KEYMAP_SE
+		CONFIG_UK_KEYMAP	CONFIG_KEYMAP_UK
+		CONFIG_US_KEYMAP	CONFIG_KEYMAP_US
+
+	* Fixed bug in `make dist` that stopped it from working.
+
+Fri Nov 16 09:28:55 GMT 2001	Riley Williams <rhw@MemAlpha.cx>
+
+	* Created testing commands in elks/Makefile:
+
+	    make me	Creates a test copy of the current tree.
+			This is NOT the same as `make dist`.
+
+	    make set	Displays a list of all environment variables
+			as currently set.
+
+	    make test	Performs `make defconfig` to create a config
+			identical to the default configuration, then
+			runs through all of the standard non-config
+			commands to ensure they all work.
+
+	* Updated TODO document.
+
+===============================================================================
+
+Wed Nov 14 13:26:39 GMT 2001	Riley Williams <rhw@MemAlpha.cx>
+
+	* THIS IS ELKS RELEASE 0.0.89 !!!
+
+	* ELKS now compiles with the SAME compilation commands throughout!
+	  Rationalisation of the ELKS makefiles is complete as a result.
+
+Tue Nov 13 23:57:42 GMT 2001	Riley Williams <rhw@MemAlpha.cx>
+
+	* Fixed stupid typos in previous bugfix !!!
+	* Stopped `make Image` from doing infinite recursion !!!
+
+Tue Nov 13 23:52:18 GMT 2001	Riley Williams <rhw@MemAlpha.cx>
+
+	* Fixed bug in elks/Makefile that stopped compiles: I'd missed a
+	  dependency :(
+
+Tue Nov 13 17:40:00 GMT 2001	Riley Williams <rhw@MemAlpha.cx>
+
+	* Renamed config vars as follows:
+
+		CONFIG_ARCH_PC		CONFIG_ARCH_IBMPC
+		CONFIG_ARCH_PC_AT	CONFIG_PC_AT
+		CONFIG_ARCH_PC_AUTO	CONFIG_PC_AUTO
+		CONFIG_ARCH_PC_CLONE	CONFIG_IBMPC_CLONE
+		CONFIG_ARCH_PC_COMPAQ	CONFIG_IBMPC_COMPAQ
+		CONFIG_ARCH_PC_MCA	CONFIG_PC_MCA
+		CONFIG_ARCH_PC_RAINBOW	CONFIG_IBMPC_RAINBOW
+		CONFIG_ARCH_PC_XT	CONFIG_PC_XT
+		CONFIG_ROM_IS186	CONFIG_CPU_80186
+		CONFIG_ROM_IS286	CONFIG_CPU_80286
+		CONFIG_ROM_IS86 	CONFIG_CPU_8086
+
+Mon Nov 12 14:05:37 GMT 2001	Riley Williams <rhw@MemAlpha.cx>
+
+	* Corrected faulty ASM comment markers to remove unnecessary display
+	  of assembly comments.
+
+Sun Nov 11 19:50:43 GMT 2001	Riley Williams <rhw@MemAlpha.cx>
+
+	* Reverted change that moved definition of UTS_RELEASE to command
+	  line as this resulted in the command line being too long. This is
+	  still a work in progress, not yet 100% complete.
+
+Sun Nov 11 12:35:14 EET 2001	Harry Kalogirou <harkal@rainbow.cs.unipi.gr>
+
+	* Fix in inet_write().
+	* Fixed case when a process writes to a closed pipe from the other
+	  end of the connection. Now returns EPIPE.
+	* Fixes in the tcp state machine concerning LAST_ACK state.
+	* More "RFC" behavior of inet_read(). 
+
+Sat Nov 10 18:27:17 EET 2001	Harry Kalogirou <harkal@rainbow.cs.unipi.gr>
+
+	* Made System.map sorted by address.
+	* Replaced tabs with spaces on the contributor list at the top of
+	  CHANGELOG file. This make's it readable from everyone, whatever
+	  tab width someone uses.
+	* Better tcp ISN selection.
+
+Sat Nov 10 00:05:18 EET 2001	Harry Kalogirou <harkal@rainbow.cs.unipi.gr>
+
+	* Did some more fixes to the inet sockets.
+
+Mon Nov  5 22:07:17 EET 2001	Harry Kalogirou <harkal@rainbow.cs.unipi.gr>
+
+	* Updated the networking.txt file.
+
+Mon Nov  5 20:17:15 GMT 2001	Riley Williams <rhw@MemAlpha.cx>
+
+	* Rationalised networking section of configuration system.
+
+Wed Oct 31 22:29:50 GMT 2001	Riley Williams <rhw@MemAlpha.cx>
+
+	* Removed details of two fixed bugs from BUGS.html file.
+	* Regenerated BUGS file from revised BUGS.html file.
+
+Mon Oct 29 18:26:24 GMT 2001	Riley Williams <rhw@MemAlpha.cx>
+
+	* Brought RELNOTES up to date.
+
+Mon Oct 29 13:12:49 GMT 2001	Riley Williams <rhw@MemAlpha.cx>
+
+	* Completed contributors table from CHANGELOG entries.
+	* Spellchecked CHANGELOG using British English spellings throughout.
+	* Updated TODO document to reflect targets for various releases.
+
+Mon Oct 29 11:03:54 GMT 2001	Paul Nasrat <pnasrat@uk.now.com>.
+
+	* Makefile patches to compile for SiBO.
+
+Sat Oct 27 00:06:00 EEST 2001	Roman Festchook <roma@polesye.net>
+
+	* Added the Russian FAQ to the Documentation.
+
+Thu Oct 25 23:14:32 BST 2001	Riley Williams <rhw@MemAlpha.cx>
+
+	* Updated elks/BUGS to match elks/BUGS.html
+	* Updated elks/INSTALLATION to match elks/INSTALLATION.html
+
+===============================================================================
+
+Tue Oct 23 17:36:10 BST 2001	Riley Williams <rhw@MemAlpha.cx>
+
+	* THIS IS ELKS RELEASE 0.0.88
+
+	* Updated include/autoconf.h to match `make defconfig` results.
+
+===============================================================================
+
+Tue Oct 23 01:44:24 BST 2001	Riley Williams <rhw@MemAlpha.cx>
+
+	* THIS IS ELKS RELEASE 0.0.88-PRE1.
+
+	* Brought Makefile-rules up to date.
+	* Removed includes for compile.h and version.h - sorry!
+	* Preliminary version of documentation of Makefile structure added.
+
+Mon Oct 22 14:22:41 BST 2001	Riley Williams <rhw@MemAlpha.cx>
+
+	* Removed requirement for compile.h and version.h as the relevant
+	  values are now provided as defaults to all source code during the
+	  compilation process.
+	* Simplified creation of elks.spec for `make rpm` command (but this
+	  command is not yet guaranteed to work).
+	* Wrote design for revised Makefile system. Refer to the file
+	  Documentation/Makefile-structure.html for details.
+
+Mon Oct 22 10:49:00 EEST 2001	Harry Kalogirou <HarKal@rainbow.cs.unipi.gr>
+
+	* Fixed bug in net/Makefile spotted by Riley Williams.
+
+Mon Oct 22 02:06:53 BST 2001	Riley Williams <rhw@MemAlpha.cx>
+
+	* Fixed typos in recent CHANGELOG entries.
+	* Thanks are due to Harry Kalogirou for sorting out the bug in the
+	  Makefile's that I was unable to track down.
+
+===============================================================================
+
+Fri Oct 19 11:35:00 EEST 2001	Harry Kalogirou <HarKal@rainbow.cs.unipi.gr>
+
+	* THIS IS ELKS RELEASE 0.0.87.
+
+	* Final changes for the release.
+
+Thu Oct 18 17:32:06 EEST 2001	Harry Kalogirou <HarKal@rainbow.cs.unipi.gr>
+
+	* Fixed `make dist` as it was stopping with error trying to create
+	  the arch/i86 directory twice.
+	* Fixed `make dist` to include keymap headers in the distribution.
+	* Fixed `make dist` to include net/ipv4 directory in the distribution.
+
+Thu Oct 18 16:53:02 EEST 2001	Harry Kalogirou <HarKal@rainbow.cs.unipi.gr>
+
+	* Fix in Makefiles. The `make dep` command needs version.h and
+	  compile.h to work.
+	* Fixed arch/i86/mm/Makefile to make the tree compilable.
+
+Wed Oct 17 11:32:57 CEST 2001	Arnaud Launay <asl@launay.org>
+
+	* Updated my current email address.
+
+===============================================================================
+
+Tue Oct 16 21:59:27 BST 2001	Riley Williams <rhw@MemAlpha.cx>
+
+	* THIS IS ELKS RELEASE 0.0.87-PRE1.
+
+	* Bumped version to 0.0.87-pre1 in case anything is using the above
+	  field. Don't think anything is, but better to be safe than sorry.
+
+Tue Oct  9 16:03:21 BST 2001	Riley Williams <rhw@MemAlpha.cx>
+
+	* Reformatted CHANGELOG to make it easier to find contributor's
+	  current email addresses.
+	* Created list of standard Makefile rules where all rules perform
+	  exactly as documented.
+
+Sun Oct  7 20:28:37 BST 2001	Riley Williams <rhw@MemAlpha.cx>
+
+	* Added `make tar` and skeletons for `make rpm` and `make deb` to base
+	  Makefile.
+
+Fri Oct  5 01:08:14 BST 2001	Riley Williams <rhw@MemAlpha.cx>
+
+	* Removed files created in compilation from CVS archive, and thus from
+	  ELKS distribution set. These were elks/include/{compile,version}.h
+	  which are both created anew as part of the compilation process.
+
+Thu Oct  4 00:00:00 BST 2001	Riley Williams <rhw@MemAlpha.cx>
+
+	* Removed empty depend.awk and hfiles.sh from elks/scripts directory.
+	* Tweaked elks/Makefile-rules to show my idea of how the Makefile
+	  system ought to work. The aim is that the rules in here will be both
+	  available and used by every Makefile in the tree.
+	* Changed tag v0m0m73 to elks-0_0_73 to match other tags.
+
+Wed Oct  3 23:37:43 EEST 2001	Harry Kalogirou <HarKal@rainbow.cs.unipi.gr>
+
+	* Fixed bug introduced by my commit of 29 Sep 2001 and spotted by
+	  Riley Williams earlier today.
+
+Wed Oct  3 18:14:08 BST 2001	Riley Williams <rhw@MemAlpha.cx>
+
+	* Reverted changes accidentally made to remaining Makefiles. There
+	  appears to still be a bug in the reversion, which results in
+	  as86 being called with bcc's parameters, but the rest is fixed.
+	* Discovered bug in Harry Kalogirou's commit of 29 Sep 2001 and
+	  reported it to him for sorting out.
+
+Tue Oct  2 23:22:12 BST 2001	Riley Williams <rhw@MemAlpha.cx>
+
+	* Added missing "### Dependencies:" tags to several Makefiles but
+	  still to revert remaining Makefiles.
+
+===============================================================================
+
+Tue Oct  2 21:29:28 BST 2001	Riley Williams <rhw@MemAlpha.cx>
+
+	* THIS IS ELKS RELEASE 0.0.85-PRE3.
+
+	* Reverted changes accidentally made to elks/Makefile previously.
+	  Changes to other Makefiles in the tree still have to be reverted.
+	* Added `make elks` rule to elks/Makefile - this will also be added to
+	  all other Makefiles as I progress through the tree, and will have the
+	  result of performing `make all` in the base directory independently
+	  of the current location in the tree.
+	* Bumped version up to 0.0.85-pre3 to provide a marker for the previous
+	  change. This is tagged both as V0-0-85-PRE3 and as elks-0_0_85-pre3
+	  in CVS, the latter being the standard used for most other releases
+	  from CVS as determined by inspection.
+
+-------------------------------------------------------------------------------
+
+Sat Sep 29 13:47:47 EEST 2001	Harry Kalogirou <HarKal@rainbow.cs.unipi.gr>
+
+	* Added locking of sock.avail_data that was previously omitted.
+	* Changed Unix and nano sockets to use semaphores. Saved around 120
+	  bytes of code.
+
+Wed Sep 26 23:36:17 BST 2001	Riley Williams <rhw@MemAlpha.cx>
+
+	* Deleted redundant Makefile's from Documentation sub-tree.
+	* Added prototype rule to Makefile-rules to allow automatic conversion
+	  of *.html to *.txt by Makefiles.
+
+Sun Sep  9 09:56:25 BST 2001	Riley Williams <rhw@MemAlpha.cx>
+
+	* Accidentally committed Makefile tweaks as part of the Makefile
+	  rationalisation that I started on 30 Aug 2001 that broke the
+	  compilation of ELKS. This wasn't discovered until 26 Sep 2001.
+
+	  The part of the rationalization that appears to have caused problems
+	  is that of ensuring that ld86 was used throughout to generate the
+	  *.a files from the collections of *.o files that were created by the
+	  earlier rationalisation, rather than using a mixture of ld for some
+	  and ld86 for others.
+
+Sat Sep  8 22:33:39 BST 2001	Riley Williams <rhw@MemAlpha.cx>
+
+	* Prevented header files from being included more than once, as some
+	  header files were not properly guarded against this.
+	* Simplified current Makefiles by making use of `make -C` option.
+
+Sat Sep  8 19:51:41 BST 2001	Riley Williams <rhw@MemAlpha.cx>
+
+	* Added `mkMake` script to scripts directory. This new file forms part
+	  of the rationalisation of the ELKS Makefile system that I have been
+	  undertaking, but does not impact on the current system in any way.
+	  It is an important part of the rationalised Makefile system though,
+	  so needs to be included.
+	* Arranged Makefile such that `make elks` from ANY directory in the
+	  ELKS source tree will compile the entire tree.
+
+Thu Aug 30 19:16:22 BST 2001	Riley Williams <rhw@MemAlpha.cx>
+
+	* Rationalised ELKS Makefiles to use standard rule prototypes, with
+	  elks/Makefile-rules containing all of the standard prototypes.
+
+	  Basically, the rationalisation in question resulted in the ugly
+	  mixture of using gcc to compile some *.c sources to *.s and bcc to
+	  compile other *.c sources to *.s with either bcc or as86 used to
+	  compile *.s to *.o (and some using bcc to compile directly to *.o
+	  without going through the *.s intermediate stage) being changed to
+	  use bcc from *.c to *.s and as86 from *.s to *.o throughout.
+
+Tue Aug 28 11:43:35 BST 2001	Paul Nasrat <pnasrat@uk.now.com>
+
+	* Patched ELKS CVS source to compile for SiBO.
+
+Mon Aug 27 11:59:12 GMT 2001	Harry Kalogirou <HarKal@rainbow.cs.unipi.gr>
+
+	* Changed tcpdev.c to use semaphores now we have them.
+	* Fixed bug in inet_read(). Should sleep again if woken up and has no
+	  lock on the buffer.
+	* Did some inet code cleanup
+	* Some fixes to the TCP behaviour.
+
+Mon Aug 27 08:24:38 BST 2001	Riley Williams <rhw@MemAlpha.cx>
+
+	* Unfolded prototype rules in Makefiles.
+
+Sun Aug 26 21:22:43 BST 2001	Riley Williams <rhw@MemAlpha.cx>
+
+	* Rationalised elks/Makefile somewhat, ready for standardising the
+	  Makefile rules throughout the ELKS source tree.
+
+Sun Aug 26 10:54:19 BST 2001	Riley Williams <rhw@MemAlpha.cx>
+
+	* Clarified what is being incremented and decremented in sleepwake.c
+	  up() and down() routines.
+
+Sat Aug 25 23:32:20 GMT 2001	Harry Kalogirou <HarKal@rainbow.cs.unipi.gr>
+
+	* Fixed bug in sleepwake.c . In down() *s-- was actually decreasing the
+	  address with funny results!. Changed to --*s.
+
+Fri Aug 24 18:23:54 GMT 2001	Harry Kalogirou <HarKal@rainbow.cs.unipi.gr>
+
+	* Made /dev/tcpdev return EBUSY if used.
+
+Thu Aug 23 23:43:28 BST 2001	Riley Williams <rhw@MemAlpha.cx>
+
+	* Fixed printout alignment error in arch/i86/kernel/printreg.c and also
+	  offered apologies to Harry Kalogirou for the syntax error fixed below.
+	* Reformatted CHANGELOG back to 80 columns.
+	* Made `make dist` use the correct directory for pre-versions, and
+	  simplified the creation of include/linuxmt/version.h in the process.
+
+Wed Aug 22 23:25:57 GMT 2001	Harry Kalogirou <HarKal@rainbow.cs.unipi.gr>
+
+	* Fixed syntax error in arch/i86/kernel/printreg.c
+
+Wed Aug 22 21:35:29 GMT 2001	Harry Kalogirou <HarKal@rainbow.cs.unipi.gr>
+
+	* Added the needed functionality to enable processes to get info and
+	  configure the network. Look at the nettools directory in elkscmd.
+
+Tue Aug 21 18:50:53 GMT 2001	Harry Kalogirou <HarKal@rainbow.cs.unipi.gr>
+
+	* Changed in scripts/Menuconfig and scripts/Configure a "linux"
+	  leftover to "linuxmt" that caused configuration header file not
+	  to be written.
+	  
+Tue Aug 21 18:09:08 BST 2001	Riley Williams <rhw@MemAlpha.cx>
+
+	* Whilst I was validating the printk() format strings, I came across
+	  quite a few existing %o and %u format specifiers despite the fact
+	  that neither was implemented until I added both types to printk()
+	  earlier today.
+	* Completed the validation of those files containing not more than
+	  nine lines with printk() functions. Discovered several cases of
+	  printk() formats without a terminating newline, so added such.
+	* Found a panic() using a bad swear word, so changed it...
+
+Tue Aug 21 17:23:40 BST 2001	Riley Williams <rhw@MemAlpha.cx>
+
+	* Updated strace.h and strace.c so all parameter types are printed
+	  correctly, also added additional common parameter types to the list
+	  of available parameter types.
+	* Fixed a bug where an unknown syscall silently vanished.
+
+Tue Aug 21 14:01:13 BST 2001	Riley Williams <rhw@MemAlpha.cx>
+
+	* Added %o and %u types to printk() and redefined %d as signed.
+	  Appropriate changes to printk calls will need to be made.
+	* Reformatted syscall table in strace.c
+
+Tue Aug 21 12:23:14 BST 2001	Riley Williams <rhw@MemAlpha.cx>
+
+	* Documented VT52 sequences listed in the VT100 User Guide. Others
+	  probably exist that are only documented in the VT52 User Guide, but
+	  I don't have access to that.
+
+Tue Aug 21 11:33:28 BST 2001	Riley Williams <rhw@MemAlpha.cx>
+
+	* Created separate video directory for standalone video drivers.
+	* Created new VT52 directory to move existing kernel VT52 driver into.
+	  I plan to get this working in user-mode first, to help me to learn
+	  how to do likewise with the ANSI driver.
+	* Moved current ANSI video driver into video directory.
+
+Tue Aug 21 10:30:24 BST 2001	Riley Williams <rhw@MemAlpha.cx>
+
+	* Second draft of ANSI driver.
+
+Tue Aug 21 01:08:01 BST 2001	Riley Williams <rhw@MemAlpha.cx>
+
+	* First draft of ANSI driver.
+
+Mon Aug 20 09:01:05 BST 2001	Riley Williams <rhw@MemAlpha.cx>
+
+	* Prepare for writing of ANSI / VT100 driver as user-mode by creating
+	  directory ansi to do it in. This will compile as a separate program,
+	  but is best kept in sync with the elks kernel by being part of the
+	  same package.
+	* Move Documentation/HTML/Technical/vt100.html to the ANSI directory.
+
+Mon Aug 20 08:22:34 BST 2001	Riley Williams <rhw@MemAlpha.cx>
+
+	* Second draft of Documentation/HTML/Technical/vt100.html
+
+Mon Aug 20 01:22:32 BST 2001	Riley Williams <rhw@MemAlpha.cx>
+
+	* Reformatted and spell-checked various documents.
+	* Added first draft of Documentation/HTML/Technical/vt100.html which
+	  will document the requirements of a VT100 driver as extracted from
+	  the Digital VT100 User Guide.
+
+===============================================================================
+
+Fri Aug 17 17:43:14 GMT 2001	Harry Kalogirou <HarKal@rainbow.cs.unipi.gr>
+
+	* THIS IS ELKS RELEASE 0.0.85-PRE2.
+
+	* Optimised character queue code.
+	* Changed tty code to keep settings after every tty_open().
+	* Added support for 57600 and 115200 Baud in serial driver.
+	* Changed the Configure.help entry for CONFIG_INET.
+	* Changed version to 0.0.85-pre2 and made a new release.
+
+Tue Aug 14 22:18:01 BST 2001	Riley Williams <rhw@MemAlpha.cx>
+
+	* Revamped keymap system to make it easier to add new key maps.
+
+Tue Aug 14 10:46:47 BST 2001	Riley Williams <rhw@MemAlpha.cx>
+
+	* Added INSTALLATION and README document submitted on Linux-8086
+	  mailing list, after reformatting and HTML'ising.
+	* Changed all vger.rutgers.edu to vger.kernel.org in above.
+	* Added `renvar` script to scripts directory.
+
+Mon Aug 13 22:58:15 BST 2001	Peter L Vachuska <pvachusk@nconnect.net>
+
+	* Added DVORAK keyboard layout and options.
+
+Mon Aug 13 18:50:50 BST 2001	Riley Williams <rhw@MemAlpha.cx>
+
+	* Renamed configuration variables such that all such variables that are
+	  mentioned in the [Cc]onfig.in files now have names beginning with
+	  CONFIG_ as per recommendations. This involved remapping variable
+	  names as follows:
+
+	GET_DISKPARAM_BY_INT13_NO_SEEK	CONFIG_HW_NO_SEEK_FOR_FLOPPY
+	ROM_8253_100HZ			CONFIG_HW_8253_VALUE_FOR_100HZ
+	ROM_ADD_BIOS			CONFIG_ROM_ADD_BIOS_IMAGE
+	ROM_BASIS			CONFIG_ROM_BASE
+	ROM_CHECKSUM_SIZE		CONFIG_ROM_CHECKSUM_SIZE
+	ROM_CODE_DEBUG			CONFIG_ROM_DEBUG
+	ROM_CONFIG_8253			CONFIG_HW_8253_SYSTEM_CLOCK
+	ROM_EXTMEMSIZE			CONFIG_MEM_EXTENDED_MEMORY_SIZE
+	ROM_EXT_MOD1			CONFIG_ROM_BIOS_MODULE
+	ROM_EXT_MOD1_ADDR		CONFIG_ROM_BIOS_ADDRESS
+	ROM_E_SIMULATOR			CONFIG_ROM_USE_SIMULATOR
+	ROM_E_SIM_CALL			CONFIG_ROM_SIMULATOR_PROGRAM
+	__ROM_EXTMEM			CONFIG_MEM_EXTENDED_MEMORY
+	ROM_GETFLOPPY_VIA_INT13		CONFIG_HW_USE_INT13_FOR_FLOPPY
+	ROM_HIGH_OF_CRT			CONFIG_HW_VIDEO_LINES_PER_SCREEN
+	ROM_KERNEL_CODE			CONFIG_ROM_KERNEL_CODE
+	ROM_KERNEL_DATA			CONFIG_ROM_KERNEL_DATA
+	ROM_KERNEL_IRQDATA		CONFIG_ROM_IRQ_DATA
+	ROM_NOFLOPPY			CONFIG_HW_NO_FLOPPY_DRIVE
+	ROM_NOFPU			CONFIG_HW_NO_FPU
+	ROM_NOHDD			CONFIG_HW_NO_HARD_DRIVE
+	ROM_NOKBDBIOS			CONFIG_HW_NO_KEYBOARD_BIOS
+	ROM_NOPS2MOUSE			CONFIG_HW_NO_PS2_MOUSE
+	ROM_NOVGA			CONFIG_HW_NO_VGA
+	ROM_RESET_ADDR			CONFIG_ROM_RESET_ADDRESS
+	ROM_RESET_VEC			CONFIG_ROM_BOOTABLE_BY_RESET
+	ROM_SETUP_CODE			CONFIG_ROM_SETUP_CODE
+	ROM_SETUP_DATA			CONFIG_ROM_SETUP_DATA
+	ROM_USE_ORG_INTMASK		CONFIG_HW_259_USE_ORIGINAL_MASK
+	ROM_VIDEO_HIGHOFCHARACTERS	CONFIG_HW_VIDEO_LINES_PER_CHARACTER
+	__ROM_VIDEO_HOC			CONFIG_HW_VIDEO_HOC
+
+Mon Aug 13 18:44:52 BST 2001	Riley Williams <rhw@MemAlpha.cx>
+
+	* Added HTML'ised BUGS file, with updated details.
+
+Fri Aug 10 23:38:14 BST 2001	Riley Williams <rhw@MemAlpha.cx>
+
+	* Reformatted BUGS and TODO documents to fit in 80 columns.
+	  Not sure if they're up to date though...
+
+Fri Aug  3 21:36:21 BST 2001	Riley Williams <rhw@MemAlpha.cx>
+
+	* Updated all files to refer to vger.kernel.org instead of to
+	  vger.rutgers.edu as previously.
+
+Sun Jul 29 19:44:58 BST 2001	Riley Williams <rhw@MemAlpha.cx>
+
+	* Reformatted CHANGELOG to 80 character lines, with standardised
+	  layout throughout.
+	* Corrected spelling in CHANGELOG.
+
+Sun Jul  1 16:49:34 GMT 2001	Harry Kalogirou <HarKal@rainbow.cs.unipi.gr>
+
+	* Added inet_select()
+
+-------------------------------------------------------------------------------
+
+Fri Jun 29 17:05:39 GMT 2001	Riley Williams <rhw@MemAlpha.cx>
+
+	* Add CONFIG_EXPERIMENTAL, CONFIG_OBSOLETE and CONFIG_NOT_YET to
+	  Documentation/Configure.help and arch/i86/config.in files ready
+	  for use with other options.
+	* Rationalise arch/i86/config.in to enable `make menuconfig` to
+	  work - previously, it didn't.
+	* Upgrade scripts/Configure and scripts/Menuconfig to the versions
+	  included with the Linux 2.4.5 kernel source trees.
+
+Tue Jun 26 01:18:57 GMT 2001	Harry Kalogirou <HarKal@rainbow.cs.unipi.gr>
+
+	* Semaphores made all inode downs block because sleeping when non
+	  positive. Fixed to sleep on negative and wake on non negative.
+
+Sun Jun 24 23:01:09 GMT 2001	Harry Kalogirou <HarKal@rainbow.cs.unipi.gr>
+
+	* implemented do_mknod()
+	* Some fixes in AF_UNIX sockets.
+	* socket.state changed to unsigned char to solve compiler problems
+	* Modified ntty.c and serial.c to support "raw" mode required for
+	  networking
+	* Now serial baud rate is set to the default on init and not open
+	* tty_charout now blocks the right way if queue is full in ntty.c
+	* Modified tty_read() in ntty.c
+	* Merged in TCP/IP code
+	* Fixed bug in do_select(). The new wait_set() expects current->waitpt
+	  to be null. The do_select() didn't honour that.
+
+Wed Jun 20 23:21:51 BST 2001	Harry Kalogirou <HarKal@rainbow.cs.unipi.gr>
+
+	* Merged fix for syscall.dat error Alan Cox made.
+
+Wed Jun 20 23:21:21 BST 2001	Riley Williams <rhw@MemAlpha.cx>
+
+	* Merged first Configure changes.
+
+Mon Jun 18 00:18:55 BST 2001	Alan Cox <alan@redhat.com>
+
+	* Fixed bugs in the new tty select code
+	* Added select to pty
+	* Added register keywords to malloc.c to save memory
+	* Fixed double indirection (> 512Kbytes) on minixfs
+
+Sun Jun 17 19:47:58 BST 2001	Alan Cox <alan@redhat.com>
+
+	* Moved common code into minix_set_ops - based on a 2.4 change from
+	  mainstream by Al Viro.
+	* Chop ltype down to 16 bytes - with our tiny stack 256 is crazy
+	* Remove shlib stuff from fs/exec.c move file onto stack
+
+===============================================================================
+
+Sun Jun 17 18:38:30 BST 2001	Alistair Riddoch <alriddoch@zepler.org>
+
+	* THIS IS ELKS RELEASE 0.0.84.
+
+	* Resolved some minor clashes between Alan's commit and Thomas's fix.
+	* Bumped up version to 0.0.84 for release.
+
+Sun Jun 17 11:20:06 BST 2001	Alan Cox <alan@redhat.com>
+
+	* Abolished the suid config option
+	* Merged stuff to reduce the ifdef clutter a bit
+	* Removed the nonexistent IP socket stuff. Its confusing having all
+	  this old nonentity crap in it
+	* Buffer cache and request queue now have segment data
+	* Implemented segment stuff in the bios driver
+	* Added the back end code (untested so far) for swapping
+	* Replaced the wait queues with a V7 like wakeup mechanism with a bit
+	  of auditing we should be ready to page kernel stacks of sleeping
+	  processes that will free a fair bit of the data segment at the same
+	  time as upping the task limit - still need to get stacks smaller
+	  than 1K/task.
+	* Made select work using a crude hash and the V7 like wakeups. May
+	  need a bigger hash
+	* Removed CONFIG_NOFS - just too ugly right now
+	* Cleaned up random #if 0 stuff
+	* Reformatted xt_key.c since it had bad tab/space damage
+	* Killed bh->b_prev for good
+	* Killed inode hash for good
+	* Make off_t signed as required by Unix and Posix
+	* Fix bogus scheduling during IRQ report
+	* Fix link error about protocols
+	* Clean up a lot of pointless define options
+	* Remove BH stuff we definitely don't need
+	* Add chq_full and fix select for write on tty interfaces
+	* Shrink various minixfs messages to cut down on data segment
+	* Note that the pipefs needs to be using minixfs blocks as per V7
+
+Tue Apr 17 14:52:30 GMT 2001	Alistair Riddoch <alriddoch@zepler.org>
+
+	* Added dist rule to Makefiles.
+
+Mon Apr  2 14:06:30 UTC 2001	Thomas McWilliams <tgm9999@yahoo.com>
+
+	* Generate 8254 timer constants directly from definition of HZ.
+	* Also some minor miscellaneous cleanups.
+
+-------------------------------------------------------------------------------
+
+Wed Mar 28 08:37:30 UTC 2001	Thomas McWilliams <tgm9999@yahoo.com>
+
+	* Change broken definition of pid_t from unsigned to signed.
+
+Mon Mar 26 16:29:30 UTC 2001	Thomas McWilliams <tgm9999@yahoo.com>
+
+	* Fix long standing file system bug: EBUSY when unmounting, and related
+	  sys_access() bug.
+
+-------------------------------------------------------------------------------
+
+===============================================================================
+
+Fri Mar  3 11:44:30 GMT 2000	Alistair Riddoch <ajr@ecs.soton.ac.uk>
+
+	* THIS IS ELKS RELEASE 0.0.83.
+
+	* Final changes for 0.0.83
+
+Tue Feb 29 11:00:30 GMT 2000	Christian Mardmuller <chm@kdt.de>
+
+	* Small change to setup.S to fix segment definitions for ROM boot code.
+
+Sat Feb 26 19:23:30 GMT 2000	Alistair Riddoch <ajr@ecs.soton.ac.uk>
+
+	* Fixed bug in file descriptor macros which meant that select() only
+	  worked for not more than 7 file descriptors.
+
+Sat Feb 26 13:02:30 GMT 2000	Alistair Riddoch <ajr@ecs.soton.ac.uk>
+
+	* Fixed socket code that deals with disconnections which was only
+	  included for UNIX sockets, but is required by NANO sockets.
+
+Fri Feb 25 15:05:30 GMT 2000	Per Olofsson <MagerValp@cling.gu.se>
+
+	* Added Swedish keyboard map.
+
+Tue Feb 22 15:45:30 GMT 2000	Alistair Riddoch <ajr@ecs.soton.ac.uk>
+
+	* Altered default config to allow nano-X to run on standard kernel.
+
+Mon Feb 21 23:38:30 GMT 2000	Alistair Riddoch <ajr@ecs.soton.ac.uk>
+
+	* Re-wrote tty input interrupt character code so it now works on
+	  serial tty's.
+
+Fri Feb 19 19:38:30 GMT 2000	Alistair Riddoch <ajr@ecs.soton.ac.uk>
+
+	* Added raw keyboard mode for games support.
+
+Mon Feb 14 10:25:30 GMT 2000	Mario Frasca
+
+	* Fix setting of effective uid and gid on suid and sgid executables.
+
+Fri Feb  4 18:37:30 GMT 2000	Alistair Riddoch <ajr@ecs.soton.ac.uk>
+
+	* Modified buffer cache code so external 64K buffer cache can be
+	  removed on systems with fast block device access and low RAM.
+
+Thu Feb  3 17:40:30 GMT 2000	Alistair Riddoch <ajr@ecs.soton.ac.uk>
+
+	* Minor and cosmetic fixes to changes committed by Christoph Plattner.
+
+Wed Feb  2 16:00:00 GMT 2000	Christoph Plattner <Christoph.Plattner@dot.at>
+
+	* init/main.c (init_task): use /dev/ttys0 instead of /dev/tty1 if
+	  serial console is used.
+	* arch/i86/drivers/char/serial.c (port;): added function to set up tty
+	  termios for the serial console.
+	* (rs_init): rs_init checks now, if a serial port has been already
+	  checked and set up by serial console initialisation
+	* (init_console): beside the rs_init() also the tty termios are
+	  initialised und updated for the serial console port.
+
+Wed Feb  2 08:00:00 GMT 2000	Christoph Plattner <Christoph.Plattner@dot.at>
+
+	* include/linuxmt/config.h (DEF_SETUPSEG): it should be defined as
+	  DEF_INITSEG + 0x20, otherwise two things are to edit.
+	* init/main.c (init_task): use serial console as default output
+	* Makefile (include/linuxmt/version.h): added sync against NFS race
+	  problems on the host machines
+	* arch/i86/drivers/char/serial.c (rs_init): the printk saying which
+	  ttys[0123] is set up has to use ttyno instead of i !
+	* include/linuxmt/ntty.h: added external definition to def_vals
+
+Tue Feb  1 12:00:00 GMT 2000	Christoph Plattner <Christoph.Plattner@dot.at>
+
+	* arch/i86/Makefile (clean): added Boot.map and Setup.map in the clean
+	  rule. Also crt0.s was not cleaned yet.
+
+Mon Jan 31 12:00:00 GMT 2000	Christoph Plattner <Christoph.Plattner@dot.at>
+
+	* include/arch/debug_disp.h: added display port to output debug
+	  messages to LED, hex-display or logic analyser.
+	* arch/i86/mm/init.c (mm_stat): reduce ram for ramdisk.
+	* arch/i86/kernel/system.c: reducing the main memory for ramdisk.
+	* arch/i86/boot/netbootsect.S: added netboot sector for  netboot-0.8.1
+	  noting that it is (c) Gero Kuhlmann.
+	* include/linuxmt/config.h (CONFIG_PRELOAD_RAMDISK): new macro to embed
+	  a ram disk, downloaded by netboot. This disk can be used as mini root
+	  disk or as auxiliary partition to transport new files over net into
+	  the elks system. RAM_REDUCE reserves memory for that (at the moment
+	  the segments 0x6000 and 0x7000 are used as disk to test this option.
+	  This is defined in rd.c)
+	* arch/i86/Makefile (nbImage): added rule to create netboot image (also
+	  delete netboot files in the clean section)
+	* Makefile (nbImage): added rule to create netboot image
+	* arch/i86/drivers/block/rd.c(do_rd_request): fixed the mix up of
+	  sector offset address and byte offset address at fmemcpy.
+	* In rd_info and rd_segment a fix preloaded disk can be defined
+	  (CONFIG_PRELOAD_DISK, the values are hard coded for test purpose).
+	
+Thu Jan 20 12:30:30 GMT 2000	Mario Frasca
+
+	* Support for suid/sgid exec.
+
+Wed Jan 19 14:05:30 GMT 2000	Alistair Riddoch <ajr@ecs.soton.ac.uk>
+
+	* Fixed hole diagnostic function so it now works.
+
+Wed Jan 19 13:55:30 GMT 2000	Alistair Riddoch <ajr@ecs.soton.ac.uk>
+
+	* Fixes to the ssd access code used in the wrt_dsk program.
+
+Thu Jan 13 18:30:30 GMT 2000	Alistair Riddoch <ajr@ecs.soton.ac.uk>
+
+	* Fix to bug which meant last possible inode could not be accessed.
+
+Wed Jan 12 18:43:30 GMT 2000	Alistair Riddoch <ajr@ecs.soton.ac.uk>
+
+	* Fixed problem with inodes not released.
+
+Wed Jan 12 18:27:30 GMT 2000	Simon Wood
+
+	* Important fix to SiBO keyboard driver.
+
+===============================================================================
+
+Mon Jan 10 17:07:30 GMT 2000	Alistair Riddoch <ajr@ecs.soton.ac.uk>
+
+	* THIS IS ELKS RELEASE 0.0.82.
+
+	* Final changes before 0.0.82.
+
+Thu Jan  6 14:36:30 GMT 2000	Simon Wood
+
+	* Merged code to make ELKS work on the Psion Sixteen Bit Organiser
+	  (SiBO) architecture.
+
+Wed Jan  5 17:23:30 GMT 2000	Alistair Riddoch <ajr@ecs.soton.ac.uk>
+
+	* Fixed typo bug in free_irq() by Vladimir Shamaev.
+
+-------------------------------------------------------------------------------
+
+Fri Dec 17 16:37:30 GMT 1999	Alistair Riddoch <ajr@ecs.soton.ac.uk>
+
+	* Modified console selection to make more sense.
+
+Wed Dec 15 19:41:30 GMT 1999	Alistair Riddoch <ajr@ecs.soton.ac.uk>
+
+	* Re-wrote a number of file system functions to make them smaller and
+	  faster.
+
+Mon Nov 22 13:11:30 GMT 1999	Giles Russell
+
+	* Grammar correction of config files.
+
+Wed Nov 17 12:12:30 GMT 1999	Alistair Riddoch <ajr@ecs.soton.ac.uk>
+
+	* English version of mkurlader.c ROM image builder.
+
+Mon Nov 15 08:38:30 GMT 1999	David Murn <scuffer@hups.apana.org.au>
+
+	* Patch that allows you to pass parameters to IRQ handlers.
+
+Wed Nov 10 16:04:30 GMT 1999	Christian Mardmuller <chm@kdt.de>
+
+	* Merge in code to boot kernel from ROM.
+
+Wed Nov 10 14:51:30 GMT 1999	Alistair Riddoch <ajr@ecs.soton.ac.uk>
+
+	* Replaced bulky timer mechanism with a simple one.
+
+Fri Nov  5 17:21:30 GMT 1999	Alistair Riddoch <ajr@ecs.soton.ac.uk>
+
+	* Fixed inode finding bug which caused mount problems.
+
+===============================================================================
+
+Mon Nov  1 18:02:30 GMT 1999	Alistair Riddoch <ajr@ecs.soton.ac.uk>
+
+	* THIS IS ELKS RELEASE 0.0.80.
+
+	* Final changes for 0.0.80.
+
+Fri Oct 29 19:14:30 BST 1999	Alistair Riddoch <ajr@ecs.soton.ac.uk>
+
+	* Filled out kill(2) functionality to full System V spec.
+
+===============================================================================
+
+Tue Oct 26 14:24:30 BST 1999	Alistair Riddoch <ajr@ecs.soton.ac.uk>
+
+	* THIS IS ELKS RELEASE 0.0.80-PRE1.
+
+	* Increment version to 0.0.80-pre1
+	* Removed unused "old timer" code from sched.c
+	* Removed unused bottom half code from sched.c
+	* Fixed errno return codes to negative values in kernel/time.c as
+	  pointed out by James M. Lowery about 16 months ago. Sorry.
+	* Added CONFIG option to allow atime and ctime to be removed from
+	  kernel, and enable by default as it is unimplemented in minixfs.
+	* Removed bloated notify_change() code, and instead implement inode
+	  changes directly in the required functions.
+	* Fix to irqtab.c which should solve problems with floppy not spinning
+	  down.
+
+Mon Oct 11 14:00:30 BST 1999	Alistair Riddoch <ajr@ecs.soton.ac.uk>
+
+	* Latest version of the rd driver by Blaz Antonic.
+	* Added CONFIG options for embedded systems including option to remove
+	  the complete file system, and execution in place for code in ROM.
+	* Removed the inode hashing code.
+
+-------------------------------------------------------------------------------
+
+Thu Sep 30 10:39:30 BST 1999	Alistair Riddoch <ajr@ecs.soton.ac.uk>
+
+	* Added utime system call.
+
+Thu Sep 30 10:34:30 BST 1999	Alistair Riddoch <ajr@ecs.soton.ac.uk>
+
+	* Fixed unbalanced map_buffer calls in minix_add_entry().
+
+Thu Sep 30 05:24:30 UTC 1999	Thomas McWilliams <tgm@netcom.com>
+
+	* Changed goto's to for() loop in map_buffer().
+
+Fri Sep 24 16:24:30 BST 1999	Thomas McWilliams <tgm@netcom.com>
+
+	* Fixes and code cleanups in file system code.
+	
+Thu Sep 16 12:04:30 BST 1999	Thomas McWilliams <tgm@netcom.com>
+
+	* Fixes and code cleanups in file system code.
+
+Tue Sep 14 19:32:30 BST 1999	Alistair Riddoch <ajr@ecs.soton.ac.uk>
+
+	* Fix to problem with fchown() by Blaz Antonic.
+
+Tue Sep 14 19:29:30 BST 1999	Alistair Riddoch <ajr@ecs.soton.ac.uk>
+
+	* Fixed types of all string lengths in namei code to size_t.
+	* Fixed problem with 14 char filenames by Blaz Antonic.
+
+Tue Sep 14 19:27:30 BST 1999	Thomas McWilliams <tgm@netcom.com>
+
+	* Fix type of task->child_wait.
+
+===============================================================================
+
+Fri Aug 27 14:11:40 BST 1999	Alistair Riddoch <ajr@ecs.soton.ac.uk>
+
+	* THIS IS ELKS RELEASE 0.0.79.
+
+	* Added CONFIG_SHORT_FILES which limits file descriptors to 16.
+	* Removed unused supplementary groups, and made into a config option.
+	* Made link_count a global variable, rather than per task.
+	* Optimised the way read(2) and write(2) check file descriptors.
+	* Made character access to block devices an option.
+	* Cleaned up and tested signal code.
+	* Fixed cleaning up of signals and file descriptors in close(2).
+	* Final version tweaks for 0.0.79
+
+Fri Aug 27 14:11:20 CEST 1999	Thomas McWilliams <tgm@netcom.com>
+
+	* Many bug fixes to file system code.
+
+Thu Aug 26 19:39:30 CEST 1999	Arnaud Launay <zoro@multimania.com>
+
+	* Some additions and clean-ups in docs.
+
+Mon Aug 23 11:19:30 BST 1999	Alistair Riddoch <ajr@ecs.soton.ac.uk>
+
+	* Fixed tty bug that prevented boot/root disk from working.
+
+Wed Aug 18 19:40:30 BST 1999	Alistair Riddoch <ajr@ecs.soton.ac.uk>
+
+	* Added vfork() capability.
+	* Added simple data types for many values in the kernel.
+	* Cleaned up header files.
+	* Removed unused features from the interrupt code.
+	* Cut down to 16 signals rather than 32.
+	* Replaced scheduler code with a more compact round robin version.
+	* Changed default size of block and inode values from 32 to 16 bit.
+	* Made closing a terminal HUP the process group.
+	
+Tue Jul 20 18:11:30 BST 1999	Alistair Riddoch <ajr@ecs.soton.ac.uk>
+
+	* Removed unused members of file system structures.
+
+Tue Jul 20 18:08:30 BST 1999	Alistair Riddoch <ajr@ecs.soton.ac.uk>
+
+	* Fix debugging output in signal code.
+
+Tue Jul 20 17:34:30 BST 1999	Greg Haerr
+
+	* Fix to exec time memory allocation.
+
+Thu Jul 15 22:17:30 CEST 1999	Arnaud Launay <zoro@multimania.com>
+
+	* Updates to the French FAQ, and added the Japanese FAQ.
+
+===============================================================================
+
+Thu Jul 15 14:14:30 BST 1999	Alistair Riddoch <ajr@ecs.soton.ac.uk>
+
+	* THIS IS ELKS RELEASE 0.0.78.
+
+	* Final updates for 0.0.78
+
+Wed Jul 14 18:32:30 BST 1999	Alistair Riddoch <ajr@ecs.soton.ac.uk>
+
+	* Many changes to tty code to correct various aspects of behaviour by
+	  Al Riddoch and Greg Haerr.
+
+Wed Jul 14 18:28:30 BST 1999	Greg Haerr
+
+	* Update and recode of direct console driver, adding more ANSI support,
+	  and added support for BEL character code.
+
+Wed Jul 14 18:21:30 BST 1999	Alistair Riddoch <ajr@ecs.soton.ac.uk>
+
+	* Change to chq_peekch() which fixes select() behaviour for zero bytes.
+
+Wed Jul 14 18:21:30 BST 1999	Alistair Riddoch <ajr@ecs.soton.ac.uk>
+
+	* Fix to sched.[ch] which was messing up .o file sizes by Greg Haerr.
+
+Wed Jul 14 18:17:30 BST 1999	Greg Haerr
+
+	* Updates to memory allocation code which fixes environment truncation
+	  and brk() bug.
+
+Fri Jul  9 17:00:30 BST 1999	Alistair Riddoch <ajr@ecs.soton.ac.uk>
+
+	* Major updates to socket code. Addition of server socket capability,
+	  and addition of Unix domain socket code (currently not functional),
+	  plus nano sockets.
+
+===============================================================================
+
+Fri Jul  9 16:59:30 BST 1999	Alistair Riddoch <ajr@ecs.soton.ac.uk>
+
+	* THIS IS ELKS RELEASE 0.0.77.
+
+	* Late commit of changes for version 0.0.77 due to CVS outage.
+
+Fri Jul  9 16:54:30 BST 1999	Alistair Riddoch <ajr@ecs.soton.ac.uk>
+
+	* Added support for very basic pseudo ttys. Initially to support
+	  terminal program for nano-X.
+
+Fri Jul  9 16:21:30 BST 1999	Alistair Riddoch <ajr@ecs.soton.ac.uk>
+
+	* Make exit send a SIGCHLD to parent.
+
+Fri Jul  9 16:21:30 BST 1999	Alistair Riddoch <ajr@ecs.soton.ac.uk>
+
+	* Fixed the way the kernel handles loading shell if no init is found
+
+Fri Jul  9 16:15:30 BST 1999	Alistair Riddoch <ajr@ecs.soton.ac.uk>
+
+	* Updated signal code to make it clearer.
+
+Fri Jul  9 16:10:30 BST 1999	Alistair Riddoch <ajr@ecs.soton.ac.uk>
+
+	* Updated romfs to use byte order functions.
+
+Fri Jul  9 15:45:30 BST 1999	Alistair Riddoch <ajr@ecs.soton.ac.uk>
+
+	* Tweaks to bioshd driver to fix problems with disabling hard drive
+	  support. Fix to Changelog times.
+
+Wed Jul  7 19:17:30 BST 1999	Alistair Riddoch <ajr@ecs.soton.ac.uk>
+
+	* Updated build system to make it more arch independent.
+	  Makefile contributed by Simon Wood.
+
+Tue Jul  6 19:17:30 BST 1999	Alistair Riddoch <ajr@ecs.soton.ac.uk>
+
+	* Added byte order functions for romfs.
+
+Tue Jul  6 14:23:30 BST 1999	Alistair Riddoch <ajr@ecs.soton.ac.uk>
+
+	* More changes to the rd driver by Blaz Antonic.
+
+Mon Jul  5 14:11:30 BST 1999	Alistair Riddoch <ajr@ecs.soton.ac.uk>
+
+	* Sanitisation and enhancement of the rd driver by Blaz Antonic.
+
+-------------------------------------------------------------------------------
+
+Thu Jun 24 14:11:30 BST 1999	Alistair Riddoch <ajr@ecs.soton.ac.uk>
+
+	* Bug fix to bioscon driver.
+
+Tue Jun 15 10:40:30 BST 1999	Alistair Riddoch <ajr@ecs.soton.ac.uk>
+
+	* Latest changes to (ALPHA) meta driver.
+
+Tue Jun 15 10:31:30 BST 1999	Alistair Riddoch <ajr@ecs.soton.ac.uk>
+
+	* Minor tweaks to Makefile
+
+Sun May 30 00:05:10 BST 1999	Alistair Riddoch <ajr@ecs.soton.ac.uk>
+
+	* Fixes code to allow loading of shared libraries.
+	* Modified tty interface to simplify it.
+	* Added support for non-blocking IO on ttys.
+	* Included support for graphics on direct console driver.
+	* Updated serial termios support to allow baud rate to be
+	  changed.
+	* Added support for ^C and ^Z to generate signals from the
+	  console.
+	* Minor tweaks to select code.
+	* Added socket to syscall table.
+
+Sun May 30 00:01:30 BST 1999	Alistair Riddoch <ajr@ecs.soton.ac.uk>
+
+	* Updated to-do file.
+
+Fri May 28 20:04:30 BST 1999	Alistair Riddoch <ajr@ecs.soton.ac.uk>
+
+	* Updated bugs file.
+
+===============================================================================
+
+Thu May 20 12:04:30 BST 1999	Alistair Riddoch <ajr@ecs.soton.ac.uk>
+
+	* THIS IS ELKS RELEASE 0.0.76.
+
+	* Final tweaks for 0.0.76
+
+Mon May 17 12:29:30 GMT 1999	Alistair Riddoch <ajr@ecs.soton.ac.uk>
+
+	* Added Documentation/cs_write which describes code that
+	  writes to the kernel code segment.
+
+Tue May  6 17:19:30 GMT 1999	Alistair Riddoch <ajr@ecs.soton.ac.uk>
+
+	* Fixed select code, including modifications to scheduler
+	  to fix timers.
+
+Tue May  6 16:39:30 GMT 1999	Alistair Riddoch <ajr@ecs.soton.ac.uk>
+
+	* Minor fix to line printer driver.
+
+Fri Apr 16 09:57:30 GMT 1999	Alistair Riddoch <ajr@ecs.soton.ac.uk>
+
+	* Added support for the signal(2) system call, and support
+	  for signal handler functions.
+
+-------------------------------------------------------------------------------
+
+Thu Feb 25 21:13:30 GMT 1999	Alistair Riddoch <ajr@ecs.soton.ac.uk>
+
+	* Fixed typo for read_only option.
+
+===============================================================================
+
+Tue Feb 16 12:34:30 GMT 1999	Alistair Riddoch <ajr@ecs.soton.ac.uk>
+
+	* THIS IS ELKS RELEASE 0.0.75.
+
+	* Final tweaks for 0.0.75
+
+Mon Feb 15 17:08:30 GMT 1999	Alistair Riddoch <ajr@ecs.soton.ac.uk>
+
+	* Driver stub of meta driver for user space device drivers
+
+Mon Feb 15 17:06:30 GMT 1999	Alistair Riddoch <ajr@ecs.soton.ac.uk>
+
+	* Latest tweaks to serial driver by Blaz Antonic
+
+Mon Feb 15 16:56:30 GMT 1999	Alistair Riddoch <ajr@ecs.soton.ac.uk>
+
+	* Added alpha code for shared libraries.
+
+Mon Feb 15 16:47:30 GMT 1999	Alistair Riddoch <ajr@ecs.soton.ac.uk>
+
+	* Commented mm diagnostic functions.
+
+Fri Feb 12 16:35:30 GMT 1999	Alistair Riddoch <ajr@ecs.soton.ac.uk>
+
+	* Trimmed block request code.
+
+Sun Jan 31 17:50:30 GMT 1999	Alistair Riddoch <ajr@ecs.soton.ac.uk>
+
+	* Fix main.c so init is launched with a valid set of argvs.
+	* Fix ntty.c so tty driver ioctls are called.
+
+-------------------------------------------------------------------------------
+
+Sat Dec  6 00:24:30 GMT 1998	Alastair Bridgewater <nyef@softhome.net>
+
+	* Fixed arch/i86/lib/Makefile to rebuild setup[bw].s when necessary.
+
+===============================================================================
+
+Wed Dec  3 17:12:30 GMT 1998	Alistair Riddoch <ajr@ecs.soton.ac.uk>
+
+	* THIS IS ELKS RELEASE 0.0.74.
+
+	* Tweaked docs for 0.0.74
+
+Wed Dec  3 17:12:30 GMT 1998	Alistair Riddoch <ajr@ecs.soton.ac.uk>
+
+	* Debugged minix file system, so that removing files now
+	  works correctly, and the file system no longer gets corrupted.
+
+Wed Nov 19 18:22:30 GMT 1998	Riley Williams <rhw@MemAlpha.cx>
+
+	* Added changes to bootsect.S to fix a bug and tidy up the code.
+
+Wed Nov 19 17:39:30 GMT 1998	Alistair Riddoch <ajr@ecs.soton.ac.uk>
+
+	* Fix to minix truncate code. See BUGS.
+
+Tue Nov 18 11:42:30 GMT 1998	Alistair Riddoch <ajr@ecs.soton.ac.uk>
+
+	* Tweaked select so it now passes 5 parameters in the normal way.
+
+Thu Nov 18 15:00:30 GMT 1998	Alistair Riddoch <ajr@ecs.soton.ac.uk>
+
+	* Some more updates to config scripts made in conjunction with
+	  Riley Williams.
+
+Thu Nov 18 14:31:30 GMT 1998	Alistair Riddoch <ajr@ecs.soton.ac.uk>
+
+	* Fixed typo in hdisk reporting.
+
+Wed Nov 18 19:16:30 GMT 1998	Riley Williams <rhw@MemAlpha.cx>
+
+	* Integrated updated and re-organised config scripts.
+
+Tue Nov 17 19:16:30 GMT 1998	Alistair Riddoch <ajr@ecs.soton.ac.uk>
+
+	* Improved serial driver and added support for serial console.
+
+Mon Nov 16 17:48:30 GMT 1998	Riley Williams <rhw@MemAlpha.cx>
+
+	* Cosmetic fix to bitops.c.
+
+Mon Nov 16 16:31:30 GMT 1998	Alistair Riddoch <ajr@ecs.soton.ac.uk>
+
+	* Latest version of Blaz Antonic's line printer driver added.
+
+Wed Nov 11 15:32:40 GMT 1998	Alistair Riddoch <ajr@ecs.soton.ac.uk>
+
+	* Latest version of Blaz Antonic's directhd driver added.
+	* Minor tweaks to nearby code.
+
+Wed Nov 11 15:32:20 GMT 1998	David Murn <scuffer@hups.apana.org.au>
+
+	* Fixed bioscon driver - now works correctly.
+
+Tue Nov  3 12:44:30 CET 1998	Simon Weijgers <simon@mbit.doa.org>
+
+	* Fixed a little parse error pointed out by Al Sutton
+	 <al.sutton@chase.com>.
+
+===============================================================================
+
+Thu Oct 22 17:46:30 BST 1998	Alistair Riddoch <ajr@ecs.soton.ac.uk>
+
+	* THIS IS ELKS RELEASE 0.0.73.
+
+	* Some fixes to serial driver - now interrupts seem to work.
+	* Final tweaks before 0.0.73.
+
+Wed Oct 21 12:26:30 BST 1998	Alistair Riddoch <ajr@ecs.soton.ac.uk>
+
+	* More register variable optimisation. Should now be complete.
+	* Fixed some small bugs introduced in previous optimisation.
+	* Discovered big bug in the minix truncate code - see BUGS.
+
+Thu Oct 13 20:20:30 BST 1998	Alistair Riddoch <ajr@ecs.soton.ac.uk>
+
+	* Heavily optimised file system code adding new register variables in
+	  carefully selected places.
+	* Re-wrote block device code so it now only deals with single
+	  block accesses, but much more cleanly
+	* Fixed comment in kernel/sched.c
+	* Removed a lot of checking code from get_empty_inode() in
+	  fs/inode.c. I don't think this should cause a problem.
+	  Opinions?
+
+Thu Oct 13 20:20:30 BST 1998	Alistair Riddoch <ajr@ecs.soton.ac.uk>
+
+	* Added new BUGS entries.
+
+Tue Oct 13 18:07:30 BST 1998	Alistair Riddoch <ajr@ecs.soton.ac.uk>
+
+	* Optimised code size with careful use of register variables
+
+Tue Oct 13 12:09:30 BST 1998	Alistair Riddoch <ajr@ecs.soton.ac.uk>
+
+	* Removed the blocked signal element from task structure, and
+	  associated code.
+
+Sun Oct 11 13:37:30 BST 1998	Alistair Riddoch <ajr@ecs.soton.ac.uk>
+
+	* Corrected some signal behaviour, fixed return status behaviour.
+
+Sat Oct 10 11:59:59 CET 1998	Simon Weijgers <simon@mbit.doa.org>
+
+	* After detection of executable format jump to rest of the code
+	  instead of going on detecting other formats.
+
+Sat Oct 10 09:18:30 BST 1998	Alistair Riddoch <ajr@ecs.soton.ac.uk>
+
+	* Moved dependency cleaning to its own rule.
+
+Thu Oct  8 20:40:30 BST 1998	Alistair Riddoch <ajr@ecs.soton.ac.uk>
+
+	* Added very simple signal support.
+
+Mon Oct  5 11:15:30 BST 1998	Alistair Riddoch <ajr@ecs.soton.ac.uk>
+
+	* Replaced functions cli() and sti() with single asm instruction
+	  macros icli() and isti(), which saves 96 bytes.
+	* Moved Makefile dependency cleaning to distclean as I was fed up
+	  of doing `make dep` so much.
+
+-------------------------------------------------------------------------------
+
+Sun Sep 25 12:37:30 BST 1998	Alistair Riddoch <ajr@ecs.soton.ac.uk>
+
+	* Removed redundant code from the dircon driver.
+
+Sat Sep 26 02:07:30 CET 1998	Simon Weijgers <mbit@mbit.doa.org>
+	
+	* Added a ### Dependencies line at the end of the Makefiles
+	  in fs/ and fs/elksfs/.
+
+Sat Sep 26 01:50:30 CET 1998	Simon Weijgers <mbit@mbit.doa.org>
+	
+	* Fixed various things (typos etc) in fs/exec.c and
+	  include/linuxmt/msdos.h to make .exe-support compilable.
+
+Sat Sep 26 00:32:30 CET 1998	Simon Weijgers <mbit@mbit.doa.org>
+	
+	* "Fixed" Documentation/Configure.help so that help text
+	  fits in the menuconfig help-window line length.
+
+Fri Sep 25 15:30:45 BST 1998	Alistair Riddoch <ajr@ecs.soton.ac.uk>
+
+	* Fixed some bugs pointed out by Marnix Coppens <maco@telindus.be>
+	* Changed code at 147 in arch/i86/mm/user.c in strlen_fromfs
+	  which should use es:di to point to a string rather than ds:si.
+	* Fixed code in fs/exec.c which uses file.f_op before it has been
+	  checked.
+	* Replaced code that clears bss in exec() to a call to fmemset() but
+	  this did not work. fmemset() may be buggy.
+	* Fixed chq_erase() so it zeroes len, not size, and ifdef'd it out.
+	* Tweaked getch and addch so they deal with waiting in less code,
+	  and modified checks for q->size - 1 into checks for q->size.
+	* ifdef'd out chq_delch
+
+Thu Sep 24 23:28:33 CET 1998	Simon Weijgers <mbit@mbit.doa.org>
+
+	* Changed top level Makefile to make it clean up all dependency
+	  stuff in all Makefiles. Should make it easier (no rejects) to
+	  patch and diff stuff. 
+
+Wed Sep 23 16:10:04 CET 1998	Simon Weijgers <mbit@mbit.doa.org>
+
+	* Changed #include <errno.h> to #include <linuxmt/errno.h> in file
+	  arch/i86/drivers/block/rd.c. It doesn't matter for compilation
+	  but it should be a kernel include file, right?
+
+Wed Sep 16 20:20:20 CET 1998	Simon Weijgers <mbit@mbit.doa.org>
+
+	* Fixed infinite loop bug in dircon.c ANSI colour code; the
+	  infinite loop would occur when faulty ANSI escape sequences
+	  were fed to the kernel.
+
+-------------------------------------------------------------------------------
+END OF CHANGELOG

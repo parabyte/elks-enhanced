@@ -1,0 +1,44 @@
+.TH CRON 8
+.SH NAME
+cron -\ run commands at scheduled times
+.SH SYNOPSIS
+.B cron [\fIinterval\fR]
+.SH DESCRIPTION
+.B Cron
+executes commands at specified dates and times according to the
+instructions in
+.BR crontab (5)
+files in
+.IR /var/cron .
+When
+.B cron
+is running, it wakes up every minute, checks to see if any of the
+.I crontabs 
+in
+.I /var/cron
+contain jobs to be run, then runs them and mails the output (if any)
+to the owner of the crontab (or to the user named in the 
+.I MAILTO
+environment variable defined in the crontab.)
+.PP
+.B Cron
+normally examines
+.I /var/cron
+every minute, but this interval can be increased by the command-line
+argument
+.IR interval ,
+which is the number of minutes between
+.B cron
+runs.
+.SH BUGS
+.B Cron
+doesn't understand the idea of daylight savings time.
+.SH FILES
+.TP 20
+.B "/var/cron"
+Where the crontabs are.
+.SH SEE ALSO
+.BR crontab (1),
+.BR crontab (5).
+.SH AUTHOR
+David Parsons (orc@pell.portland.or.us)

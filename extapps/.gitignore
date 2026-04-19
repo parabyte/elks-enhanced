@@ -1,0 +1,3 @@
+# External application working trees fetched by buildext.sh.
+*
+!.gitignore

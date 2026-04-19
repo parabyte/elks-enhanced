@@ -1,0 +1,22 @@
+This is elkscmd, a loose collection of user space code for ELKS including
+most of what you need apart from the kernel to build a working system.
+
+Note that inclusion of code in this package does not imply any kind of
+right to distribute the code. Please check the license for each program
+before modifying or distributing it.
+
+More contributions are required under a GPL compatible license. Please see
+the CONTRIBUTING file for more details.
+
+This package has been put together for two main purposes:
+
+1. To make it as easy as possible to put together a working binary release
+   of a complete ELKS system.
+
+2. To make it as easy as possible for other developers to accurately
+   reproduce a release.
+
+The Makefiles contain rules which automatically build disk images for
+the ELKS system. In order to do this you must have the source code to the ELKS
+kernel, and the definitions at the top of the Make.defs point to the correct
+source directories.

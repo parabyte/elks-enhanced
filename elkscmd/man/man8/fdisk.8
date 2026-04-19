@@ -1,0 +1,79 @@
+.TH FDISK 8
+.SH NAME
+fdisk \- create or update a partition table on a hard disk or SSD device
+.SH SYNOPSIS
+\fBfdisk\fR [\fB\-l\fR] [\fIblock_device\fR]
+.br
+.SH OPTIONS
+.TP 5
+.B \-l
+list the partition table and exit.
+.SH DESCRIPTION
+.PP
+When \fBfdisk\fR starts up, it reads in the partition table from 
+.IR block_device ,
+or if no
+.I block_device
+was specified, from
+.BR /dev/hda .
+.I block_device
+must be a non-partitioned, MBR-capable block device name, such as
+.B /dev/hda
+or
+.BR /dev/hdb ,
+etc.
+.PP
+If the
+.B -l
+option is not specified,
+.B fdisk
+will enter interactive mode and allow the user to manipulate the partition
+table using the following commands:
+.PP
+.nf
+	Key Description
+	b   Set bootable flag
+	d   Delete partition
+	l   List partition types
+	n   Create new partion
+	p   Print partition table
+	q   Quit fdisk
+	t   Set partition type
+	w   Write partition table
+	?   Help
+.fi
+.PP
+.B Fdisk
+will fail on flat images (disks with no partition table), floppy devices and other devices with no partition. Selecting
+.I quit
+will discard any changes unless preceeded by the
+.I write
+command.
+.SH EXAMPLES
+.TP 10
+elks17# \fBfdisk\fP
+.nf
+Geometry: 7818 cylinders, 16 heads, 63 sectors.
+Command (? for help):
+.fi
+.B fdisk
+enters interactive mode.
+.TP 10
+elks17# \fBfdisk -l\fP
+.nf
+                      START              END          SECTOR
+Device      #:ID   Cyl Head Sect    Cyl Head Sect  Start   Size
+
+/dev/hda1  *1:80     0    1    1     66    15   63     63  67473
+/dev/hda2   2:80    67    0    1     200   15   63  67536 135072
+/dev/hda3   3:00     0    0    0      0    0    0      0      0
+/dev/hda4   4:80   332    0    1     432   15   63 7560000 101808
+.fi
+
+.B Fdisk 
+lists the partition table, the asterisk in the ID-column indictating an active
+partition.
+.SH BUGS
+.PP
+.B Fdisk
+does minimal sanity checking on input, it is possible to create a totaly bogus partition table.

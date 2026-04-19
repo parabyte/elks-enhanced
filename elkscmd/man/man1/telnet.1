@@ -1,0 +1,33 @@
+.TH TELNET 1
+.SH NAME
+telnet \- user interface to the TELNET protocol
+.SH SYNOPSIS
+.B telnet
+[
+.I -e
+<esc>
+-I 
+]
+.I host
+[
+.I port
+]
+.SH DESCRIPTION
+.B telnet
+is a small and simple implementation of the client side of the TELNET protocol,
+used to communicate interactively with another Internet or LAN host.
+.PP
+Once a connection has been opened, all
+text typed is immediately sent to the remote host for processing.
+.PP
+A hung session may be terminated using the
+.I escape
+character, '^]' by default, which may be set via the 
+.I -e
+option. The new escape character may be specified as a single character optionally
+preceded by a caret ('^'), which will be converted to the corresponding
+ control character, as in '^A' becoming 'control-A' etc.  
+.PP
+.SH BUGS
+.PP
+There is no adequate way for dealing with flow control.

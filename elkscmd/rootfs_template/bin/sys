@@ -1,0 +1,163 @@
+# sys - create or update system from booted volume
+#   Creates and/or updates /dev, /etc, /bin and /linux on drive passed as argument
+set -e
+
+usage()
+{
+	echo "Usage: sys [-3][-M][-F] /dev/{fd0,fd1,hda1,hda2}"
+	echo "	-3  Build minimal (360k) system"
+	echo "	-M  add MBR to target device"
+	echo "	-F  create flat non-MBR /dev/hd[a-d]"
+	exit 1
+}
+
+create_dev_dir()
+{
+	echo "Creating /dev"
+	mkdir -p $MNT/dev
+	mknod -p $MNT/dev/hda	b 3 0
+	mknod -p $MNT/dev/hda1	b 3 1
+	mknod -p $MNT/dev/hda2	b 3 2
+	mknod -p $MNT/dev/hda3	b 3 3
+	mknod -p $MNT/dev/hda4	b 3 4
+	mknod -p $MNT/dev/fd0	b 3 32
+	mknod -p $MNT/dev/fd1	b 3 40
+	mknod -p $MNT/dev/df0	b 4 0
+	mknod -p $MNT/dev/df1	b 4 1
+	mknod -p $MNT/dev/cfa	b 5 0
+	mknod -p $MNT/dev/cfa1	b 5 1
+	mknod -p $MNT/dev/cfa2	b 5 2
+	mknod -p $MNT/dev/cfa3	b 5 3
+	mknod -p $MNT/dev/cfa4	b 5 4
+	mknod -p $MNT/dev/kmem	c 1 2
+	mknod -p $MNT/dev/null	c 1 3
+	mknod -p $MNT/dev/zero	c 1 5
+	mknod -p $MNT/dev/netdev	c 8 0
+	mknod -p $MNT/dev/ne0	c 9 0
+	mknod -p $MNT/dev/wd0	c 9 1
+	mknod -p $MNT/dev/3c0	c 9 2
+	mknod -p $MNT/dev/ptyp0	c 2 8
+	mknod -p $MNT/dev/ttyp0	c 4 8
+	mknod -p $MNT/dev/tty1	c 4 0
+	mknod -p $MNT/dev/ttyS0	c 4 64
+	mknod -p $MNT/dev/ttyS1	c 4 65
+	mknod -p $MNT/dev/console	c 4 254
+	chmod 0600 $MNT/dev/console
+	mknod -p $MNT/dev/tty	c 4 255
+	chmod 0666 $MNT/dev/tty
+	if test "$small" = "1"; then return; fi
+	mknod -p $MNT/dev/hdb	b 3 8
+	mknod -p $MNT/dev/hdb1	b 3 9
+	mknod -p $MNT/dev/hdb2	b 3 10
+	mknod -p $MNT/dev/hdb3	b 3 11
+	mknod -p $MNT/dev/hdb4	b 3 12
+	mknod -p $MNT/dev/hdc	b 3 16
+	mknod -p $MNT/dev/hdc1	b 3 17
+	mknod -p $MNT/dev/hdd	b 3 24
+	mknod -p $MNT/dev/cfb	b 5 8
+	mknod -p $MNT/dev/cfb1	b 5 9
+	mknod -p $MNT/dev/cfb2	b 5 10
+	mknod -p $MNT/dev/cfb3	b 5 11
+	mknod -p $MNT/dev/cfb4	b 5 12
+	mknod -p $MNT/dev/rd0	b 1 0
+	mknod -p $MNT/dev/rd1	b 1 1
+	mknod -p $MNT/dev/tty2	c 4 1
+	mknod -p $MNT/dev/tty3	c 4 2
+	mknod -p $MNT/dev/ttyS2	c 4 66
+	mknod -p $MNT/dev/ttyS3	c 4 67
+	mknod -p $MNT/dev/ttyp1	c 4 9
+	mknod -p $MNT/dev/ttyp2	c 4 10
+	mknod -p $MNT/dev/ttyp3	c 4 11
+	mknod -p $MNT/dev/ptyp1	c 2 9
+	mknod -p $MNT/dev/ptyp2	c 2 10
+	mknod -p $MNT/dev/ptyp3	c 2 11
+}
+
+create_directories()
+{
+	mkdir -p $MNT/bin
+	mkdir -p $MNT/etc
+	mkdir -p $MNT/mnt
+	mkdir -p $MNT/tmp
+	mkdir -p $MNT/root
+}
+
+copy_bin_files()
+{
+	echo "Copying /bin"
+	if test "$small" = "1"; then
+	cp /bin/sh	$MNT/bin
+	cp /bin/cat	$MNT/bin
+	cp /bin/clock	$MNT/bin
+	cp /bin/chmod	$MNT/bin
+	cp /bin/cp	$MNT/bin
+	cp /bin/date	$MNT/bin
+	cp /bin/df	$MNT/bin
+	cp /bin/echo	$MNT/bin
+	cp /bin/fdisk	$MNT/bin
+	cp /bin/init	$MNT/bin
+	cp /bin/getty	$MNT/bin
+	cp /bin/login	$MNT/bin
+	cp /bin/ls	$MNT/bin
+	cp /bin/makeboot $MNT/bin
+	cp /bin/meminfo $MNT/bin
+	cp /bin/mkdir	$MNT/bin
+	cp /bin/mkfat	$MNT/bin
+	cp /bin/mkfs	$MNT/bin
+	cp /bin/mknod	$MNT/bin
+	cp /bin/mount	$MNT/bin
+	cp /bin/mv	$MNT/bin
+	cp /bin/printenv $MNT/bin
+	cp /bin/ps	$MNT/bin
+	cp /bin/pwd	$MNT/bin
+	cp /bin/shutdown $MNT/bin
+	cp /bin/rm	$MNT/bin
+	cp /bin/sync	$MNT/bin
+	cp /bin/sys	$MNT/bin
+	cp /bin/umount	$MNT/bin
+	cp /bin/uname	$MNT/bin
+	else
+	cp -fR /bin $MNT/bin
+	fi
+}
+
+copy_etc_files()
+{
+	echo "Copying /etc"
+	cp /etc/*	$MNT/etc
+}
+
+# sys script starts here
+MNT=/tmp/mnt
+small=0
+arg=-s
+if test "$1" = "-M"; then shift; arg="-M -s"; fi
+if test "$1" = "-F"; then shift; arg="-F -s"; fi
+if test "$1" = "-3"; then shift; small=1; fi
+if test "$#" -lt 1; then usage; fi
+
+echo "Installing/updating `grep ELKS /etc/issue` on $1. Continue (y/n)?"
+read confirm
+if test "$confirm" != "y"; then exit 0; fi;
+
+# returns fstype, 1=MINIX, 2=FAT
+set +e
+makeboot $arg $1
+FSTYPE=$?
+set -e
+if test "$FSTYPE" = "255"; then exit 1; fi;
+
+mkdir -p $MNT
+mount $1 $MNT || exit 1
+
+# if MINIX, create /dev entries
+if test "$FSTYPE" = "1"; then create_dev_dir; fi
+create_directories
+copy_bin_files
+copy_etc_files
+
+sync
+umount $1
+rmdir $MNT
+sync
+echo "Finished successfully."

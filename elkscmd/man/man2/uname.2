@@ -1,0 +1,33 @@
+.TH UNAME 2
+.SH NAME
+uname \- get system info
+.SH SYNOPSIS
+.ft B
+.nf
+#include <sys/utsname.h>
+
+int uname(struct utsname *name)
+.fi
+.ft P
+.SH DESCRIPTION
+.B Uname()
+fills a struct utsname with system information.  This structure is described
+in <sys/utsname.h> as follows:
+.PP
+.nf
+.ta +4n +6n +25n
+struct utsname {
+	char	sysname[7+1];		/* System name */
+	char	nodename[15+1];		/* Node/Network name */
+	char	release[11+1];		/* O.S. release */
+	char	version[47+1];		/* O.S. version */
+	char	machine[15+1];		/* Machine hardware */
+};
+.fi
+.PP
+The strings are always null terminated, and may be of a different length than
+shown here.  The first five are required by \s-2POSIX\s+2.
+.SH "SEE ALSO"
+.BR uname (1).
+.SH AUTHOR
+Kees J. Bot (kjb@cs.vu.nl)

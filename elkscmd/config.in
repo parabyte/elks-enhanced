@@ -1,0 +1,93 @@
+#
+# ELKS Commands configuration menu
+#
+
+mainmenu_option next_comment
+	comment 'Userland'
+
+	bool 'Select Applications by Image Size'	CONFIG_APPS_BY_IMAGESZ	n
+	if [ "$CONFIG_APPS_BY_IMAGESZ" == "n" ]; then
+
+		comment "Shell"
+
+		bool 'ash'        CONFIG_APP_ASH        y
+		bool 'sash'       CONFIG_APP_SASH       y
+
+		comment 'Applications'
+
+		busyelks 'diskutils'	CONFIG_APP_DISK_UTILS	y
+		busyelks 'fileutils'	CONFIG_APP_FILE_UTILS	y
+		busyelks 'shutils'	 	CONFIG_APP_SH_UTILS		y
+		bool 'sysutils'			CONFIG_APP_SYS_UTILS	y
+		bool 'vi'      			CONFIG_APP_ELVIS		y
+		busyelks 'minix1'		CONFIG_APP_MINIX1		y
+		bool 'minix2'			CONFIG_APP_MINIX2		y
+		busyelks 'minix3'		CONFIG_APP_MINIX3		y
+		busyelks 'miscutils'	CONFIG_APP_MISC_UTILS	y
+		bool 'Text UI'			CONFIG_APP_TUI  		y
+		bool 'BASIC'			CONFIG_APP_BASIC		y
+		bool 'screen'     		CONFIG_APP_SCREEN       y
+		bool 'cron'           	CONFIG_APP_CRON        	y
+		bool 'other'         	CONFIG_APP_OTHER        y
+		bool 'test'       		CONFIG_APP_TEST         n
+		bool 'busyelks'			CONFIG_APP_BUSYELKS		n
+		string 'Additional TAG string for app selection'  CONFIG_APP_TAGS      ''
+
+		#comment 'Commands not compiling'
+		#bool 'levee'			CONFIG_APP_LEVEE      n
+		#bool 'xvi'        		CONFIG_APP_XVI        n
+
+		comment "Internet stack and utilities"
+
+		if [ "$CONFIG_INET" == "y" ]; then
+			if [ "$CONFIG_APPS_BY_IMAGESZ" == "n" ]; then
+			bool 'uIP userspace stack' CONFIG_APP_UIP y
+		else
+			comment '(uIP binaries selected by image size)'
+		fi
+			int 'uIP packet buffer size' CONFIG_UIP_BUFFER_SIZE 1514
+			int 'uIP TCP connections' CONFIG_UIP_MAX_CONNECTIONS 16
+			int 'uIP listen ports' CONFIG_UIP_MAX_LISTENPORTS 10
+			bool 'uIP UDP support' CONFIG_UIP_UDP y
+			if [ "$CONFIG_UIP_UDP" == "y" ]; then
+				bool 'uIP IP broadcast receive' CONFIG_UIP_BROADCAST y
+				int 'uIP UDP connections' CONFIG_UIP_UDP_CONNS 8
+				bool 'uIP DHCP client' CONFIG_UIP_DHCPC y
+				if [ "$CONFIG_UIP_DHCPC" == "y" ]; then
+					bool 'uIP DHCP light mode' CONFIG_UIP_DHCP_LIGHT y
+				fi
+				bool 'uIP DNS resolver framework' CONFIG_UIP_RESOLV y
+				if [ "$CONFIG_UIP_RESOLV" == "y" ]; then
+					int 'uIP resolver cache entries' CONFIG_UIP_RESOLV_ENTRIES 4
+				fi
+			fi
+		else
+			comment '(uIP needs TCP/IP sockets)'
+		fi
+
+		comment 'Man pages'
+
+		bool 'Man Pages'      		CONFIG_APP_MAN_PAGES  n
+	else
+		comment "Select Applications by Image Size"
+
+		choice 'Apps and Image Size' \
+		"ALL-HD      	CONFIG_APPS_HD   	\
+		 Large-2880k	CONFIG_APPS_2880K	\
+		 Large-1440k	CONFIG_APPS_1440K	\
+		 PC98-1232k     CONFIG_APPS_1232K	\
+		 Medium-1200k	CONFIG_APPS_1200K	\
+		 Medium-720k	CONFIG_APPS_720K	\
+		 Small-360k		CONFIG_APPS_360K" Large-1440k
+	fi
+	if [ "$CONFIG_INET" == "y" ]; then
+		comment "External Network Applications"
+		bool 'Dropbear SSH client (external repo)' CONFIG_APP_DROPBEAR n
+		bool 'BearSSL tlsget client (external repo)' CONFIG_APP_BEARSSL n
+	fi
+	comment "System startup"
+
+	bool 'Use sash as default shell'		CONFIG_SYS_DEFSHELL_SASH n
+	bool 'Run /bin/sh as init'				CONFIG_SYS_NO_BININIT n
+
+endmenu

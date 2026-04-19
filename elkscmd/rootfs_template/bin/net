@@ -1,0 +1,135 @@
+# Start/stop ELKS networking
+#
+# Usage: net [start|stop|restart|show] [ne0|wd0|3c0|slip|cslip] [baud] [device]
+#
+# Examples:
+#	net start ne0			start ethernet networking
+#	net start slip			start slip networking
+#	net start slip 19200	start slip at 19200 baud
+#	net start cslip 4800 /dev/ttyS1
+#	net show				shows settings for 'net start'
+#
+# See slattach.sh for Linux slip setup
+# See qemu.sh NET= line for host forwarding into ELKS using QEMU
+#
+#set -x
+
+# read net configuration file
+source /etc/net.cfg
+
+usage()
+{
+	echo "Usage: net [start|stop|show] [ne0|wd0|3c0|slip|cslip] [baud] [device]"
+	exit 1
+}
+
+wait_for_dhcp()
+{
+	i=0
+	while test "$i" -lt "$dhcpwait"
+	do
+		if test -f /tmp/uip-network.cfg; then
+			source /tmp/uip-network.cfg
+			if test "$configured" = "1"; then
+				return 0
+			fi
+		fi
+		sleep 1
+		i=`expr "$i" + 1`
+	done
+	return 1
+}
+
+getty_off()
+{
+	# turn off any serial gettys running
+	#init 1
+}
+
+start_network()
+{
+	custom_prestart_network
+	echo "Starting networking" on $link
+	case "$link" in
+	slip)
+		getty_off
+		if test "$ipmode" = "dhcp"; then
+			echo "DHCP is only supported on ethernet links"
+			exit 1
+		fi
+		uipcmd="uip -b -p slip $mtu -s $baud -l $device $localip $gateway $netmask"
+		;;
+	cslip)
+		getty_off
+		if test "$ipmode" = "dhcp"; then
+			echo "DHCP is only supported on ethernet links"
+			exit 1
+		fi
+		uipcmd="uip -b -p cslip $mtu -s $baud -l $device $localip $gateway $netmask"
+		;;
+	ne0|wd0|3c0)
+		uipcmd="uip -b -p $link $mtu"
+		if test "$ipmode" = "dhcp"; then
+			uipcmd="$uipcmd -D"
+		else
+			uipcmd="$uipcmd $localip $gateway $netmask"
+		fi
+		;;
+	*)
+		usage ;;
+	esac
+	if test "$dnsserver" != ""; then
+		uipcmd="$uipcmd -n $dnsserver"
+	fi
+	# run uip as background daemon if successful starting networking
+	echo $uipcmd
+	if $uipcmd; then
+		if test "$ipmode" = "dhcp"; then
+			if ! wait_for_dhcp; then
+				echo "DHCP configuration timed out"
+				exit 1
+			fi
+		fi
+		echo -n "Starting daemons "
+		for daemon in $netstart
+		do
+			eval cmdline=\$$daemon
+			echo -n "'$cmdline' "
+			$cmdline || true
+		done
+		echo ""
+	else
+		echo "Network start failed"
+		exit 1
+	fi
+	custom_poststart_network
+}
+
+stop_network()
+{
+	echo "Stopping network"
+	kill $(ps | grep "uip|ktcp|telnet|httpd|ftpd" | cut -c 1-5) > /dev/null 2>&1
+	custom_stop_network
+}
+
+if test "$#" -lt 1; then
+	usage
+fi
+
+case "$1" in
+start)
+	if test "$2" != ""; then link=$2; fi
+	if test "$3" != ""; then baud=$3; fi
+	if test "$4" != ""; then device=$4; fi
+	start_network ;;
+stop) stop_network ;;
+restart)
+	stop_network
+	start_network ;;
+show)
+	echo -n ipmode $ipmode ip $localip gateway $gateway mask $netmask dns $dnsserver $link
+	if test "$link" = "slip"; then echo "" $baud $device; else echo; fi ;;
+*) usage ;;
+esac
+
+exit 0

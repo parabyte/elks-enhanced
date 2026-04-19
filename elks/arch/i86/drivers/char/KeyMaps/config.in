@@ -1,0 +1,14 @@
+# Automatically created - do not edit.
+
+choice 'XT Keyboard support'			\
+	"Belgique   	CONFIG_KEYMAP_BE	\
+	 Deutsch    	CONFIG_KEYMAP_DE	\
+	 Dvorak     	CONFIG_KEYMAP_DV	\
+	 Espanol    	CONFIG_KEYMAP_ES	\
+	 Francais   	CONFIG_KEYMAP_FR	\
+	 Italiano   	CONFIG_KEYMAP_IT	\
+	 Suede      	CONFIG_KEYMAP_SE	\
+	 British    	CONFIG_KEYMAP_UK	\
+	 American   	CONFIG_KEYMAP_US"		American
+
+# EOF.

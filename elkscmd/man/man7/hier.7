@@ -1,0 +1,110 @@
+.TH HIER 7
+.SH NAME
+hier \- Description of the ELKS file system hierarchy
+.SH DESCRIPTION
+A tour through the ELKS directory hierarchy. Be aware that many directories and files 
+are configuration dependent in order to enable very small images to be created.
+.TP
+.I /
+This is where the whole tree starts, and is called root. The root directory holds
+the 
+.BR bootopts (5)
+file in addition to some or all of the directories listed below.
+.TP
+.I /bin/
+Contains all runnable  programs and scripts. In ELKS
+there are no \fB/sbin/\fP, \fB/usr/bin/\fP, \fB/usr/sbin\fP etc. for the simple reason to save 
+inodes and directory lookups. This simplicity makes it possible to run 
+a reasonably complete system from a 360k floppy disk.
+.PP
+.nf
+	  \fBcat\fP    show files, \fBcat\fP(1)	
+	  \fBcp\fP     copy files and directories, \fBcp\fP(1)
+	  \fBmount\fP  mount file systems, \fBmount\fP(1) 
+	  \fBsh\fP     shell
+	  ...
+.fi
+.TP
+.I /dev/
+Contains device, block, or other special files. See
+.BR mknod (2).	
+.PP
+.nf
+	  \fBconsole\fP computer's console device, \fBtty\fP(4)
+	  \fBfd*\fP     floppy disk, \fBfd\fP(4)
+	  \fBhd*\fP     hard disk, \fBhd\fP(4)
+	  \fBnull\fP    accepts and discards all input; produces no output
+	  \fBtty*\fP    terminal device, \fBtty\fP(4)
+	  \fBttyS*\fP   serial line, \fBtty\fP(4)
+	  \fBzero\fP    the zero device; produces null bytes
+	  ...
+.fi
+.TP
+.I /etc/
+System configuration and data files.
+.PP
+.nf
+	  \fBgroup\fP   group permissions file
+	  \fBhosts\fP   TCP/IP hosts database, \fBhosts\fP(5)
+	  \fBmotd\fP    system message of the day, \fBlogin\fP(1)
+	  \fBpasswd\fP  user database, \fBpasswd\fP(1) 
+	  \fBprofile\fP system wide shell profile
+	  \fBrc.sys\fP  system startup script, \fBboot\fP(8)
+	  \fBtermcap\fP terminal type descriptions, \fBtermcap\fP(5)
+	  \fBinittab\fP processes and lines to enable
+				at startup, \fBinittab\fR(5)
+	  \fBnet.cfg\fP network settings and defaults
+	  \fBmount.cfg\fP filesystems to check and mount at startup
+	  ...
+.fi
+.TP
+.I /home/
+Contains home directories for users.
+.PP
+.nf
+	  \fBuser1\fP     home directory for user user1
+.fi
+.TP
+.I /mnt/
+Mount point for temporarily mounted file system.
+.TP
+.I /root/
+This directory is the home directory for the root user.
+.TP
+.I /tmp/	
+Contains small, short-lived temporary files.
+.TP
+.I /var/	
+On ELKS this directory is optional, present only if the 
+.BR httpd (8)
+and/or the
+.BR crond (8)
+daemons
+are installed and activated.
+.TP
+.I /lib/
+Contains manual pages in subdirectories according to 
+		  	the man page sections. See \fBman\fP(1).
+
+    	\fBman0/\fP	section 0, Book style user commands
+    	\fBman1/\fP	user commands
+    	\fBman2/\fP	system calls
+    	\fBman3/\fP	library routines
+    	\fBman4/\fP	device files
+    	\fBman5/\fP	file formats
+    	\fBman6/\fP	games
+    	\fBman7/\fP	miscellaneous
+    	\fBman8/\fP	system utilities
+
+.fi
+
+.SH "SEE ALSO"
+.BR ls (1),
+.BR man (1),
+.BR grep (1),
+.BR mount (1).
+.SH NOTES
+Not all of the directories and files shown are present.  They must be
+created as needed.
+.SH BUGS
+Some of the listed manual references do not yet exist.

@@ -1,0 +1,52 @@
+			List of maintainers
+
+Maintainers List (try to look for most precise areas first)
+
+P: Person
+M: Mail patches to
+S: Status, one of the following:
+
+	Maintained:	Someone actually looks after it.
+	Orphan:		No current maintainer [but maybe you could take the
+			role as you write your new code].
+	Stalled:	Someone was looking after it but there is no news.
+
+KERNEL HACKING & APPS (NanoX, Microwin, kernel side, etc.)
+P:	Greg Haerr
+M:	greg@censoft.com
+S:	Maintained
+
+COMPILER (BCC)
+P:	Robert de Bath
+M:	robert@mayday.cix.co.uk
+S:	Maintained
+
+DOCUMENTATION, SCRIPTS
+P:	Arnaud Launay
+M:	zoro@multimania.com
+S:	Maintained
+
+HD DRIVER
+P:	Blaz Antonic
+M:	blaz.antonic@guest.arnes.si
+S:	Maintained
+
+KERNEL
+P:	Harry Kalogirou
+M:	harkal@gmx.net
+S:	Maintained
+
+NETWORKING
+P:	Harry Kalogirou
+M:	harkal@rainbow.cs.unipi.gr
+S:	Maintained
+
+RFS Filesystem
+P:	Beau Kuiper
+M:	ekuiperba@cc.curtin.edu.au
+S:	Maintained
+
+ROMFS
+P:	Michel Onstein
+M:	michel@livid.cistron.nl
+S:	Stalled

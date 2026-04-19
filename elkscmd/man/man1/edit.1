@@ -1,0 +1,197 @@
+.TH EDIT 1
+.SH NAME
+edit - Screen editor
+.SH SYNOPSIS
+\fBedit\fR [\fIfile\fR]
+.TP 20
+.B edit file.c
+# Edit an existing file
+.TP 20
+.B edit
+# Call editor to create a new file
+.TP 20
+.B ls \(enl | edit
+# Use \fIedit\fR as a pager to inspect listing
+.SH DESCRIPTION
+\fIEdit\fR is a simple screen editor.
+At any instant, a window of 24 lines is visible on the screen.
+The current position in the file is shown by the cursor.
+Ordinary characters typed in are inserted at the cursor.
+Control characters and keys on the numeric keypad (at the right-hand side
+of the keyboard) are used to move the cursor and perform other functions.
+.PP
+Commands exist to move forward and backward a word, and delete words
+either in front of the cursor or behind it.
+A word in this context is a sequence of characters delimited on both ends by
+white space (space, tab, line feed, start of file, or end of file).
+The commands for deleting characters and words also work on line feeds, making
+it possible to join two consecutive lines by deleting the line feed between them.
+.PP
+The editor maintains one save buffer (not displayed).
+Commands are present to move text from the file to the buffer, from the buffer
+to the file, and to write the buffer onto a new file.
+If the edited text cannot be written out due to a full disk, it may still
+be possible to copy the whole text to the save buffer and then write it to a
+different file on a different disk with CTRL-Q.
+It may also be possible to escape from the editor with CTRL-S and remove
+some files.
+.PP
+Some of the commands prompt for arguments (file names, search patterns, etc.).
+All commands that might result in loss of the file being edited prompt to ask
+for confirmation.
+.PP
+A key (command or ordinary character) can be repeated
+.I n
+times by typing
+.I "ESC n key"
+where 
+.I ESC
+is the \*(OQescape\*(CQ key.
+.PP
+Forward and backward searching requires a regular expression as the search
+pattern.
+Regular expressions follow the same rules as in the 
+editor,
+.I ed
+.
+These rules can be stated as:
+.TP
+Any displayable character matches itself.
+.TP
+\&. (period) matches any character except line feed.
+.TP
+\&^ (circumflex) matches the start of the line.
+.TP
+\&$ (dollar sign) matches the end of the line.
+.TP
+\&\\c matches the character \fIc\fR (including period, circumflex, etc).
+.TP
+[\fIstring\fR] matches any of the characters in the string.
+.TP
+[^string] matches any of the characters except those in the string.
+.TP
+[\fIx\(eny\fR] matches any characters between \fIx\fR and \fIy\fR (e.g., [\fIa\(enz\fR]).
+.TP
+Pattern\(** matches any number of occurrences of \fIpattern\fR.
+.PP
+Some examples of regular expressions are:
+.HS
+.TP
+The boy	matches the string \*(OQThe boy\*(CQ
+.TP
+^$	matches any empty line.
+.TP
+^.$	matches any line containing exactly 1 character
+.TP
+^A.*\\.$	matches any line starting with an \fIA\fR, ending with a period.
+.TP
+^[A\(enZ]*$	matches any line containing only capital letters (or empty).
+.TP
+[A\(enZ0\(en9]	matches any line containing either a capital letter or a digit.
+.TP
+\&.*X$	matches any line ending in \*(OQX\*(CQ
+.TP
+A.*B	matches any line containing an \*(OQA\*(CQ and then a \*(OQB\*(CQ
+.PP
+Control characters cannot be entered into a file simply by typing them because
+all of them are editor commands.
+To enter a control character, depress the ALT key, and then while holding it
+down, hit the ESC key.
+Release both ALT and ESC and type the control character.
+Control characters are displayed in reverse video.
+.PP
+The 
+.I edit
+commands are as follows.
+.sp
+.TP
+\fBCURSOR MOTION\fR
+.TP
+\fBarrows\fR	Move the cursor in the indicated direction
+.TP
+\fBCTRL-A\fR	Move cursor to start of current line
+.TP
+\fBCTRL-Z\fR	Move cursor to end of current line
+.TP
+\fBCTRL-^\fR	Move cursor to top of screen
+.TP
+\fBCTRL-_\fR	Move cursor to end of screen
+.TP
+\fBCTRL-F\fR	Move cursor forward to start of next word 
+.TP
+\fBCTRL-B\fR	Move cursor backward to start of previous word 
+
+.TP
+\fBSCREEN MOTION\fR
+.TP
+\fBHome key\fR	Move to first character of the file
+.TP
+\fBEnd key\fR	Move to last character of the file
+.TP
+\fBPgUp key\fR	Scroll window up 23 lines (closer to start of the file)
+.TP
+\fBPgDn key\fR	Scroll window down 23 lines (closer to end of the file)
+.TP
+\fBCTRL-U\fR	Scroll window up 1 line
+.TP
+\fBCTRL-D\fR	Scroll window down 1 line
+
+.TP
+\fBMODIFYING TEXT\fR
+.TP
+\fBDel key\fR	Delete the character under the cursor
+.TP
+\fBBackspace\fR	Delete the character to left of the cursor
+.TP
+\fBCTRL-N\fR	Delete the next word
+.TP
+\fBCTRL-P\fR	Delete the previous word
+.TP
+\fBCTRL-T\fR	Delete tail of line (all characters from cursor to end of line)
+.TP
+\fBCTRL-O\fR	Open up the line (insert line feed and back up)
+.TP
+\fBCTRL-G\fR	Get and insert a file at the cursor position
+
+.TP
+\fBBUFFER OPERATIONS\fR
+.TP
+\fBCTRL-@\fR	Set mark at current position for use with CTRL-C and CTRL-K
+.TP
+\fBCTRL-C\fR	Copy the text between the mark and the cursor into the buffer
+.TP
+\fBCTRL-K\fR	Delete text between mark and cursor; also copy it to the buffer
+.TP
+\fBCTRL-Y\fR	Yank contents of the buffer out and insert it at the cursor
+.TP
+\fBCTRL-Q\fR	Write the contents of the buffer onto a file
+
+.TP
+\fBMISCELLANEOUS\fR
+.TP
+\fBnumeric +\fR	Search forward (prompts for regular expression)
+.TP
+\fBnumeric \(mi\fR	Search backward (prompts for regular expression)
+.TP
+\fBnumeric 5\fR	Display the file status
+.TP
+\fBCTRL-]\fR	Go to specific line
+.TP
+\fBCTRL-R\fR	Global replace \fIpattern\fR with \fIstring\fR (from cursor to end)
+.TP
+\fBCTRL-L\fR	Line replace \fIpattern\fR with \fIstring\fR 
+.TP
+\fBCTRL-W\fR	Write the edited file back to the disk
+.TP
+\fBCTRL-X\fR	Exit the editor
+.TP
+\fBCTRL-S\fR	Fork off a shell (use CTRL-D to get back to the editor)
+.TP
+\fBCTRL-\\\fR	Abort whatever the editor was doing and wait for command
+.TP
+\fBCTRL-E\fR	Erase screen and redraw it
+.TP
+\fBCTRL-V\fR	Visit (edit) a new file
+.SH AUTHOR
+\fIEdit\fR was designed by Andy Tanenbaum and written by Michiel Huisjes,
+and called \fImined\fR on MINIX.

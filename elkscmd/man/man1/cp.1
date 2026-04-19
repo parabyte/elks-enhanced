@@ -1,0 +1,149 @@
+.TH CP 1
+.SH NAME
+cp, mv, rm, ln, \- copy, move, remove, link
+.SH SYNOPSIS
+.B cp
+.RB [ \-Rfv ]
+.I file1 file2
+.br
+.B cp
+.RB [ \-Rv ]
+.IR file " ... " dir
+.PP
+.B mv
+.I file1 file2
+.br
+.B mv
+.IR file " ... " dir
+.PP
+.B rm
+.RB [ \-ifr ]
+.IR file " ..."
+.PP
+.B ln
+.RB [ \-s ]
+.I link_target link_name
+.br
+.B ln
+.IR file " ... " dir
+.SH DESCRIPTION
+The utilities
+.BR cp ,
+.BR mv ,
+.BR rm ,
+and
+.B ln
+do basic file management: copying, renaming or moving, deletion, and
+creating links.
+.PP
+The first synopsis form of the utilities
+.BR cp ,
+.BR mv ,
+and
+.B ln
+is used if only two arguments are given, and the second argument is not a
+directory.  The source and target file are then the two files given.
+.PP
+If the second synopsis form is used then the last argument must be a
+directory.  Each of the files is copied, moved or linked into this directory.
+.PP
+A file is by default copied by
+.B cp
+looking at its type; symlinks are not followed but copied, and devices are also
+duplicated.  Links between files are not ignored.
+.PP
+The
+.B mv
+utility uses the
+.BR rename (2)
+call to rename or move files.  If source and target are on different devices
+however, then
+.B mv
+will copy the files or directory trees.
+.PP
+Each utility continues with the next file on errors, except on I/O errors.
+.SS OPTIONS
+.TP
+.B \-i
+Ask if ok to overwrite, replace or remove.
+.B Mv
+and
+.B rm
+will ask this automatically if interactive and the target file is writable.
+.B Cp
+will fail if the target cannot be written,
+.B ln
+will always fail if the target exists.
+.TP
+.B \-f
+Makes
+.B cp
+remove a target file before copying if it is not writable,
+.B mv
+removes an existing target without asking,
+.B rm
+does not report any errors, and
+.B ln
+removes an existing target file before linking.
+(Not implemented in ELKS for
+.B mv
+or
+.B ln
+).
+.TP
+.B \-s
+Make a symlink instead of a normal link.
+.TP
+.BR \-r ", " \-R
+Recursively copy or remove.  If the source is a directory then the
+files in this directory are copied to similarly named files in the target
+directory.  Special files are copied as new special files, they are not read
+or written.  Symlinks are still expanded and the link structure ignored with
+.BR \-R .
+The
+.B \-r
+flag does copy symlinks as symlinks and keeps the link structure intact.
+(Note that
+.B \-R
+is invented by \s-2POSIX\s+2 as a replacement for the classic
+.B \-r
+option of older copy commands that did read special files.  The standard
+says that
+.B \-r
+is implementation defined, so that's why this flag is better than
+.B \-R
+in this implementation of
+.BR cp .)
+For
+.B rm
+the
+.B -r
+option must be used.
+.TP
+.B \-v
+Verbose.  Show what is done on standard output.
+.SH "SEE ALSO"
+.BR cat (1),
+.BR mkdir (1),
+.BR rmdir (1),
+.BR link (2),
+.BR symlink (2),
+.BR unlink (2),
+.BR rename (2).
+.SH NOTES
+All the utilities described are links to the same program (not in ELKS).
+.SH BUGS
+.B Mv
+should first copy a tree across devices and then remove the source tree if
+there was no error.  Instead, each file in the tree is copied and
+immediately removed.  On error you may be left with two half-filled trees,
+together containing all of the files.
+.PP
+On ELKS, comments above about recursive symlinks and copying or moving
+across filesystems aren't implemented.
+.PP
+.B Rm
+should be able to remove arbitrarily deep trees, but can fail on ELKS
+due to lack of L1 internal buffer space.
+.SH AUTHOR
+Kees J. Bot (kjb@cs.vu.nl)

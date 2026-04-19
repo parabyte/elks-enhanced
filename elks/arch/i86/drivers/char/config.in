@@ -1,0 +1,46 @@
+#
+# Character device driver configuration
+#
+
+mainmenu_option next_comment
+	comment 'Character device drivers'
+
+	choice 'Select console driver'			\
+		"Direct         CONFIG_CONSOLE_DIRECT	\
+		 BIOS           CONFIG_CONSOLE_BIOS	\
+		 8018x		CONFIG_CONSOLE_8018X 	\
+		 NECV25		CONFIG_CONSOLE_NECV25 	\
+		 Headless       CONFIG_CONSOLE_HEADLESS"	Direct
+	if [ "$CONFIG_CONSOLE_DIRECT" = "y" ]; then
+		if [ "$CONFIG_ARCH_SWAN" = "y" ]; then
+			choice 'Console font'			\
+				"8x8   CONFIG_CONSOLE_FONT_8X8  \
+				4x8    CONFIG_CONSOLE_FONT_4X8" 4x8
+		fi
+		bool '  Scancode keyboard driver'	CONFIG_KEYBOARD_SCANCODE y
+		bool '  Dual-screen console support'    CONFIG_CONSOLE_DUAL n
+	fi
+	bool 'Serial Console'	CONFIG_CONSOLE_SERIAL		n
+	if [[ "$CONFIG_CONSOLE_DIRECT" = "y" || "$CONFIG_CONSOLE_BIOS" = "y" ]]; then
+	        bool 'Console ANSI terminal emulation'  CONFIG_EMUL_ANSI  y
+	fi
+	if [ "$CONFIG_CONSOLE_DIRECT" = "y" ]; then
+		source elks/arch/i86/drivers/char/KeyMaps/config.in
+	fi
+
+	comment 'Other character devices'
+	if [ "$CONFIG_CONSOLE_SERIAL" = "n" ]; then
+		bool 'Serial device driver'	CONFIG_CHAR_DEV_RS	  y
+	else
+		define_bool CONFIG_CHAR_DEV_RS y
+	fi
+	bool 'Parallel device driver'		CONFIG_CHAR_DEV_LP	  y
+	#bool 'CGA text mode videobuffer'	CONFIG_CHAR_DEV_CGATEXT	  n
+	bool 'Memory character devices'		CONFIG_CHAR_DEV_MEM	  y
+	#if [ "$CONFIG_CHAR_DEV_MEM" = "y" ]; then
+		#bool '  Port read'	CONFIG_CHAR_DEV_MEM_PORT_READ	n
+		#bool '  Port write'	CONFIG_CHAR_DEV_MEM_PORT_WRITE	n
+	#fi
+
+	bool 'Pseudo tty device driver'		CONFIG_PSEUDO_TTY	  y
+endmenu
