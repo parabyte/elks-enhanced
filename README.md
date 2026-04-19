@@ -14,8 +14,10 @@ class hardware, SBCs and FPGA systems, and emulator setups such as QEMU.
 This tree keeps the ELKS kernel, driver model, filesystems and userspace
 environment, but replaces the historical userspace networking stack with Adam
 Dunkels' uIP. The goal is to keep the ELKS hardware and kernel boundaries
-stable while moving protocol handling onto a smaller, better understood TCP/IP
+stable while moving protocol handling onto a smaller, better understood** TCP/IP
 engine that fits 16-bit systems well.
+
+* Better understood at my day job by other technicians coming from embedded/contiki
 
 ## Platform
 
