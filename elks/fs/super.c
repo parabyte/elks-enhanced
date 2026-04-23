@@ -44,6 +44,10 @@ extern struct file_system_type romfs_fs_type;
 extern struct file_system_type msdos_fs_type;
 #endif
 
+#ifdef CONFIG_EXT2_FS
+extern struct file_system_type ext2_fs_type;
+#endif
+
 static struct file_system_type *file_systems[] = {
 /* first filesystem is default filesystem for mount w/o -t parm*/
 #ifdef CONFIG_ROMFS_FS
@@ -55,9 +59,12 @@ static struct file_system_type *file_systems[] = {
 #ifdef CONFIG_FS_FAT
         &msdos_fs_type,
 #endif
+#ifdef CONFIG_EXT2_FS
+        &ext2_fs_type,
+#endif
         NULL
 };
-static const char *fsname[] = { NULL, "minix", "msdos", "romfs" };
+static const char *fsname[] = { NULL, "minix", "msdos", "romfs", "ext2" };
 
 static struct file_system_type *get_fs_type(int type)
 {
@@ -142,10 +149,21 @@ int sys_ustatfs(dev_t dev, struct statfs *ubuf, int flags)
     struct super_block *s;
     struct statfs sbuf;
 
-    if (dev < NR_SUPER)
-        dev = super_blocks[(int)dev].s_dev;
-    s = get_super(to_kdev_t(dev));
-    if (s == NULL) return -EINVAL;
+    if (dev < NR_SUPER) {
+        s = &super_blocks[(int)dev];
+        if (!s->s_dev)
+            return -EINVAL;
+        wait_on_super(s);
+        if (!s->s_dev || !s->s_type || !s->s_op) {
+            if (s->s_dev && (!s->s_type || !s->s_op))
+                s->s_dev = 0;
+            return -EINVAL;
+        }
+    } else {
+        s = get_super(to_kdev_t(dev));
+        if (s == NULL || !s->s_type || !s->s_op)
+            return -EINVAL;
+    }
 
     /* for querying mounted filesystem w/o statfs */
     if (ubuf == NULL) return s->s_type->type;
@@ -188,7 +206,7 @@ static struct super_block *read_super(kdev_t dev, int t, int flags,
     s->s_flags = flags;
 
     if (!type->read_super(s, data, silent)) {
-        s->s_dev = 0;
+        memset(s, 0, sizeof(*s));
         return NULL;
     }
     s->s_covered = NULL;

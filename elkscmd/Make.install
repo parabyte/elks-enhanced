@@ -171,6 +171,10 @@ ifdef CONFIG_APPS_HD
     TAGS = :*|
 endif
 
+ifdef CONFIG_APP_OSS
+	TAGS += :oss|
+endif
+
 ifdef CONFIG_APP_DROPBEAR
 	TAGS += :dropbear|
 endif

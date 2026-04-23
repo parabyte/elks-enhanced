@@ -32,5 +32,6 @@
 #define DEV_TTY4    MKDEV(TTY_MAJOR, 3)
 #define DEV_TTYS0   MKDEV(TTY_MAJOR, 64)
 #define DEV_TTYS1   MKDEV(TTY_MAJOR, 65)
+#define DEV_DSP     MKDEV(DSP_MAJOR, 0)
 
 #endif

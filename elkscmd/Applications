@@ -40,6 +40,7 @@
 #   :shutil     Shell utilities                             shell_utils
 #   :diskutil   Disk utilities                              disk_utils
 #   :miscutil   Miscellaneous utilities                     misc_utils
+#   :oss        OSS core userland for /dev/dsp              oss
 #   :minix1,2,3 Minix utilities                             minix{1,2,3}
 #   :tui        Text user interface library programs        tui
 #   :mtools     MSDOS utilities                             mtools
@@ -138,6 +139,10 @@ misc_utils/uuencode             :miscutil                :1200c     :1440k
 misc_utils/uudecode             :miscutil                :1200c     :1440k
 misc_utils/ecalc                :miscutil                           :1440k
 #misc_utils/ed                  :be-miscutil        :720k
+oss/ossinfo                     :oss
+oss/oss_beep                    :oss
+oss/ossdsp                      :oss
+# esd/esdplay moved to external esd-elks package
 elvis/elvis ::bin/vi            :elvis              :720k
 minix1/banner                   :minix1                 :1200k
 #minix1/decomp16                :minix1                         :1440k

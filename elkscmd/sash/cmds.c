@@ -481,6 +481,8 @@ do_mount(int argc, char **argv)
 					type = FST_MSDOS;
 				else if (!strcmp(option, "romfs"))
 					type = FST_ROMFS;
+				else if (!strcmp(option, "ext2"))
+					type = FST_EXT2;
 				argc--;
 				break;
 
@@ -521,8 +523,13 @@ do_mount(int argc, char **argv)
 
 	if (mount(argv[0], argv[1], type, flags) < 0) {
 		if (flags & MS_AUTOMOUNT) {
-			type = (!type || type == FST_MINIX)? FST_MSDOS: FST_MINIX;
-			if (mount(argv[0], argv[1], type, flags) < 0) {
+			if ((!type || type == FST_MINIX) &&
+			    mount(argv[0], argv[1], FST_MSDOS, flags) >= 0)
+				return;
+			if ((!type || type == FST_MINIX || type == FST_MSDOS) &&
+			    mount(argv[0], argv[1], FST_EXT2, flags) >= 0)
+				return;
+			if (mount(argv[0], argv[1], FST_MINIX, flags) < 0) {
 				perror("mount failed");
 				return;
 			}

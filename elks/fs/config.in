@@ -9,6 +9,11 @@ mainmenu_option next_comment
 
 	bool 'ROM file system'                 CONFIG_ROMFS_FS            n
 
+	bool 'Ext2 file system'                CONFIG_EXT2_FS             n
+	if [ "$CONFIG_EXT2_FS" = "y" ]; then
+		bool 'Ext2 extra debug printk'   CONFIG_EXT2_DEBUG          n
+	fi
+
 	if [ "$CONFIG_ROMFS_FS" = "y" ]; then
 		hex 'Base in ROM (paragraphs)' CONFIG_ROMFS_BASE 0x8000
 	fi
