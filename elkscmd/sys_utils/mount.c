@@ -20,7 +20,7 @@
 #define errmsg(str) write(STDERR_FILENO, str, sizeof(str) - 1)
 
 static char *fs_typename[] = {
-	0, "minix", "msdos", "romfs"
+	0, "minix", "msdos", "romfs", "ext2"
 };
 
 static int show_mount(dev_t dev)
@@ -30,7 +30,7 @@ static int show_mount(dev_t dev)
 	if (ustatfs(dev, &statfs, UF_NOFREESPACE) < 0)
 		return -1;
 
-	if (statfs.f_type < FST_MSDOS) 
+	if (statfs.f_type == FST_MINIX || statfs.f_type == FST_EXT2)
 		printf("%-9s (%5s) blocks %6lu free %6lu mount %s\n",
 		devname(statfs.f_dev, S_IFBLK), fs_typename[statfs.f_type], statfs.f_blocks,
 		statfs.f_bfree, statfs.f_mntonname);
@@ -50,7 +50,7 @@ static void show(void)
 
 static int usage(void)
 {
-	errmsg("usage: mount [-a][-q][-t minix|fat][-o ro|remount,{rw|ro}] <device> <directory>\n");
+	errmsg("usage: mount [-a][-q][-t minix|fat|ext2][-o ro|remount,{rw|ro}] <device> <directory>\n");
     return 1;
 }
 
@@ -89,6 +89,8 @@ int main(int argc, char **argv)
 					type = FST_MSDOS;
 				else if (!strcmp(option, "romfs"))
 					type = FST_ROMFS;
+				else if (!strcmp(option, "ext2"))
+					type = FST_EXT2;
 				else return usage();
 				argc--;
 				break;
@@ -129,9 +131,16 @@ int main(int argc, char **argv)
 		flags = MS_AUTOMOUNT;
 	if (mount(argv[0], argv[1], type, flags) < 0) {
 		if (flags & MS_AUTOMOUNT) {
-			type = (!type || type == FST_MINIX)? FST_MSDOS: FST_MINIX;
-			if (mount(argv[0], argv[1], type, flags) >= 0)
+			if ((!type || type == FST_MINIX) &&
+			    mount(argv[0], argv[1], FST_MSDOS, flags) >= 0) {
+				type = FST_MSDOS;
 				goto mount_ok;
+			}
+			if ((!type || type == FST_MINIX || type == FST_MSDOS) &&
+			    mount(argv[0], argv[1], FST_EXT2, flags) >= 0) {
+				type = FST_EXT2;
+				goto mount_ok;
+			}
 		}
 		if (!query)
 			perror("mount failed");
@@ -139,8 +148,9 @@ int main(int argc, char **argv)
 	}
 
 mount_ok:
-	/* if query return type: 1=fail, 2=MINIX, 3=FAT */
+	/* if query return type: 1=fail, 2=MINIX, 3=FAT, 4=EXT2 */
 	if (query)
-		return (!type || type == FST_MINIX)? 2: 3;
+		return (!type || type == FST_MINIX) ? 2 :
+			(type == FST_MSDOS) ? 3 : 4;
 	return 0;
 }

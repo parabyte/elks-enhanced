@@ -34,6 +34,7 @@ IA16DIRS =       \
 	minix2      \
 	minix3      \
 	misc_utils  \
+	oss         \
 	romprg      \
 	sash        \
 	screen      \

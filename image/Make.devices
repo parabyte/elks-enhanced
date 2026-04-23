@@ -145,6 +145,11 @@ devices:
 #	$(MKDEV) /dev/lp	c 6 0 4
 
 ##############################################################################
+# OSS /dev/dsp (8-bit ISA DMA SB-compatible)
+	$(MKDEV) /dev/dsp	c 5 0
+	$(MKDEV) /dev/audio	c 5 0
+
+##############################################################################
 # NETDEV, used by the user-space uIP daemon
 
 	$(MKDEV) /dev/netdev c 8 0

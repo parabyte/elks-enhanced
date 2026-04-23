@@ -9,6 +9,7 @@
 #define FST_MINIX	1
 #define FST_MSDOS	2
 #define FST_ROMFS	3
+#define FST_EXT2	4
 
 /* filesystem mount flags*/
 #define MS_RDONLY	    1	/* mount read-only */

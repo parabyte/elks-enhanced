@@ -37,6 +37,10 @@ include $(BASEDIR)/Makefile-rules
 
 OBJS  = init.o mem.o ntty.o netdev.o pty.o lp.o
 
+ifeq ($(CONFIG_CHAR_DEV_DSP), y)
+OBJS += sb_dsp.o
+endif
+
 ifeq ($(CONFIG_ETH), y)
     OBJS += eth.o
 endif

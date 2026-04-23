@@ -8,6 +8,7 @@ mainmenu_option next_comment
 	choice 'Filesystem' \
 	"MINIX  CONFIG_IMG_MINIX   \
 	 FAT    CONFIG_IMG_FAT     \
+	 EXT2   CONFIG_IMG_EXT2    \
 	 ROM    CONFIG_IMG_ROM" MINIX
 
 	if [ "$CONFIG_IMG_ROM" != "y" ]; then
@@ -21,7 +22,7 @@ mainmenu_option next_comment
 		 FD360  CONFIG_IMG_FD360  \
 		 HD     CONFIG_IMG_HD" FD1440
 
-		if [ "$CONFIG_IMG_MINIX" == "y" -o "$CONFIG_IMG_ROM" == "y" -o "$CONFIG_IMG_FAT" == "y" ]; then
+		if [ "$CONFIG_IMG_MINIX" == "y" -o "$CONFIG_IMG_ROM" == "y" -o "$CONFIG_IMG_FAT" == "y" -o "$CONFIG_IMG_EXT2" == "y" ]; then
 			define_bool CONFIG_IMG_DEV y
 		fi
 
@@ -36,7 +37,7 @@ mainmenu_option next_comment
 			int 'Blocks'  CONFIG_IMG_BLOCKS 31752
 		fi
 
-		if [ "$CONFIG_IMG_MINIX" == "y" -o "$CONFIG_IMG_FAT" == "y" ]; then
+		if [ "$CONFIG_IMG_MINIX" == "y" -o "$CONFIG_IMG_FAT" == "y" -o "$CONFIG_IMG_EXT2" == "y" ]; then
 			bool 'Bootable' CONFIG_IMG_BOOT y
 		fi
 		bool 'Compressed exectuables' CONFIG_APPS_COMPRESS n

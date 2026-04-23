@@ -5,7 +5,7 @@ mount \- mount a file system
 .B mount
 .B [\-a]
 .B [\-q]
-.B [\-t minix|fat]
+.B [\-t minix|fat|ext2]
 .B [\-o ro|remount,{rw|ro}]
 .I device directory
 .SH DESCRIPTION
@@ -44,6 +44,9 @@ Query filesystem type and set return value based on filesystem.
 .TP 30
 .B mount \-a /dev/fd1 /mnt
 # Mount diskette 1 (MINIX or DOS) on /mnt
+.TP 30
+.B mount \-t ext2 /dev/hda1 /mnt
+# Mount an ext2 filesystem on /mnt
 .LP
 .SH EXIT STATUS
 .TP
@@ -58,6 +61,9 @@ When used with \-q, filesystem is MINIX.
 .TP
 .I 3
 When used with \-q, filesystem is MSDOS/FAT.
+.TP
+.I 4
+When used with \-q, filesystem is ext2.
 .SH SEE ALSO
 .BR umount (8),
 .BR mkfs (8),

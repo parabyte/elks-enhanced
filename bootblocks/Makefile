@@ -20,6 +20,9 @@ TARGETS = mbr.bin
 
 ifneq ($(CONFIG_ROMCODE), y)
 TARGETS += minix.bin probe.bin fat.bin
+ifeq ($(CONFIG_EXT2_FS), y)
+TARGETS += ext2.bin
+endif
 endif
 
 all: $(TARGETS)
@@ -47,6 +50,11 @@ boot_minix.o: boot_minix.c $(TOPDIR)/include/autoconf.h
 fat.bin: boot_sect_fat.o $(TOPDIR)/include/autoconf.h
 	$(LD) $(LDFLAGS) -M -o fat.bin boot_sect_fat.o > fat.map
 
+ext2.bin: boot_sect.o boot_ext2.o
+	$(LD) $(LDFLAGS) -M -o ext2.bin boot_sect.o boot_ext2.o > ext2.map
+	test $$(wc -c < ext2.bin) -le 1024
+	dd if=ext2.bin ibs=1k count=1 conv=sync of=ext2.tmp; mv ext2.tmp ext2.bin
+
 mbr.bin: mbr.S
 	$(CC) $(INCLUDES) -E -o mbr.tmp mbr.S
 	$(AS) $(ASFLAGS) -o mbr.o mbr.tmp
@@ -58,6 +66,9 @@ boot_sect_fat.o: boot_sect.S boot_sect_fat.h $(TOPDIR)/include/autoconf.h
 	$(CC) $(INCLUDES) -E -DBOOT_FAT -o boot_sect_fat.tmp boot_sect.S
 	$(AS) $(ASFLAGS) -o boot_sect_fat.o boot_sect_fat.tmp
 	rm -f boot_sect_fat.tmp
+
+boot_ext2.o: boot_ext2.c $(TOPDIR)/include/autoconf.h
+	$(CC) $(CFLAGS) -fno-strict-aliasing -c -o $@ $<
 
 clean:
 	rm -f *.o *.bin *.map mbr_autogen.c

@@ -72,6 +72,9 @@ extern void INITPROC mem_dev_init(void);
 extern void INITPROC meta_init(void);
 extern void INITPROC pty_init(void);
 extern void INITPROC netdev_init(void);
+#ifdef CONFIG_CHAR_DEV_DSP
+extern void INITPROC sb_dsp_init(void);
+#endif
 
 extern int INITPROC crtc_probe(unsigned short crtc_base);
 extern void INITPROC crtc_init(int dev);

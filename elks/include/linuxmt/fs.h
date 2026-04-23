@@ -36,6 +36,10 @@
 #include <linuxmt/romfs_fs.h>
 #endif
 
+#ifdef CONFIG_EXT2_FS
+#include <linuxmt/ext2_fs_sb.h>
+#endif
+
 #endif /* __KERNEL__ */
 
 #define BLOCK_SIZE      1024
@@ -66,6 +70,7 @@
 #define FST_MINIX       1
 #define FST_MSDOS       2
 #define FST_ROMFS       3
+#define FST_EXT2        4
 
 /*
  * These are the fs-independent mount-flags: up to 16 flags are supported
@@ -247,6 +252,9 @@ struct super_block {
 #endif
 #ifdef CONFIG_ROMFS_FS
                 struct romfs_super_info romfs;
+#endif
+#ifdef CONFIG_EXT2_FS
+                struct ext2_sb_info ext2_sb;
 #endif
                 void * generic_sbp;
     } u;

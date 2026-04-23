@@ -22,6 +22,7 @@
 #include <dirent.h>
 #include <sys/stat.h>
 #include <sys/mount.h>
+#include <arch/divmod.h>
 #include <linuxmt/minix_fs.h>
 #include <linuxmt/fs.h>
 #include <linuxmt/limits.h>
@@ -44,11 +45,32 @@ int Pflag= 0;	/* Posix standard output. */
 int kflag= 0;	/* Output in kilobytes instead of 512 byte units for -P. */
 int istty;	/* isatty(1) */
 
-/* (num / tot) in percentages rounded up. */
-#define percent(num, tot)  ((int) ((100L * (num) + ((tot) - 1)) / (tot)))
-
 /* One must be careful printing all these _t types. */
 #define L(n)	((long) (n))
+
+static int percent(unsigned long num, unsigned long tot)
+{
+	unsigned long scaled;
+	unsigned int div;
+
+	if (tot == 0)
+		return 0;
+	if (num >= tot)
+		return 100;
+
+	/*
+	 * Keep the divisor within the fast 32-by-16 helper used on 8086
+	 * targets while preserving the existing round-up behaviour.
+	 */
+	while (tot > 0xFFFFUL || num > (~0UL / 100UL)) {
+		num = (num + 1) >> 1;
+		tot = (tot + 1) >> 1;
+	}
+
+	scaled = num * 100UL + tot - 1;
+	div = (unsigned int)tot;
+	return (int)__divmod(scaled, &div);
+}
 
 void usage(void)
 {
@@ -106,7 +128,13 @@ int main(int argc, char *argv[])
 			char *nm = devname(statfs.f_dev, S_IFBLK);
 			char *filler = "  ";		/* Text alignment */
 			if (Pflag) filler = "";
-			if (statfs.f_type > FST_MSDOS || (statfs.f_type == FST_MSDOS && (Pflag||iflag))) 
+			if (statfs.f_type == FST_EXT2) 
+				printf("%-15s %7ld  %7ld  %7ld %3d%%          %s (EXT2)\n", nm,
+				    statfs.f_blocks, statfs.f_bfree,
+				    statfs.f_blocks - statfs.f_bfree,
+				    percent(statfs.f_blocks - statfs.f_bfree, statfs.f_blocks),
+				    statfs.f_mntonname);
+			else if (statfs.f_type > FST_MSDOS || (statfs.f_type == FST_MSDOS && (Pflag||iflag))) 
 				printf("%-17s %-34s %s%s\n", nm, "[Not a MINIX filesystem]", filler, statfs.f_mntonname);
 			else if (statfs.f_type == FST_MSDOS && !Pflag)
 				df_fat(nm, i);
@@ -115,8 +143,27 @@ int main(int argc, char *argv[])
 		}
 	}
 	return 0;
-  } else
-  	return df(blockdev, dname->mpoint);
+  } else {
+	struct statfs statfs;
+	struct stat st;
+
+	if (stat(blockdev, &st) < 0) {
+		fprintf(stderr, "df: Can't stat %s: %s\n", blockdev, strerror(errno));
+		return 1;
+	}
+	if (ustatfs(st.st_rdev, &statfs, UF_NOFREESPACE) >= 0
+	    && statfs.f_type == FST_EXT2 && !iflag && !Pflag) {
+		char *nm = devname(statfs.f_dev, S_IFBLK);
+
+		printf("%-15s %7ld  %7ld  %7ld %3d%%          %s (EXT2)\n", nm,
+		    statfs.f_blocks, statfs.f_bfree,
+		    statfs.f_blocks - statfs.f_bfree,
+		    percent(statfs.f_blocks - statfs.f_bfree, statfs.f_blocks),
+		    dname->mpoint);
+		return 0;
+	}
+	return df(blockdev, dname->mpoint);
+  }
 }
 
 int df_fat(char *name, int dev) 

@@ -78,6 +78,10 @@ ifeq ($(CONFIG_FS_FAT), y)
 	ARCHIVES := $(ARCHIVES) fs/msdos/msdos.a
 endif
 
+ifeq ($(CONFIG_EXT2_FS), y)
+	ARCHIVES := $(ARCHIVES) fs/ext2/ext2.a
+endif
+
 #########################################################################
 # Define commands.
 
@@ -93,6 +97,7 @@ setup: $(ARCH_DIR)/boot/setup
 # library rules (all these are built even if they aren't used).
 
 .PHONY: fs/fs.a fs/msdos/msdos.a fs/minix/minixfs.a fs/romfs/romfs.a \
+        fs/ext2/ext2.a \
         kernel/kernel.a lib/lib.a net/net.a tools
 
 fs/fs.a:
@@ -106,6 +111,9 @@ fs/minix/minixfs.a:
 
 fs/romfs/romfs.a: tools
 	${MAKE} -C fs/romfs romfs.a
+
+fs/ext2/ext2.a:
+	${MAKE} -C fs/ext2 ext2.a
 
 kernel/kernel.a:	include/linuxmt/compiler-generated.h
 	@sed 's/^/ Q> /' < include/linuxmt/compiler-generated.h

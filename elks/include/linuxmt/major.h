@@ -24,7 +24,7 @@
  *  4 - /dev/tty[1234]      /dev/df[01]            tty           direct floppy
  *  4 - /dev/ttyp[0123]                            pty slave
  *  4 - /dev/ttyS[0123]                            serial
- *  5 -                     /dev/cf[ab][1-7]                     direct ATA/CF/hd
+ *  5 - /dev/dsp             /dev/cf[ab][1-7]       8-bit ISA dsp direct ATA/CF/hd
  *  6 - /dev/lp             /dev/rom               printer       rom filesystem
  *  8 - /dev/netdev                                kernel <-> uip
  *  9 - /dev/eth                                   NIC driver
@@ -37,9 +37,8 @@
 
 #define MEM_MAJOR         1
 #define PTY_MASTER_MAJOR  2
-                             /* 3 unused*/
 #define TTY_MAJOR         4
-                             /* 5 unused*/
+#define DSP_MAJOR         5
 #define LP_MAJOR          6
 #define NETDEV_MAJOR      8
 #define ETH_MAJOR         9
