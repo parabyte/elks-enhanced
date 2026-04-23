@@ -13,8 +13,9 @@
 
 size_t block_read(struct inode *inode, struct file *filp, char *buf, size_t count)
 {
-#if defined(CONFIG_MINIX_FS) || defined(CONFIG_BLK_DEV_CHAR)
+#if defined(CONFIG_MINIX_FS) || defined(CONFIG_EXT2_FS) || defined(CONFIG_BLK_DEV_CHAR)
     loff_t pos;
+    block32_t block;
     size_t chars;
     size_t read = 0;
 
@@ -34,11 +35,11 @@ size_t block_read(struct inode *inode, struct file *filp, char *buf, size_t coun
 	/*
 	 *      Read the block in
 	 */
-	chars = (filp->f_pos >> BLOCK_SIZE_BITS);
+	block = (block32_t)(filp->f_pos >> BLOCK_SIZE_BITS);
 	if (inode->i_op->getblk) {
-	    bh = inode->i_op->getblk(inode, (block_t)chars, 0);
+	    bh = inode->i_op->getblk(inode, (block_t)block, 0);
 	} else {
-	    bh = getblk(inode->i_rdev, (block_t)chars);
+	    bh = getblk32(inode->i_rdev, block);
 	}
 	/* Offset to block/offset */
 	chars = BLOCK_SIZE - (((size_t)(filp->f_pos)) & (BLOCK_SIZE - 1));
@@ -69,7 +70,8 @@ size_t block_read(struct inode *inode, struct file *filp, char *buf, size_t coun
 
 size_t block_write(struct inode *inode, struct file *filp, char *buf, size_t count)
 {
-#if defined(CONFIG_MINIX_FS) || defined(CONFIG_BLK_DEV_CHAR)
+#if defined(CONFIG_MINIX_FS) || defined(CONFIG_EXT2_FS) || defined(CONFIG_BLK_DEV_CHAR)
+    block32_t block;
     size_t chars, offset;
     size_t written = 0;
 
@@ -81,11 +83,11 @@ size_t block_write(struct inode *inode, struct file *filp, char *buf, size_t cou
     while (count > 0) {
 	register struct buffer_head *bh;
 
-	chars = (filp->f_pos >> BLOCK_SIZE_BITS);
+	block = (block32_t)(filp->f_pos >> BLOCK_SIZE_BITS);
 	if (inode->i_op->getblk) {
-	    bh = inode->i_op->getblk(inode, (block_t)chars, 1);
+	    bh = inode->i_op->getblk(inode, (block_t)block, 1);
 	} else {
-	    bh = getblk(inode->i_rdev, (block_t)chars);
+	    bh = getblk32(inode->i_rdev, block);
 	}
 	if (!bh) {
 	    if (!written) written = -ENOSPC;
@@ -137,6 +139,7 @@ static int blk_rw(struct inode *inode, register struct file *filp,
 		  char *buf, size_t count, int wr)
 {
     register struct buffer_head *bh;
+    block32_t block;
     size_t chars, offset;
     int written = 0;
 
@@ -152,7 +155,8 @@ static int blk_rw(struct inode *inode, register struct file *filp,
 	 *      Read the block in - use getblk on a write
 	 *      of a whole block to avoid a read of the data.
 	 */
-	bh = getblk(inode->i_rdev, (block_t)(filp->f_pos >> BLOCK_SIZE_BITS));
+	block = (block32_t)(filp->f_pos >> BLOCK_SIZE_BITS);
+	bh = getblk32(inode->i_rdev, block);
 	if ((wr == BLOCK_READ) || (chars != BLOCK_SIZE)) {
 	    if (!readbuf(bh)) {
 		if (!written) written = -EIO;

@@ -558,6 +558,20 @@ CONFIG_ROMFS_BASE
   Base of the file system in memory (in paragraphs).
   Typically 0x8000 for a 512K ROM in a 1 MB address space.
 
+Ext2 file system support
+CONFIG_EXT2_FS
+  Support for mounting ext2 filesystems. The current ELKS ext2 driver
+  targets ext2 revision 0 filesystems with 1KiB blocks. Read/write
+  support is intended for regular files and basic directory mutation,
+  but should still be treated as experimental compared with the mature
+  MINIX and FAT backends.
+
+Ext2 extra debug printk
+CONFIG_EXT2_DEBUG
+  When enabled, the ext2 driver prints extra messages for I/O failures
+  in metadata paths (super commit, group descriptors, bitmap reads).
+  Leave off unless debugging; normal errors still use the EXT2: prefix.
+
 Full VFS support
 CONFIG_FULL_VFS
   If you say no to this then the VFS will only support one filesystem
@@ -679,21 +693,6 @@ CONFIG_UIP_RESOLV
 uIP resolver cache entries
 CONFIG_UIP_RESOLV_ENTRIES
   Number of hostname cache entries kept by the uIP resolver framework.
-
-Dropbear SSH client (extapp)
-CONFIG_APP_DROPBEAR
-  Install the external Dropbear dbclient port for ELKS.
-
-  This is a client-only SSH build tuned for ELKS memory limits. It
-  supports curve25519 key exchange, ed25519 host keys, chacha20-poly1305,
-  password auth and public-key auth.
-
-BearSSL tlsget client (extapp)
-CONFIG_APP_BEARSSL
-  Install the external BearSSL-based tlsget client for ELKS.
-
-  This port keeps BearSSL as a separate third-party package and provides
-  a minimal HTTPS-style GET client for smoke testing and sample use.
 
 CSLIP TCP/IP header compression
 CONFIG_CSLIP

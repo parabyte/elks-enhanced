@@ -69,18 +69,6 @@ and operational constraints of these systems. In our deployment work, the uIP
 integration also scales to roughly 20 concurrent users on an ELKS machine,
 compared with about 5 to 8 concurrent users on the standard ELKS `ktcp` stack.
 
-## External Repositories
-
-This repository no longer vendors the ELKS BearSSL or Dropbear ports.
-They live in separate repositories and are fetched into `extapps/` when needed:
-
-- `ssh-daemon-project` for the Dropbear ELKS port
-- `bearssl` for the BearSSL ELKS port
-
-Use `./buildext.sh dropbear bearssl` to fetch and build them locally.
-The `menuconfig` entries for these extapps remain in ELKS so images can still
-include them, but their source now lives outside this tree.
-
 ## Building
 
 Base ELKS build instructions remain in [BUILD.md](BUILD.md).
@@ -91,12 +79,7 @@ Typical workflow:
 . ./env.sh
 make menuconfig
 make -j1 all
-./buildext.sh dropbear bearssl
 ```
-
-For extapp smoke tests, the fetched trees must exist under `extapps/`.
-The helper scripts will tell you which `buildext.sh` target to run if an
-external tree is missing.
 
 ## Current Networking Scope
 

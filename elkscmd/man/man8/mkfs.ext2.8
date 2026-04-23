@@ -1,0 +1,48 @@
+.TH MKFS.EXT2 8
+.SH NAME
+mkfs.ext2, mke2fs \- create an ELKS-compatible ext2 filesystem
+.SH SYNOPSIS
+.B mkfs.ext2
+[\-F] [\-b 1024] [\-m \fIpct\fR] [\-N \fIinodes\fR] [\-L \fIlabel\fR] [\-E revision=0]
+.I device
+[\fIblocks\fR]
+.SH DESCRIPTION
+.PP
+.I mkfs.ext2
+creates a lean ext2 filesystem for the ELKS ext2 driver.
+The filesystem format is fixed to ext2 revision 0 with 1K blocks and
+no optional features.
+.PP
+If
+.I blocks
+is omitted, the tool uses the full size of
+.I device.
+.TP 5
+.B \-F
+Allow formatting a regular file image as well as a block device.
+.TP 5
+.B \-b 1024
+Required block size. No other block size is supported.
+.TP 5
+.B \-m \fIpct\fR
+Set reserved block percentage in the superblock.
+.TP 5
+.B \-N \fIinodes\fR
+Request a total inode count.
+.TP 5
+.B \-L \fIlabel\fR
+Write a volume label into the superblock.
+.TP 5
+.B \-E revision=0
+Accepted for compatibility. ELKS supports ext2 revision 0 only.
+.SH EXAMPLES
+.TP 24
+.B mkfs.ext2 /dev/hdb1
+# Format the whole partition as ext2
+.TP 24
+.B mkfs.ext2 \-L DATA /dev/hdb1
+# Format and label the partition
+.SH "SEE ALSO"
+.BR fdisk (8),
+.BR e2fsck (8),
+.BR mount (8).

@@ -14,6 +14,7 @@ TEMPLATE_DIR = $(ELKSCMD_DIR)/rootfs_template
 BOOTBLOCKS_DIR = $(TOPDIR)/bootblocks
 FD_MINIX_BOOT = $(BOOTBLOCKS_DIR)/minix.bin
 FD_FAT_BOOT = $(BOOTBLOCKS_DIR)/fat.bin
+FD_EXT2_BOOT = $(BOOTBLOCKS_DIR)/ext2.bin
 
 # Image file options
 
@@ -28,6 +29,13 @@ FD_FAT_BOOT = $(BOOTBLOCKS_DIR)/fat.bin
 # -i<size>	max inodes
 # -s<size>	image size in 1k blocks
 MINIX_MKFSOPTS=
+
+# ext2 mkfs options
+# -b	block size
+# -m	reserved blocks percentage
+# -L	volume label
+EXT2_MKFS = $(shell PATH=$$PATH:/sbin:/usr/sbin; command -v mkfs.ext2 2>/dev/null || command -v mke2fs 2>/dev/null)
+EXT2_MKFSOPTS = -E revision=0 -b 1024 -m 0 -L ELKS
 
 # mformat options
 # -f size	image size in kilobytes (up to 2880k only)

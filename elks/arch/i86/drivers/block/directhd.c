@@ -317,6 +317,8 @@ static int directhd_open(struct inode *inode, struct file *filp)
      */
 
     inode->i_size = (hd[minor].nr_sects) << 9;
+    if (hd[minor].nr_sects >= 0x00400000L)
+        inode->i_size = 0x7fffffffL;
     return 0;
 }
 

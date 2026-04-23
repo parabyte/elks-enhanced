@@ -36,7 +36,15 @@ copyfat:
 	$(MAKE) -f Make.image copyfat "CONFIG=$(TOPDIR)/.config"
 
 copyrom:
-	$(MAKE) -f Make.image copyrom "CONFIG=$(TOPDIR)/.config"
+	echo CONFIG_IMG_ROM=y			> Config
+	sed -n -e '/CONFIG_APP_TAGS/p'		>> Config < $(TOPDIR)/.config
+	grep -q '^CONFIG_APP_TAGS=' Config || \
+		echo 'CONFIG_APP_TAGS=":ash|:128k|"' >> Config
+	sed -n -e '/CONFIG_SYS_DEFSHELL_SASH/p'	>> Config < $(TOPDIR)/.config
+	sed -n -e '/CONFIG_SYS_NO_BININIT/p'	>> Config < $(TOPDIR)/.config
+	sed -n -e '/CONFIG_TIME_/p'		>> Config < $(TOPDIR)/.config
+	$(MAKE) -f Make.image copyrom "CONFIG=$(TOPDIR)/image/Config"
+	rm Config
 
 compress:
 	cd $(TOPDIR)/target/bin; elks-compress *

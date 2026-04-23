@@ -72,5 +72,5 @@ int main(int ac, char **av)
                 printf("%-15s %s\n", in_ntoa(arp_cache[i].ip_addr),
                         mac_ntoa(arp_cache[i].eth_addr));
     }
-    return 1;
+    return 0;
 }

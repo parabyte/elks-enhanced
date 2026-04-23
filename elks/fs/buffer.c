@@ -183,7 +183,10 @@ static void list_buffer_status(void)
 
 int INITPROC buffer_init(void)
 {
+    int requested_map_bufs;
+
     if (nr_map_bufs > MAX_NR_MAPBUFS) nr_map_bufs = MAX_NR_MAPBUFS;
+    requested_map_bufs = nr_map_bufs;
 
     /* XMS buffers override EXT buffers override internal buffers*/
 #if defined(CONFIG_FS_EXTERNAL_BUFFER) || defined(CONFIG_FS_XMS_BUFFER)
@@ -217,8 +220,14 @@ int INITPROC buffer_init(void)
     debug_setcallback(1, list_buffer_status);   /* ^O will generate buffer list */
 #endif
 
-    if (!(L1buf = heap_alloc(nr_map_bufs * BLOCK_SIZE, HEAP_TAG_CACHE|HEAP_TAG_CLEAR)))
-        return 1;
+    while (!(L1buf = heap_alloc(nr_map_bufs * BLOCK_SIZE,
+        HEAP_TAG_CACHE|HEAP_TAG_CLEAR))) {
+        if (nr_map_bufs <= 2)
+            return 1;
+        nr_map_bufs -= 2;
+    }
+    if (nr_map_bufs != requested_map_bufs)
+        printk("VFS: resized cache to %dK\n", nr_map_bufs);
 
     buffer_heads = heap_alloc(bufs_to_alloc * sizeof(struct buffer_head),
         HEAP_TAG_BUFHEAD|HEAP_TAG_CLEAR);

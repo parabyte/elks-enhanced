@@ -48,6 +48,7 @@ getty_off()
 
 start_network()
 {
+	uipargs=""
 	custom_prestart_network
 	echo "Starting networking" on $link
 	case "$link" in
@@ -57,7 +58,8 @@ start_network()
 			echo "DHCP is only supported on ethernet links"
 			exit 1
 		fi
-		uipcmd="uip -b -p slip $mtu -s $baud -l $device $localip $gateway $netmask"
+		uipcmd="uip -b -p slip $mtu -s $baud -l $device"
+		uipargs="$localip $gateway $netmask"
 		;;
 	cslip)
 		getty_off
@@ -65,14 +67,15 @@ start_network()
 			echo "DHCP is only supported on ethernet links"
 			exit 1
 		fi
-		uipcmd="uip -b -p cslip $mtu -s $baud -l $device $localip $gateway $netmask"
+		uipcmd="uip -b -p cslip $mtu -s $baud -l $device"
+		uipargs="$localip $gateway $netmask"
 		;;
 	ne0|wd0|3c0)
 		uipcmd="uip -b -p $link $mtu"
 		if test "$ipmode" = "dhcp"; then
 			uipcmd="$uipcmd -D"
 		else
-			uipcmd="$uipcmd $localip $gateway $netmask"
+			uipargs="$localip $gateway $netmask"
 		fi
 		;;
 	*)
@@ -80,6 +83,9 @@ start_network()
 	esac
 	if test "$dnsserver" != ""; then
 		uipcmd="$uipcmd -n $dnsserver"
+	fi
+	if test "$uipargs" != ""; then
+		uipcmd="$uipcmd $uipargs"
 	fi
 	# run uip as background daemon if successful starting networking
 	echo $uipcmd
@@ -107,8 +113,46 @@ start_network()
 
 stop_network()
 {
+	stop_pass()
+	{
+		sig="$1"
+		pstab="$2"
+		while read line
+		do
+			set -- $line
+			case "$1" in
+			""|PID)
+				continue
+				;;
+			esac
+			case "$4" in
+			R|S|Z|T|D|W|I)
+				pid=$1
+				shift 8
+				cmd=$1
+				;;
+			*)
+				pid=$1
+				shift 9
+				cmd=$1
+				;;
+			esac
+			case "$cmd" in
+			uip|/bin/uip|ktcp|/bin/ktcp|telnet|/bin/telnet|telnetd|/bin/telnetd|httpd|/bin/httpd|ftpd|/bin/ftpd|esd|/bin/esd)
+				kill "$sig" "$pid" > /dev/null 2>&1
+				;;
+			esac
+		done < "$pstab"
+	}
+
+	pstab=/tmp/net.stop.$$
 	echo "Stopping network"
-	kill $(ps | grep "uip|ktcp|telnet|httpd|ftpd" | cut -c 1-5) > /dev/null 2>&1
+	ps > "$pstab" 2>/dev/null
+	stop_pass -TERM "$pstab"
+	sleep 1
+	ps > "$pstab" 2>/dev/null
+	stop_pass -KILL "$pstab"
+	rm -f "$pstab"
 	custom_stop_network
 }
 

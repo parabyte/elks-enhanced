@@ -106,19 +106,19 @@ TINYPRINTF=$(ELKSCMD_DIR)/lib/tiny_vfprintf.o
 
 .PHONY: all clean install
 
-.S.s:
-	$(CC) -E -traditional $(INCLUDES) $(CCDEFS) -o $*.s $<
+%.s: %.S $(TOPDIR)/include/autoconf.h
+	$(CC) -E -traditional $(INCLUDES) $(CCDEFS) -o $@ $<
 
-.S.o:
+%.o: %.S $(TOPDIR)/include/autoconf.h
 	$(CC) -E -traditional $(INCLUDES) $(CCDEFS) -o $*.tmp $<
-	$(AS) $(ASFLAGS) -o $*.o $*.tmp
+	$(AS) $(ASFLAGS) -o $@ $*.tmp
 	$(RM) $*.tmp
 
-.s.o:
-	$(AS) $(ASFLAGS) -o $*.o $<
+%.o: %.s
+	$(AS) $(ASFLAGS) -o $@ $<
 
-.c.o:
-	$(CC) $(CFLAGS) -c -o $*.o $<
+%.o: %.c $(TOPDIR)/include/autoconf.h
+	$(CC) $(CFLAGS) -c -o $@ $<
 
 %.obj: %.c
 	$(CC) $(CFLAGS) $<

@@ -318,7 +318,14 @@ static int bioshd_open(struct inode *inode, struct file *filp)
     struct hd_struct *hdp = &part[minor];
     int target = minor >> MINOR_SHIFT;
 
-    if (!bioshd_initialized || target >= NUM_DRIVES || hdp->start_sect == NOPART)
+    if (!bioshd_initialized || target >= NUM_DRIVES)
+        return -ENXIO;
+
+    if (mbr_modified && target < DRIVE_FD0) {
+        init_partitions(&bioshd_gendisk);
+        mbr_modified = 0;
+    }
+    if (hdp->start_sect == NOPART)
         return -ENXIO;
 
     if (++access_count[target] == 1) {
@@ -326,15 +333,11 @@ static int bioshd_open(struct inode *inode, struct file *filp)
         probe_floppy(target, hdp);      /* probe only on initial open */
 #endif
     }
-    if (mbr_modified && target < DRIVE_FD0) {
-        init_partitions(&bioshd_gendisk);
-        mbr_modified = 0;
-    }
 
     inode->i_size = hdp->nr_sects * drive_info[target].sector_size;
-    /* limit inode size to max filesize for CHS >= 4MB (2^22)*/
+    /* Limit block-device size to the signed 32-bit userspace off_t ceiling. */
     if (hdp->nr_sects >= 0x00400000L)   /* 2^22*/
-        inode->i_size = 0x7ffffffL;     /* 2^31 - 1*/
+        inode->i_size = 0x7fffffffL;    /* 2^31 - 1*/
     return 0;
 }
 

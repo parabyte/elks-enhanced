@@ -709,21 +709,6 @@ CONFIG_UIP_RESOLV
 uIP resolver cache entries
 CONFIG_UIP_RESOLV_ENTRIES
   Number of hostname cache entries kept by the uIP resolver framework.
-
-Dropbear SSH client (extapp)
-CONFIG_APP_DROPBEAR
-  Install the external Dropbear dbclient port for ELKS.
-
-  This is a client-only SSH build tuned for ELKS memory limits. It
-  supports curve25519 key exchange, ed25519 host keys, chacha20-poly1305,
-  password auth and public-key auth.
-
-BearSSL tlsget client (extapp)
-CONFIG_APP_BEARSSL
-  Install the external BearSSL-based tlsget client for ELKS.
-
-  This port keeps BearSSL as a separate third-party package and provides
-  a minimal HTTPS-style GET client for smoke testing and sample use.
   
 CSLIP TCP/IP header compression
 CONFIG_CSLIP

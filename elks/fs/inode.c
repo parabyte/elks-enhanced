@@ -19,6 +19,10 @@
 #include <linuxmt/debug.h>
 
 #include <arch/system.h>
+#include <arch/segment.h>
+
+extern int nr_ext_bufs;
+extern int nr_map_bufs;
 
 int nr_inode = NR_INODE;
 int nr_file = NR_FILE;
@@ -100,13 +104,42 @@ static void list_inode_status(void)
 void INITPROC inode_init(void)
 {
     struct inode *inode;
+    int requested_inode = nr_inode;
+    int requested_file = nr_file;
+    unsigned long reserve;
+    int max_inode;
+
+    reserve = (unsigned long)max_tasks * sizeof(struct task_struct) +
+        TASK_KSTACK + IDLESTACK_BYTES;
+    reserve += (unsigned long)nr_file * sizeof(struct file);
+    reserve += (unsigned long)nr_map_bufs * BLOCK_SIZE;
+    reserve += (unsigned long)nr_ext_bufs * sizeof(struct buffer_head);
+    reserve += 2048;        /* leave room for early VFS/cache metadata */
+    if (heapsize > reserve) {
+        max_inode = (int)((heapsize - reserve) / sizeof(struct inode));
+        if (max_inode < 16)
+            max_inode = 16;
+        if (nr_inode > max_inode)
+            nr_inode = max_inode;
+        if (nr_file > nr_inode)
+            nr_file = nr_inode;
+    }
 
     inode_block = heap_alloc(nr_inode * sizeof(struct inode),
         HEAP_TAG_INODE|HEAP_TAG_CLEAR);
+    while (!inode_block && nr_inode > 16) {
+        nr_inode -= 8;
+        if (nr_file > nr_inode)
+            nr_file = nr_inode;
+        inode_block = heap_alloc(nr_inode * sizeof(struct inode),
+            HEAP_TAG_INODE|HEAP_TAG_CLEAR);
+    }
     if (!inode_block) panic("No inode mem");
     file_array = heap_alloc(nr_file * sizeof(struct file),
         HEAP_TAG_FILE|HEAP_TAG_CLEAR);
     if (!file_array) panic("No file mem");
+    if (nr_inode != requested_inode || nr_file != requested_file)
+        printk("VFS: resized caches to %d inodes, %d files\n", nr_inode, nr_file);
 
     inode = inode_block + 1;
     inode_lru = inode_block;

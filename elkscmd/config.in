@@ -81,11 +81,6 @@ mainmenu_option next_comment
 		 Medium-720k	CONFIG_APPS_720K	\
 		 Small-360k		CONFIG_APPS_360K" Large-1440k
 	fi
-	if [ "$CONFIG_INET" == "y" ]; then
-		comment "External Network Applications"
-		bool 'Dropbear SSH client (external repo)' CONFIG_APP_DROPBEAR n
-		bool 'BearSSL tlsget client (external repo)' CONFIG_APP_BEARSSL n
-	fi
 	comment "System startup"
 
 	bool 'Use sash as default shell'		CONFIG_SYS_DEFSHELL_SASH n

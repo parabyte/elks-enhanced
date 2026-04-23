@@ -71,6 +71,7 @@ try_resolver:
 
 found:
 	//if (addr) printf("found %s\n", name);
-	fclose(fp);
+	if (fp != NULL)
+		fclose(fp);
 	return addr;
 }

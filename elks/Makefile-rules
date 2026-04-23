@@ -227,19 +227,20 @@ endif
 #########################################################################
 # general construction rules
 
-.S.s: ;
+%.s: %.S $(TOPDIR)/include/autoconf.h
+	$(CC) -E -traditional $(INCLUDES) $(CCDEFS) -o $@ $<
 
-.S.o:
+%.o: %.S $(TOPDIR)/include/autoconf.h
 	$(CC) -E -traditional $(INCLUDES) $(CCDEFS) -o $*.tmp $<
-	$(AS) $(ASFLAGS) -o $*.o $*.tmp
+	$(AS) $(ASFLAGS) -o $@ $*.tmp
 	rm $*.tmp
 
-.s.o:
-	$(AS) $(ASFLAGS) -o $*.o $<
+%.o: %.s
+	$(AS) $(ASFLAGS) -o $@ $<
 
 ifneq ($(USEBCC), N)
-.c.o:
-	$(CC) $(CFLAGS) -c -o $*.o $<
+%.o: %.c $(TOPDIR)/include/autoconf.h
+	$(CC) $(CFLAGS) -c -o $@ $<
 endif
 
 #########################################################################

@@ -70,6 +70,8 @@ struct msdos_devdir_entry devnods[DEVDIR_SIZE] = {
     { "ne0",	S_IFCHR | 0644, MKDEV(ETH_MAJOR, 0)         },
     { "wd0",	S_IFCHR | 0644, MKDEV(ETH_MAJOR, 1)         },
     { "3c0",	S_IFCHR | 0644, MKDEV(ETH_MAJOR, 2)         },
+    { "dsp",	S_IFCHR | 0666, DEV_DSP                     },
+    { "audio",	S_IFCHR | 0666, DEV_DSP                     },
 };
 #endif
 

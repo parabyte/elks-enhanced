@@ -31,7 +31,6 @@
 #define REFUSED			5	/* query refused */
 
 struct DNS_HEADER {
-	__u16	len;		/* length for TCP only */
 	__u16	id;
 	__u16	flags;
 	__u16	qdcount;	/* question count */
@@ -138,7 +137,7 @@ ipaddr_t in_resolv(const char *hostname, char *server)
 	if (server == NULL)
 		server = DEFAULT_DNS;
 
-	if ((fd = socket(AF_INET, SOCK_STREAM, 0)) < 0)
+	if ((fd = socket(AF_INET, SOCK_DGRAM, 0)) < 0)
 		return 0;
 
 	addr.sin_family = AF_INET;
@@ -156,13 +155,6 @@ ipaddr_t in_resolv(const char *hostname, char *server)
 	addr.sin_port = htons(53);
 	old = signal(SIGALRM, alarm_cb);
 	alarm(2);
-	if (connect(fd, (struct sockaddr*)&addr, sizeof(addr)) < 0) {
-		alarm(0);
-		signal(SIGALRM, old);
-		close(fd);
-		errno = ENONAMESERVER;
-		return 0;
-	}
 
 	dns = (struct DNS_HEADER *)buf;
 	dns->id = htons(0xABCD);
@@ -180,14 +172,23 @@ ipaddr_t in_resolv(const char *hostname, char *server)
 	qd->qtype = htons(TYPE_A);
 	qd->qclass = htons(CLASS_IN);
 
-	len += sizeof(struct DNS_HEADER) + sizeof(struct QUESTION) - 2;
-	dns->len = htons(len);
-
-	write(fd, buf, len + 2);
-	rc = read(fd,buf,200);
+	len += sizeof(struct DNS_HEADER) + sizeof(struct QUESTION);
+	rc = sendto(fd, buf, len, 0, (struct sockaddr *)&addr, sizeof(addr));
+	if (rc != len) {
+		alarm(0);
+		signal(SIGALRM, old);
+		close(fd);
+		errno = ENONAMESERVER;
+		return 0;
+	}
+	rc = recvfrom(fd, buf, sizeof(buf), 0, NULL, NULL);
 	alarm(0);
 	signal(SIGALRM, old);
 	close(fd);
+	if (rc < 0) {
+		errno = ENONAMESERVER;
+		return 0;
+	}
 
 #if DEBUG
 	printf("DNS: %d message bytes\n", rc);

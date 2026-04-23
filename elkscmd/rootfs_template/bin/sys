@@ -33,6 +33,8 @@ create_dev_dir()
 	mknod -p $MNT/dev/null	c 1 3
 	mknod -p $MNT/dev/zero	c 1 5
 	mknod -p $MNT/dev/netdev	c 8 0
+	mknod -p $MNT/dev/dsp	c 5 0
+	mknod -p $MNT/dev/audio	c 5 0
 	mknod -p $MNT/dev/ne0	c 9 0
 	mknod -p $MNT/dev/wd0	c 9 1
 	mknod -p $MNT/dev/3c0	c 9 2
@@ -104,6 +106,8 @@ copy_bin_files()
 	cp /bin/mkdir	$MNT/bin
 	cp /bin/mkfat	$MNT/bin
 	cp /bin/mkfs	$MNT/bin
+	if test -f /bin/mkfs.ext2; then cp /bin/mkfs.ext2 $MNT/bin; fi
+	if test -f /bin/mke2fs; then cp /bin/mke2fs $MNT/bin; fi
 	cp /bin/mknod	$MNT/bin
 	cp /bin/mount	$MNT/bin
 	cp /bin/mv	$MNT/bin
@@ -114,6 +118,8 @@ copy_bin_files()
 	cp /bin/rm	$MNT/bin
 	cp /bin/sync	$MNT/bin
 	cp /bin/sys	$MNT/bin
+	if test -f /bin/e2fsck; then cp /bin/e2fsck $MNT/bin; fi
+	if test -f /bin/fsck.ext2; then cp /bin/fsck.ext2 $MNT/bin; fi
 	cp /bin/umount	$MNT/bin
 	cp /bin/uname	$MNT/bin
 	else

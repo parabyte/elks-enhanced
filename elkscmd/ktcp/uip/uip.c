@@ -906,7 +906,7 @@ uip_process(u8_t flag)
   } else {
     /* If IP broadcast support is configured, we check for a broadcast
        UDP packet, which may be destined to us. */
-#if UIP_BROADCAST
+#if UIP_BROADCAST && UIP_UDP
     DEBUG_PRINTF("UDP IP checksum 0x%04x\n", uip_ipchksum());
     if(BUF->proto == UIP_PROTO_UDP &&
        uip_ipaddr_cmp(BUF->destipaddr, all_ones_addr)

@@ -175,7 +175,11 @@ minix3/find                     :be-minix3          :720k
 minix3/mail                     :minix3 :other                          :1440c
 disk_utils/df                   :diskutil       :360k
 disk_utils/fsck                 :diskutil       :360k
+disk_utils/e2fsck               :diskutil               :1200k
+disk_utils/e2fsck :::fsck.ext2  :diskutil               :1200k
 disk_utils/mkfs                 :diskutil       :360k
+disk_utils/mkfs.ext2            :diskutil               :1200k
+disk_utils/mkfs.ext2 :::mke2fs  :diskutil               :1200k
 disk_utils/mkfat                :diskutil       :360k
 disk_utils/partype              :diskutil               :1200k
 disk_utils/ramdisk              :diskutil       :360c   :1200k

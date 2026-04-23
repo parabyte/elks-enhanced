@@ -67,7 +67,8 @@
 !	0x1e6:	elks_magic	long "ELKS", written by build tool
 !	0x1ea:	xms_kbytes	word size of xms memory in kbytes
 !	0x1ec:	hma_kernel	byte hma=kernel seen in /bootopts
-!	0x1ed-0x1ee:		2 bytes UNUSED
+!	0x1ed:	bootopts_nonfat	byte BOOTOPTS_NONFAT_MAGIC from boot_ext2
+!	0x1ee:			byte UNUSED
 !	0x1ef:	SETUPSEG	word UNUSED
 !	0x1f1:	setup_sects	byte in 512-byte sectors, written by build tool
 !	0x1f2:	ROOTFLAGS	word UNUSED
@@ -969,6 +970,28 @@ bootopts:
 	push	%ds
 	push	%es
 
+	// boot_ext2 sets bootopts_nonfat after loading /linux; FAT scan uses the wrong BPB on ext2.
+	mov	$INITSEG,%ax
+	mov	%ax,%ds
+	cmpb	$BOOTOPTS_NONFAT_MAGIC,%ds:bootopts_nonfat
+	jne	99f
+	cmpw	$0x4C45,%ds:elks_magic
+	jne	99f
+	cmpw	$0x534B,%ds:elks_magic+2
+	jne	99f
+	// set ES = boot sector (BPB) address in high memory
+	mov	mem_kbytes,%ax	// Kbytes of memory
+	mov	$6,%cl		// to paras
+	shl	%cl,%ax
+	sub	$0x1000,%ax	// find highest aligned 64K
+	and	$0xf000,%ax
+	mov	%ax,%es		// ES = boot sector w/ext2 disk params
+	call	get_bootopts_ext2
+	and	%ax,%ax
+	jz	0f
+	mov	$' ',%al
+	jmp	2f
+99:
 	// set ES = boot sector (BPB) address in high memory
 	mov	$INITSEG,%ax
 	mov	%ax,%ds
@@ -989,7 +1012,7 @@ bootopts:
 
 	// get bootopts logical sector address (LBA)
 	call	get_bootopts_sector
-	and	%ax,%ax
+1:	and	%ax,%ax
 	jz	0f
 	call	getchs		// convert LBA in AX to CHS in CX,DH
 
@@ -1038,7 +1061,160 @@ pc98_int1b:
 	pop	%ds
 	ret
 
-// BPB offsets in boot sector already in high memory
+ext2_bg_inode_table	= 8
+ext2_inode_i_block	= 40
+ext2_root_i_block	= 128 + ext2_inode_i_block
+ext2_part_offset	= 0x1f3
+ext2_sect_max		= 0x1f9
+ext2_head_max		= 0x1fa
+
+// load /bootopts from ext2 root into DEF_OPTSEG:0, return AX = 1 if found/read
+get_bootopts_ext2:
+	push	%bx
+	push	%cx
+	push	%dx
+	push	%si
+	push	%di
+
+	mov	$2,%ax			// read group descriptor block
+	call	read_ext2_block
+	jc	9f
+	mov	$DEF_OPTSEG,%ax
+	mov	%ax,%ds
+	mov	ext2_bg_inode_table,%di	// save group 0 inode table block
+	mov	%di,%ax
+	call	read_ext2_block
+	jc	9f
+
+	mov	$ext2_root_i_block,%si	// root inode direct blocks
+	mov	$12,%cx
+0:	mov	(%si),%ax
+	add	$4,%si
+	or	%ax,%ax
+	jz	1f
+	call	read_ext2_block
+	jc	9f
+	call	find_bootopts_ext2
+	or	%ax,%ax
+	jnz	2f
+1:	loop	0b
+	jmp	9f
+
+2:	dec	%ax			// inode number -> zero-based index in group 0
+	mov	%ax,%bx
+	mov	%ax,%si
+	mov	$3,%cl
+	shr	%cl,%bx			// inode table block offset
+	and	$7,%si
+	mov	$7,%cl
+	shl	%cl,%si			// inode offset within block
+	add	%di,%bx
+	mov	%bx,%ax
+	call	read_ext2_block
+	jc	9f
+	mov	ext2_inode_i_block(%si),%ax
+	or	%ax,%ax
+	jz	9f
+	call	read_ext2_block
+	jc	9f
+	mov	$1,%ax
+	jmp	10f
+
+9:	xor	%ax,%ax
+10:	pop	%di
+	pop	%si
+	pop	%dx
+	pop	%cx
+	pop	%bx
+	ret
+
+// scan DEF_OPTSEG buffer for lowercase "bootopts", return inode in AX or 0
+find_bootopts_ext2:
+	push	%bx
+	push	%si
+
+	xor	%si,%si
+0:	mov	4(%si),%bx
+	or	%bx,%bx
+	jz	1f
+	cmpw	$8,6(%si)
+	jne	2f
+	cmpw	$0x6f62,8(%si)
+	jne	2f
+	cmpw	$0x746f,10(%si)
+	jne	2f
+	cmpw	$0x706f,12(%si)
+	jne	2f
+	cmpw	$0x7374,14(%si)
+	jne	2f
+	mov	(%si),%ax
+	jmp	3f
+2:	add	%bx,%si
+	cmp	$1024,%si
+	jb	0b
+1:	xor	%ax,%ax
+3:	pop	%si
+	pop	%bx
+	ret
+
+// read ext2 1KiB block AX into DEF_OPTSEG:0 using ext2 boot sector params in ES
+read_ext2_block:
+	push	%bx
+	push	%cx
+	push	%dx
+	push	%ds
+	push	%es
+#ifdef CONFIG_ARCH_PC98
+	push	%bp
+#endif
+
+	shl	%ax			// 1KiB block -> 512-byte LBA sector
+	call	getchs_silent
+
+#ifdef CONFIG_ARCH_PC98
+	mov	$INITSEG,%ax
+	mov	%ax,%ds
+
+	mov	$DEF_OPTSEG,%ax
+	mov	%ax,%es
+	xor	%bp,%bp
+
+	mov	root_dev,%al
+	mov	$0xD6,%ah
+	mov	$1024,%bx
+	test	$0x10,%al
+	jz	0f
+#ifdef CONFIG_IMG_FD1232
+	mov	$0x03,%ch
+	inc	%dl
+#else
+	mov	$0x02,%ch
+	inc	%dl
+#endif
+0:	int	$0x1B
+#else
+	mov	$INITSEG,%ax
+	mov	%ax,%ds
+	mov	root_dev,%dl
+
+	mov	$DEF_OPTSEG,%ax
+	mov	%ax,%es
+	xor	%bx,%bx
+	mov	$0x0202,%ax
+	int	$0x13
+#endif
+
+#ifdef CONFIG_ARCH_PC98
+	pop	%bp
+#endif
+	pop	%es
+	pop	%ds
+	pop	%dx
+	pop	%cx
+	pop	%bx
+	ret
+
+	// BPB offsets in boot sector already in high memory
 sec_per_clus	= 13
 rsvd_sec_cnt	= 14
 num_fats	= 16
@@ -1122,6 +1298,38 @@ no_find:pop	%ax
 
 bootopts_name:
 	.ascii	"BOOTOPTS   "
+
+// translate ext2 block LBA in AX to CHS in CX,DH silently (for IBM PC/PC-98)
+getchs_silent:
+	xchg	%ax,%bx			// BX = LBA
+	mov	%es:ext2_head_max,%cl	// head max
+	mov	%es:ext2_sect_max,%al	// sect max
+	mulb	%cl			// AX = H*S
+	xchg	%ax,%bx			// AX = LBA, BX = H*S
+	xor	%dx,%dx
+	add	%es:ext2_part_offset,%ax
+	adc	%es:ext2_part_offset+2,%dx // DX:AX = disk LBA
+	div	%bx			// AX = cylinder, DX = head
+#ifdef CONFIG_ARCH_PC98
+	mov	%ax,%cx			// PC-98 cylinder
+#else
+	mov	%al,%ch			// CH = low 8 bits of cylinder
+	ror	%ah
+	ror	%ah
+	mov	%ah,%cl			// CL = high 2 bits of cylinder
+#endif
+	xchg	%ax,%dx			// move head to AX
+	xor	%dx,%dx
+	mov	%es:ext2_sect_max,%bl	// BX = sect max
+	xor	%bh,%bh
+	div	%bx			// DL = sector - 1
+#ifdef CONFIG_ARCH_PC98
+#else
+	or	%dl,%cl			// stash sector - 1 in CL
+	inc	%cx			// CX = sector
+#endif
+	mov	%al,%dh			// DH = head
+	ret
 
 // translate LBA in AX to CHS in CX,DH (for IBM PC)
 getchs:

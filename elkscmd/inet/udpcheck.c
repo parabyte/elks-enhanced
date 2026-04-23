@@ -42,7 +42,7 @@ static void bind_local(int s, unsigned short port)
 	addr.sin_port = htons(port);
 	addr.sin_addr.s_addr = INADDR_ANY;
 	if (bind(s, (struct sockaddr *)&addr, sizeof(addr)) < 0)
-		msg("bind failed");
+		die_errno("bind");
 }
 
 static void write_ready(char *path)

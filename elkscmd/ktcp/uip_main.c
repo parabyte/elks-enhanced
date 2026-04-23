@@ -681,6 +681,7 @@ int main(int argc, char **argv)
 
 	signal(SIGHUP, catch);
 	signal(SIGINT, catch);
+	signal(SIGTERM, catch);
 #if USE_DEBUG_EVENT
 	signal(SIGURG, debug_toggle);
 #endif

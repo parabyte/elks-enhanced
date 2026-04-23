@@ -5,8 +5,7 @@
 #       If OpenWatcom C installed and WATCOM= present, external OWC apps are built,
 #       The ELKS C Library is also built for OpenWatcom and C86, along with sample apps.
 #
-# This build script is used by CI jobs and local developers to fetch and build
-# external application repositories plus ELKS-side toolchain targets.
+# This build script is called by build.sh in main.yml by GitHub Continuous Integration
 #
 # Usage: ./buildext.sh [all | <project ...> ]
 # Currently supported projects are:
@@ -28,8 +27,6 @@
 #       bobcat          OpenWatcom      Bobcat web browser (Lynx fork)
 #       kilomacs        OpenWatcom      Kilo-based editor with Emacs-style keybindings
 #       elksmoria       OpenWatcom      Roguelike game
-#       dropbear        ia16-elf-gcc    Dropbear SSH client for ELKS (external repo)
-#       bearssl         ia16-elf-gcc    BearSSL library and tlsget client for ELKS (external repo)
 #
 # Some projects may require prerequisites.
 # To only build the C86 toolchain, use './buildext.sh owc_libc c86_toolchain'
@@ -37,10 +34,6 @@
 # 17 Jan 2026 Greg Haerr
 
 set -e
-
-XT_GIT_BASE_URL=${XT_GIT_BASE_URL:-https://www.xt-emporium.com/git}
-DROPBEAR_REPO_URL=${DROPBEAR_REPO_URL:-$XT_GIT_BASE_URL/ssh-daemon-project.git}
-BEARSSL_REPO_URL=${BEARSSL_REPO_URL:-$XT_GIT_BASE_URL/bearssl.git}
 
 doexit()
 {
@@ -326,42 +319,6 @@ elksmoria()
     echo "ELKSmoria build complete"
 }
 
-dropbear()
-{
-    echo "Building Dropbear SSH client..."
-    cd $TOPDIR/extapps
-    if [ ! -d dropbear ] ; then
-        git clone "$DROPBEAR_REPO_URL" dropbear
-    fi
-    cd dropbear
-    if [ -n "$(git status --porcelain 2>/dev/null)" ] ; then
-        echo "Dropbear tree has local changes, skipping git pull"
-    else
-        git pull --ff-only
-    fi
-    make -f Makefile.elks clean
-    make -f Makefile.elks
-    echo "Dropbear SSH client build complete"
-}
-
-bearssl()
-{
-    echo "Building BearSSL..."
-    cd $TOPDIR/extapps
-    if [ ! -d bearssl ] ; then
-        git clone "$BEARSSL_REPO_URL" bearssl
-    fi
-    cd bearssl
-    if [ -n "$(git status --porcelain 2>/dev/null)" ] ; then
-        echo "BearSSL tree has local changes, skipping git pull"
-    else
-        git pull --ff-only
-    fi
-    make -f Makefile.elks clean
-    make -f Makefile.elks
-    echo "BearSSL build complete"
-}
-
 # build all extapps repos
 make_all()
 {
@@ -369,8 +326,6 @@ make_all()
     dcc
     dflat
     elkirc
-    dropbear
-    bearssl
     if [ -n "$WATCOM" ] ; then
         owc_libc
         owc_elkscmd

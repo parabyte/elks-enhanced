@@ -38,6 +38,8 @@ file, with everything commented out:
 #QEMU=1             # to use ftp/ftpd in qemu
 #init=/bin/init 3   # multiuser serial
 #init=/bin/sh       # singleuser shell
+#console=ttyS0,19200
+#net=slip
 #LOCALIP=10.0.2.16
 #HOSTNAME=elks16
 #comirq=,,7,10      # IRQ-settings for COM1-4
@@ -87,6 +89,8 @@ root=fd1, root=/dev/fd1, root=hda[1-4], hdb[1-4], hdc[1-4]
 net=eth, net=slip, net=cslip  starts predefined network configurations
 ro, rw		The root filesystem may be mounted rw or read only
 comirq=,7            sets non-standard IRQ (7) on COM2
+LOCALIP=, GATEWAY=, NETMASK=, DNSSERVER=, BAUD=, DEVICE=
+		override /etc/net.cfg defaults for serial or ethernet startup
 .fi
 .PP
 To edit and adapt

@@ -45,6 +45,10 @@ IA16DIRS =       \
 	test        \
 	# EOL
 
+ifeq ($(wildcard $(BASEDIR)/test/Makefile),)
+IA16DIRS := $(filter-out test, $(IA16DIRS))
+endif
+
 OWCDIRS =       \
     basic       \
     fsck_dos    \

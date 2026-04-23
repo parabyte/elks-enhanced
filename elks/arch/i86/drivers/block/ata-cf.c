@@ -96,7 +96,7 @@ static int ata_cf_open(struct inode *inode, struct file *filp)
 
     debug_blk("cf%c: open\n", drive+'a');
 
-    if (drive >= NUM_DRIVES || hdp->start_sect == NOPART)
+    if (drive >= NUM_DRIVES)
         return -ENXIO;
 
 #if NOTYET
@@ -109,9 +109,13 @@ static int ata_cf_open(struct inode *inode, struct file *filp)
         init_partitions(&ata_gendisk);
         mbr_modified = 0;
     }
+    if (hdp->start_sect == NOPART)
+        return -ENXIO;
 
     ++access_count[drive];
     inode->i_size = hdp->nr_sects * ata_drive_info[drive].sector_size;
+    if (hdp->nr_sects >= 0x00400000L)
+        inode->i_size = 0x7fffffffL;
 
     return 0;
 }

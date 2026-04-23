@@ -29,6 +29,12 @@ char buf_out[1500];
 char *binlogin[2] = {_PATH_LOGIN, NULL};
 char *binsh[2] = {_PATH_BSHELL, NULL};
 
+static void
+catch(int sig)
+{
+    exit(0);
+}
+
 static pid_t
 term_init(int *pty_fd)
 {
@@ -44,7 +50,6 @@ again:
     if ((*pty_fd = open(pty_name, O_RDWR)) < 0) {
         if (errno == EBUSY && n++ < 3)
             goto again;
-        perror(pty_name);
         return -1;
     }
     if ((pid = fork()) == -1) {
@@ -241,17 +246,23 @@ main(int argc, char **argv)
         close(fd);
     setsid();                   /* create new process group */
     signal(SIGINT, SIG_IGN);
+    signal(SIGHUP, catch);
+    signal(SIGTERM, catch);
     signal(SIGCHLD, sigchild);
 
     while (1) {
         socklen_t len = sizeof(addr_in);
         connectionfd = accept(sockfd, (struct sockaddr *)&addr_in, &len);
         if (connectionfd < 0) {
-            /* interrupted accept() returns ERESTARTSYS on signal SIGCHLD, not EINTR */
-            if (errno == ERESTARTSYS || errno == EINTR)
+            /*
+             * After a child exits, ELKS can report an interrupted accept as
+             * ERESTARTSYS, EINTR, or EAGAIN.
+             */
+            if (errno == ERESTARTSYS || errno == EINTR || errno == EAGAIN)
                 continue;
             perror("telnetd accept");
-            break;
+            sleep(1);
+            continue;
         }
         if ((pid = fork()) == -1)
             errmsg("telnetd: No more processes\n");

@@ -88,6 +88,8 @@ static void load_env_options(void)
 int main(int argc, char **argv)
 {
     int listen_mode = 0;
+    int stdin_open = 1;
+    int stdin_is_tty;
     int port = 0;
     int s, c;
     char *host = NULL;
@@ -97,6 +99,7 @@ int main(int argc, char **argv)
     long total_bytes = 0;
 
     load_env_options();
+    stdin_is_tty = isatty(0);
     debug("netcat starting...");
 
     if (argc < 2)
@@ -168,36 +171,54 @@ int main(int argc, char **argv)
             die("bind-local failed");
 
         debug("connecting...");
-        if (connect(s, (struct sockaddr *)&addr, sizeof(addr)) < 0)
+        if (in_connect(s, (struct sockaddr *)&addr, sizeof(addr), 10) < 0)
             die("connect failed");
 
         debug("connected!");
     }
 
-    debug("entering I/O loop...");
-    for (;;) {
-        FD_ZERO(&fds);
-        FD_SET(0, &fds);
-        FD_SET(s, &fds);
+    if (!stdin_is_tty) {
+        char b[256];
+        int n;
 
-        int rc = select(s + 1, &fds, NULL, NULL, NULL);
-        if (rc < 0)
-            die("select failed");
-
-        /* stdin to socket */
-        if (FD_ISSET(0, &fds)) {
-            char b[256];
-            int n = read(0, b, sizeof(b));
-            if (n <= 0) {
-                debug("stdin closed");
-                break;
-            }
+        while ((n = read(0, b, sizeof(b))) > 0) {
             write(s, b, n);
             total_bytes += n;
 
             if (opt_maxbytes >= 0 && total_bytes >= opt_maxbytes) {
                 debug("maxbytes reached");
                 break;
+            }
+        }
+        stdin_open = 0;
+    }
+
+    debug("entering I/O loop...");
+    for (;;) {
+        FD_ZERO(&fds);
+        FD_SET(s, &fds);
+        if (stdin_open)
+            FD_SET(0, &fds);
+
+        int rc = select(s + 1, &fds, NULL, NULL, NULL);
+        if (rc < 0)
+            die("select failed");
+
+        /* stdin to socket */
+        if (stdin_open && FD_ISSET(0, &fds)) {
+            char b[256];
+            int n = read(0, b, sizeof(b));
+            if (n <= 0) {
+                debug("stdin closed");
+                stdin_open = 0;
+            } else {
+                write(s, b, n);
+                total_bytes += n;
+
+                if (opt_maxbytes >= 0 && total_bytes >= opt_maxbytes) {
+                    debug("maxbytes reached");
+                    break;
+                }
             }
         }
 

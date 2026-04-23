@@ -2,6 +2,10 @@
 #TZ=MDT6
 #LOCALIP=10.0.2.16
 #HOSTNAME=elks16
+#console=ttyS0,19200
+console=tty1
+sb=0x220,5,1
+#net=slip
 #ne0=12,0x300,,0x80
 #wd0=10,0x300,0xCC00,0x80
 #3c0=11,0x330,,0x80
@@ -23,13 +27,13 @@ hma=kernel
 #task=16 buf=64 cache=8 file=64 inode=96 heap=44000 # std
 #task=6 buf=8 cache=4 file=20 inode=24 heap=15000 n # min
 #sync=30
-#3	# multiuser serial
+#3
 #n	# no rc.sys
 #init=/bin/sash
 #kstack
 #strace
 #FTRACE=1
-#net=ne0
+net=slip
 #debug=1
 #istack
 #console=ttyS0,19200 3

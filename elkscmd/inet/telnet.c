@@ -75,6 +75,8 @@ int     DO_suppress_go_ahead_allowed = TRUE;
 
 int tcp_fd;
 int discard;
+int stdin_open = 1;
+int stdin_is_tty;
 char *term_env;
 int escape = ESCAPE;
 struct termios def_termios;
@@ -121,7 +123,15 @@ read_keyboard(void)
     char    buffer[BUFSIZE];
 
     count = read(0, buffer, sizeof(buffer));
-    if (count <= 0 || buffer[0] == escape) {
+    if (count <= 0) {
+        if (stdin_is_tty) {
+            fprintf(stderr, "\nSession terminated\n");
+            finish();
+        }
+        stdin_open = 0;
+        return;
+    }
+    if (buffer[0] == escape) {
         fprintf(stderr, "\nSession terminated\n");
         finish();
     }
@@ -191,6 +201,7 @@ main(int argc, char **argv)
     unsigned short port;
     ipaddr_t ipaddr;
     int     nonblock;
+    int     count;
     struct sockaddr_in locadr, remadr;
 
     if (argc < 2)
@@ -210,6 +221,7 @@ main(int argc, char **argv)
 
     tcgetattr(0, &def_termios);
     signal(SIGINT, finish);
+    stdin_is_tty = isatty(0);
 
     tcp_fd = socket(AF_INET, SOCK_STREAM, 0);
     if (tcp_fd < 0) {
@@ -252,14 +264,23 @@ main(int argc, char **argv)
     nonblock = 1;
     ioctl(0, FIONBIO, &nonblock);
 
+    if (!stdin_is_tty) {
+        char buffer[BUFSIZE];
+
+        while ((count = read(0, buffer, sizeof(buffer))) > 0)
+            write(tcp_fd, buffer, count);
+        stdin_open = 0;
+    }
+
     for (;;) {
         int n;
         fd_set  fdset;
         struct timeval tv;
 
         FD_ZERO(&fdset);
-        FD_SET(0, &fdset);
         FD_SET(tcp_fd, &fdset);
+        if (stdin_open)
+            FD_SET(0, &fdset);
         tv.tv_sec = 0;
         tv.tv_usec = 500000L;   /* 500ms */
 
@@ -278,7 +299,7 @@ main(int argc, char **argv)
         }
         if (FD_ISSET(tcp_fd, &fdset))
             read_network();
-        if (FD_ISSET(0, &fdset))
+        if (stdin_open && FD_ISSET(0, &fdset))
             read_keyboard();
     }
     finish();

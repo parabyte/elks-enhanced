@@ -237,15 +237,6 @@ int INITPROC bios_gethdinfo(struct drive_infot *drivep) {
             debug_bios("hd%c:  BIOS CHS %3d,%d,%d\n", 'a'+drive, drivep->cylinders,
                 drivep->heads, drivep->sectors);
         }
-#ifdef CONFIG_IDE_PROBE
-        if (sys_caps & CAP_HD_IDE) {            /* Normally PC/AT or higher */
-            if (!get_ide_data(drive, drivep)) { /* get CHS from the drive itself */
-                /* sanity checks already done, accepting data */
-                debug_bios("hd%c:   IDE CHS %3d,%d,%d\n", 'a'+drive, drivep->cylinders,
-                drivep->heads, drivep->sectors);
-            }
-        }
-#endif
         drivep++;
     }
     return ndrives;

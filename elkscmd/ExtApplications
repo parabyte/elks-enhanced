@@ -28,8 +28,6 @@
 # ------------- ----------------------------------------------------------
 #
 # ia16 builds
-dropbear/dbclient                                :dropbear            :2880k
-bearssl/tlsget                                   :bearssl             :2880k
 microwindows/src/bin/nano-x                         :nanox  :1232c :1440k
 microwindows/src/bin/nxcalc                         :nanox  :1232c :1440k
 microwindows/src/bin/nxclock                        :nanox  :1232c :1440k

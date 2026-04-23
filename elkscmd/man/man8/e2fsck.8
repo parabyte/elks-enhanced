@@ -1,0 +1,46 @@
+.TH E2FSCK 8
+.SH NAME
+e2fsck, fsck.ext2 \- check and repair an ELKS-compatible ext2 filesystem
+.SH SYNOPSIS
+.B e2fsck
+[\-apnyfv]
+.I device
+.SH DESCRIPTION
+.PP
+.I e2fsck
+checks the ELKS ext2 subset: ext2 revision 0, 1K blocks, and no optional
+features.
+It repairs metadata used by the ELKS kernel: inode and block bitmaps,
+free counts, link counts, dead inodes, invalid block pointers, and basic
+directory entry sanity.
+.TP 5
+.B \-a
+Automatically repair detected problems.
+.TP 5
+.B \-p
+Preen mode. This is the same as
+.BR \-a .
+.TP 5
+.B \-y
+Answer yes to all repairs. This is the same as
+.BR \-a .
+.TP 5
+.B \-n
+Never modify the filesystem.
+.TP 5
+.B \-f
+Force a full check even if the filesystem is marked clean.
+.TP 5
+.B \-v
+Print a short summary.
+.SH EXAMPLES
+.TP 24
+.B e2fsck \-f /dev/hdb1
+# Force a full ext2 metadata check
+.TP 24
+.B e2fsck \-p /dev/hdb1
+# Automatically repair a dirty ext2 filesystem
+.SH "SEE ALSO"
+.BR mkfs.ext2 (8),
+.BR fsck (8),
+.BR mount (8).
