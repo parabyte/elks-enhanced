@@ -689,6 +689,11 @@ static void tcpdev_read(void)
 	if (count < slot->rx_len)
 		memmove(slot->rx_buf, slot->rx_buf + count, slot->rx_len - count);
 	slot->rx_len -= count;
+	if (count > 0 && slot->uconn && slot->connected && !slot->peer_closed) {
+		uip_send_window_update(slot->uconn);
+		if (uip_len > 0)
+			ktcp_send_uip_output(0);
+	}
 	/*
 	 * For stream reads, return the remaining buffered byte count in
 	 * addr_port so the kernel can preserve read readiness without

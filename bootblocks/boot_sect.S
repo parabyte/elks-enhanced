@@ -46,7 +46,7 @@
 // (http://www.webtech.co.jp/company/doc/undocumented_mem/memsys.txt)
 // mechanism for configuring the "end of track" value; we will need to
 // somehow figure out this mechanism and test it :-( :-(
-#if !defined BOOT_FAT && !defined CONFIG_ARCH_PC98
+#if !defined BOOT_FAT && !defined CONFIG_ARCH_PC98 && !defined(CONFIG_IMG_HD)
 #   define FAST_READ
 #else
 #   undef FAST_READ
@@ -186,6 +186,18 @@ _next1:
 	mov $msg_boot,%bx
 	call _puts
 
+#if defined(CONFIG_IMG_HD) && !defined(CONFIG_ARCH_PC98) && !defined(BOOT_FAT)
+	mov $0x0800,%ax    // BIOS get drive parameters
+	mov %cs:drive_num,%dl
+	int $0x13
+	jc 1f
+	and $0x3f,%cl
+	mov %cl,%cs:sect_max
+	inc %dh
+	mov %dh,%cs:head_max
+1:
+#endif
+
 #ifdef FAST_READ
 	// Set sector count in floppy parameter table
 
@@ -239,7 +251,6 @@ _reboot:
 
 _reboot1:
 	call _puts
-
 	xor %ax,%ax  // wait for key
 #ifdef CONFIG_ARCH_PC98
 	int $0x18
@@ -357,16 +368,16 @@ dr_loop:
 	// AX = logical sector, low word
 
 	xchg %ax,%bx
-	mov sect_max,%al
-	mulb head_max
+	mov %cs:sect_max,%al
+	mulb %cs:head_max
 	xchg %ax,%bx		// BX = sects per cyl
 #ifdef CONFIG_ARCH_PC98
 	xor %dx,%dx
 #else
 	mov -10(%bp),%dx	// DX = high word of start sector
 #endif
-	add sect_offset,%ax
-	adc sect_offset+2,%dx
+	add %cs:sect_offset,%ax
+	adc %cs:sect_offset+2,%dx
 	div %bx
 
 #ifdef CONFIG_ARCH_PC98
@@ -381,10 +392,10 @@ dr_loop:
 	xchg %ax,%dx     // AX = remainder, ie. sect # on this cylinder
 	xor %dx,%dx
 #ifndef BOOT_FAT
-	mov sect_max,%bl
+	mov %cs:sect_max,%bl
 	xor %bh,%bh
 #else
-	mov sect_max,%bx // BX = sectors per track
+	mov %cs:sect_max,%bx // BX = sectors per track
 #endif
 	div %bx          // DL = physical sector number - 1
 #ifndef CONFIG_ARCH_PC98
@@ -423,7 +434,7 @@ dr_over2:
 dr_over3:
 #endif
 #ifdef BIOS_DRVNUM
-	mov drive_num,%dl
+	mov %cs:drive_num,%dl
 #endif
 
 dr_try:
@@ -433,7 +444,20 @@ dr_try:
 	push %cx
 	push %dx
 	push %es
-	mov 4(%bp),%es
+	mov -6(%bp),%bx
+	mov 4(%bp),%ax
+#ifndef BOOT_FAT
+	or  %ax,%ax
+	jnz 1f
+	mov  %bx,%ax
+	and  $0x000f,%bx
+	shr  %ax
+	shr  %ax
+	shr  %ax
+	shr  %ax
+1:
+#endif
+	mov %ax,%es
 
 #ifdef CONFIG_ARCH_PC98
 	push %bp
@@ -461,13 +485,11 @@ pc98_1b:
 	int $0x1B
 	pop %bp
 #else
-
-	mov -6(%bp),%bx
-#ifdef FAST_READ
+	#ifdef FAST_READ
 	mov $0x02,%ah    // BIOS read disk
-#else
+	#else
 	mov $0x0201,%ax
-#endif
+	#endif
 	int $0x13
 #endif
 	pop %es
@@ -479,11 +501,6 @@ pc98_1b:
 	xor %ah,%ah       // BIOS reset disk
 	int $0x13
 #endif
-	// PATCH: failure trace
-
-	mov $'*',%al
-	call _putc
-
 	decb -7(%bp)
 	pop %dx
 	pop %cx
@@ -501,11 +518,6 @@ dr_cont:
 	// Reset retry count
 
 	movb $5,-7(%bp)
-
-	// PATCH: success trace
-
-	mov $'.',%al
-	call _putc
 
 	pop %dx
 	pop %cx
@@ -548,15 +560,24 @@ dr_exit:
 // void run_prog ()
 
 	.global run_prog
+	.global mark_bootopts_nonfat
 
 // TODO: to be moved to the MINIX specific payload
 
+mark_bootopts_nonfat:
+	push	%ds
+	mov	$LOADSEG,%ax
+	mov	%ax,%ds
+	movb	$BOOTOPTS_NONFAT_MAGIC,bootopts_nonfat
+	pop	%ds
+	ret
+
 run_prog:
 
-	mov drive_num,%dl
+	mov %cs:drive_num,%dl
 	xor %dh,%dh
-	mov sect_offset,%cx
-	mov sect_offset+2,%bx
+	mov %cs:sect_offset,%cx
+	mov %cs:sect_offset+2,%bx
 	mov $LOADSEG,%ax
 	mov %ax,%ds
 
@@ -587,7 +608,7 @@ boot_it:
 	mov $LOADSEG,%ax
 	mov %ax,%ds
 	mov %ax,%es
-	ljmp $LOADSEG+0x20,$0
+		ljmp $LOADSEG+0x20,$0
 #endif
 
 //------------------------------------------------------------------------------
@@ -610,6 +631,7 @@ tvram_x:
 
 	.global end_of_code
 end_of_code:
+
 //------------------------------------------------------------------------------
 
 #if defined(CONFIG_IMG_FD1232)

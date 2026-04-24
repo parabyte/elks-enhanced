@@ -77,6 +77,8 @@ struct ext2_dir_entry {
 	char name[1];
 } __attribute__((packed));
 
+/* Some BIOS EDD implementations are picky about low-memory buffer alignment. */
+static byte_t io_pad[0x14] __attribute__((used));
 static byte_t i_block[BLOCK_SIZE];
 static struct ext2_inode *i_data;
 static byte_t z_block[1][BLOCK_SIZE];
@@ -93,6 +95,7 @@ static unsigned long loadaddr;
 
 void except(char code);
 void run_prog(void);
+void mark_bootopts_nonfat(void);
 int seg_data(void);
 void disk_read_blk(unsigned block, const int count, const byte_t *buf,
 		   const int seg);
@@ -125,10 +128,7 @@ void load_prog(void)
 		loadaddr = LOADSEG << 4;
 		load_file();
 		/* Tell setup.S to skip FAT /bootopts (wrong BPB on ext2). */
-		{
-			char __far *mark = _MK_FP(LOADSEG, bootopts_nonfat);
-			*mark = BOOTOPTS_NONFAT_MAGIC;
-		}
+		mark_bootopts_nonfat();
 		run_prog();
 	}
 }

@@ -48,7 +48,7 @@ entry:
 	push	%cx
 	retf			// Jump to OURSEG:cont
 cont:
-	mov	%dh,drive_num	// Save BIOS drive number
+	mov	%dl,drive_num	// Save BIOS drive number
 	sti			// Let the interrupts back in.
 
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
@@ -83,10 +83,23 @@ found_active:
 retry:
 
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+do_LBA:
+	mov	%si,%bp		// Save partition entry pointer
+	mov	8(%bp),%ax	// Copy start LBA from partition entry
+	mov	%ax,dap+8
+	mov	10(%bp),%ax
+	mov	%ax,dap+10
+	mov	drive_num,%dl
+	mov	$dap,%si
+	mov	$0x4200,%ax	// Extended read, 1 sector to 0000:7C00
+	int	$0x13
+	jnc	sector_loaded
+
 do_CHS:
 
-	mov	(%si),%dx	// dh = drive head, dl = 0x80 ie HD drive 0
-	mov	2(%si),%cx	// cx = sector & cylinder encoded for int $0x13
+	mov	(%bp),%dx	// dh = drive head
+	mov	drive_num,%dl	// dl = BIOS drive number
+	mov	2(%bp),%cx	// cx = sector & cylinder encoded for int $0x13
 	mov	$DISKBUF,%bx	// Pointer to start of BB.
 	mov	$0x0201,%ax	// Read 1 sector
 	int	$0x13		// Disk read.
@@ -108,8 +121,8 @@ sector_loaded:
 	cmpw	$0xAA55,%es:(%di) // for magic 0xAA55 word
 	jnz	try_next_part	// No? Try next partition.
 
-	mov	drive_num,%dh	// Restore DH drive number for VBR
-	mov	%si,%bp		// LILO says some BBs use bp rather than si
+	mov	drive_num,%dl	// Restore BIOS drive number for VBR
+	mov	%bp,%si		// LILO says some BBs use bp rather than si
 
 	ljmp	$0,$BOOTADDR	// Jump to VBR boot sector
 
@@ -269,6 +282,14 @@ banner:
 //
 drive_num:
 	.byte	0		// saved BIOS drive number
+
+dap:
+	.byte	0x10,0		// Disk Address Packet: size, reserved
+	.word	1		// sector count
+	.word	DISKBUF		// destination offset
+	.word	0		// destination segment
+	.long	0		// starting LBA, patched above
+	.long	0		// high 32 bits of LBA
 
 	.global	end_of_code
 end_of_code:

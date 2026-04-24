@@ -452,7 +452,7 @@ uip_connect(uip_ipaddr_t *ripaddr, u16_t rport)
   conn->snd_nxt[2] = iss[2];
   conn->snd_nxt[3] = iss[3];
 
-  conn->initialmss = conn->mss = UIP_TCP_MSS;
+  conn->initialmss = conn->mss = uip_link_mss();
   
   conn->len = 1;   /* TCP length of the SYN is one. */
   conn->nrtx = 0;
@@ -1339,7 +1339,7 @@ uip_process(u8_t flag)
 	tmp16 = ((u16_t)uip_buf[UIP_TCPIP_HLEN + UIP_LLH_LEN + 2 + c] << 8) |
 	  (u16_t)uip_buf[UIP_IPTCPH_LEN + UIP_LLH_LEN + 3 + c];
 	uip_connr->initialmss = uip_connr->mss =
-	  tmp16 > UIP_TCP_MSS? UIP_TCP_MSS: tmp16;
+	  tmp16 > uip_link_mss()? uip_link_mss(): tmp16;
 	
 	/* And we are done processing options. */
 	break;
@@ -1372,8 +1372,9 @@ uip_process(u8_t flag)
      SYNACK. */
   BUF->optdata[0] = TCP_OPT_MSS;
   BUF->optdata[1] = TCP_OPT_MSS_LEN;
-  BUF->optdata[2] = (UIP_TCP_MSS) / 256;
-  BUF->optdata[3] = (UIP_TCP_MSS) & 255;
+  tmp16 = uip_link_mss();
+  BUF->optdata[2] = tmp16 / 256;
+  BUF->optdata[3] = tmp16 & 255;
   uip_len = UIP_IPTCPH_LEN + TCP_OPT_MSS_LEN;
   BUF->tcpoffset = ((UIP_TCPH_LEN + TCP_OPT_MSS_LEN) / 4) << 4;
   goto tcp_send;
@@ -1508,7 +1509,7 @@ uip_process(u8_t flag)
 	    tmp16 = (uip_buf[UIP_TCPIP_HLEN + UIP_LLH_LEN + 2 + c] << 8) |
 	      uip_buf[UIP_TCPIP_HLEN + UIP_LLH_LEN + 3 + c];
 	    uip_connr->initialmss =
-	      uip_connr->mss = tmp16 > UIP_TCP_MSS? UIP_TCP_MSS: tmp16;
+	      uip_connr->mss = tmp16 > uip_link_mss()? uip_link_mss(): tmp16;
 
 	    /* And we are done processing options. */
 	    break;
@@ -1705,6 +1706,7 @@ uip_process(u8_t flag)
 	/* Add the length of the IP and TCP headers. */
 	uip_len = uip_connr->len + UIP_TCPIP_HLEN;
 	/* We always set the ACK flag in response packets. */
+	uip_connr->tcpstateflags &= ~UIP_ACK_PENDING;
 	BUF->flags = TCP_ACK | TCP_PSH;
 	/* Send the packet. */
 	goto tcp_send_noopts;
@@ -1712,6 +1714,18 @@ uip_process(u8_t flag)
       /* If there is no data to send, just send out a pure ACK if
 	 there is newdata. */
       if(uip_flags & UIP_NEWDATA) {
+	if(uip_link_window() > uip_link_mss() &&
+	   !(uip_connr->tcpstateflags & UIP_ACK_PENDING)) {
+	  uip_connr->tcpstateflags |= UIP_ACK_PENDING;
+	  goto drop;
+	}
+	uip_connr->tcpstateflags &= ~UIP_ACK_PENDING;
+	uip_len = UIP_TCPIP_HLEN;
+	BUF->flags = TCP_ACK;
+	goto tcp_send_noopts;
+      }
+      if((uip_flags & UIP_POLL) && (uip_connr->tcpstateflags & UIP_ACK_PENDING)) {
+	uip_connr->tcpstateflags &= ~UIP_ACK_PENDING;
 	uip_len = UIP_TCPIP_HLEN;
 	BUF->flags = TCP_ACK;
 	goto tcp_send_noopts;
@@ -1822,8 +1836,9 @@ uip_process(u8_t flag)
        window so that the remote host will stop sending data. */
     BUF->wnd[0] = BUF->wnd[1] = 0;
   } else {
-    BUF->wnd[0] = ((UIP_RECEIVE_WINDOW) >> 8);
-    BUF->wnd[1] = ((UIP_RECEIVE_WINDOW) & 0xff);
+    tmp16 = uip_link_window();
+    BUF->wnd[0] = (tmp16 >> 8);
+    BUF->wnd[1] = (tmp16 & 0xff);
   }
 
  tcp_send_noconn:
@@ -1893,5 +1908,76 @@ uip_send(const void *data, int len)
       memcpy(uip_sappdata, (data), uip_slen);
     }
   }
+}
+
+void
+uip_send_window_update(struct uip_conn *conn)
+{
+  if(conn == NULL) {
+    uip_len = 0;
+    return;
+  }
+
+  uip_conn = conn;
+  uip_sappdata = uip_appdata = &uip_buf[UIP_IPTCPH_LEN + UIP_LLH_LEN];
+  uip_len = UIP_IPTCPH_LEN;
+
+  BUF->flags = TCP_ACK;
+  BUF->tcpoffset = (UIP_TCPH_LEN / 4) << 4;
+
+  BUF->ackno[0] = uip_conn->rcv_nxt[0];
+  BUF->ackno[1] = uip_conn->rcv_nxt[1];
+  BUF->ackno[2] = uip_conn->rcv_nxt[2];
+  BUF->ackno[3] = uip_conn->rcv_nxt[3];
+
+  BUF->seqno[0] = uip_conn->snd_nxt[0];
+  BUF->seqno[1] = uip_conn->snd_nxt[1];
+  BUF->seqno[2] = uip_conn->snd_nxt[2];
+  BUF->seqno[3] = uip_conn->snd_nxt[3];
+
+  BUF->proto = UIP_PROTO_TCP;
+  BUF->srcport = uip_conn->lport;
+  BUF->destport = uip_conn->rport;
+  uip_ipaddr_copy(BUF->srcipaddr, uip_hostaddr);
+  uip_ipaddr_copy(BUF->destipaddr, uip_conn->ripaddr);
+
+  if(uip_conn->tcpstateflags & UIP_STOPPED) {
+    BUF->wnd[0] = 0;
+    BUF->wnd[1] = 0;
+  } else {
+    tmp16 = uip_link_window();
+    BUF->wnd[0] = (tmp16 >> 8);
+    BUF->wnd[1] = (tmp16 & 0xff);
+  }
+
+  BUF->ttl = UIP_TTL;
+#if UIP_CONF_IPV6
+  BUF->len[0] = ((uip_len - UIP_IPH_LEN) >> 8);
+  BUF->len[1] = (uip_len - UIP_IPH_LEN) & 0xff;
+#else
+  BUF->len[0] = (uip_len >> 8);
+  BUF->len[1] = uip_len & 0xff;
+#endif
+  BUF->urgp[0] = 0;
+  BUF->urgp[1] = 0;
+  BUF->tcpchksum = 0;
+  BUF->tcpchksum = ~(uip_tcpchksum());
+
+#if UIP_CONF_IPV6
+  BUF->vtc = 0x60;
+  BUF->tcflow = 0x00;
+  BUF->flow = 0x00;
+#else
+  BUF->vhl = 0x45;
+  BUF->tos = 0;
+  BUF->ipoffset[0] = 0;
+  BUF->ipoffset[1] = 0;
+  ++ipid;
+  BUF->ipid[0] = ipid >> 8;
+  BUF->ipid[1] = ipid & 0xff;
+  BUF->ipchksum = 0;
+  BUF->ipchksum = ~(uip_ipchksum());
+#endif
+  uip_flags = 0;
 }
 /** @} */

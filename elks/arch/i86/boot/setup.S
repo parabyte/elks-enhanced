@@ -87,7 +87,11 @@
 
 // Relocating loader debug option
 debug_output    =       0       // display various register values during execution
+#ifdef CONFIG_CONSOLE_SERIAL
+serial_output   =       1       // use INT 14 serial instead of INT 10 console out
+#else
 serial_output   =       0       // use INT 14 serial instead of INT 10 console out
+#endif
 debug_loader    =       0       // display relocations
 
 
@@ -287,7 +291,7 @@ start_os:
 	stosw
 #endif
 
-// Set various INITSEG values used by kernel SETUP_xxx defines (see config.h)
+	// Set various INITSEG values used by kernel SETUP_xxx defines (see config.h)
 
 	call	arch_set_initseg
 

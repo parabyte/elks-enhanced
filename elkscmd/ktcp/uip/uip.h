@@ -421,6 +421,9 @@ void uip_setipid(u16_t id);
  */
 extern u8_t uip_buf[UIP_BUFSIZE+2];
 
+u16_t uip_link_mss(void);
+u16_t uip_link_window(void);
+
 /** @} */
 
 /*---------------------------------------------------------------------------*/
@@ -536,6 +539,8 @@ struct uip_conn *uip_connect(uip_ipaddr_t *ripaddr, u16_t port);
  * \hideinitializer
  */
 void uip_send(const void *data, int len);
+
+void uip_send_window_update(struct uip_conn *conn);
 
 /**
  * The length of any incoming data that is currently avaliable (if avaliable)
@@ -1381,6 +1386,7 @@ void uip_process(u8_t flag);
 #define UIP_TS_MASK     15
   
 #define UIP_STOPPED      16
+#define UIP_ACK_PENDING  32
 
 /* The TCP and IP headers. */
 struct uip_tcpip_hdr {

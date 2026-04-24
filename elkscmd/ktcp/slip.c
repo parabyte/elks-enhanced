@@ -174,55 +174,53 @@ void slip_process(void)
 	int i;
 	int len;
 
-	len = read(devfd, sbuf, sizeof(sbuf));
-	if (len <= 0)
-		return;
-
-	for (i = 0; i < len; i++) {
-		if (lastchar == ESC) {
-			switch (sbuf[i]) {
-			case ESC_END:
-				packet[packpos++] = END;
-				break;
-			case ESC_ESC:
-				packet[packpos++] = ESC;
-				break;
-			default:
-				packet[packpos++] = sbuf[i];
-				break;
-			}
-		} else {
-			switch (sbuf[i]) {
-			case ESC:
-				break;
-			case END:
-				if (packpos == SLIP_HEADROOM)
+	while ((len = read(devfd, sbuf, sizeof(sbuf))) > 0) {
+		for (i = 0; i < len; i++) {
+			if (lastchar == ESC) {
+				switch (sbuf[i]) {
+				case ESC_END:
+					packet[packpos++] = END;
 					break;
-
-				payload = packet;
-				psize = packpos - SLIP_HEADROOM;
-#if CSLIP
-				if (linkprotocol == LINK_CSLIP)
-					cslip_decompress(&payload, &psize);
-				else
-#endif
-					payload += SLIP_HEADROOM;
-
-				if (psize > 0) {
-					netstats.sliprcvcnt++;
-					ktcp_process_slip_packet(payload, psize);
-				}
-
-				packpos = SLIP_HEADROOM;
-				lastchar = 0;
-				continue;
-			default:
-				if (packpos < sizeof(packet))
+				case ESC_ESC:
+					packet[packpos++] = ESC;
+					break;
+				default:
 					packet[packpos++] = sbuf[i];
-				break;
+					break;
+				}
+			} else {
+				switch (sbuf[i]) {
+				case ESC:
+					break;
+				case END:
+					if (packpos == SLIP_HEADROOM)
+						break;
+
+					payload = packet;
+					psize = packpos - SLIP_HEADROOM;
+#if CSLIP
+					if (linkprotocol == LINK_CSLIP)
+						cslip_decompress(&payload, &psize);
+					else
+#endif
+						payload += SLIP_HEADROOM;
+
+					if (psize > 0) {
+						netstats.sliprcvcnt++;
+						ktcp_process_slip_packet(payload, psize);
+					}
+
+					packpos = SLIP_HEADROOM;
+					lastchar = 0;
+					continue;
+				default:
+					if (packpos < sizeof(packet))
+						packet[packpos++] = sbuf[i];
+					break;
+				}
 			}
+			lastchar = sbuf[i];
 		}
-		lastchar = sbuf[i];
 	}
 }
 

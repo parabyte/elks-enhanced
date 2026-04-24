@@ -56,6 +56,31 @@ void uip_ipaddr_from_ip(uip_ipaddr_t *addr, ipaddr_t ip)
 	memcpy(addr, &ip, sizeof(ip));
 }
 
+u16_t uip_link_mss(void)
+{
+	unsigned int mss;
+
+	mss = UIP_TCP_MSS;
+	if (linkprotocol != LINK_ETHER) {
+		if (MTU > UIP_TCPIP_HLEN)
+			mss = MTU - UIP_TCPIP_HLEN;
+		else
+			mss = 64;
+		if (mss > 192)
+			mss = 192;
+		if (mss < 64)
+			mss = 64;
+	}
+	return mss;
+}
+
+u16_t uip_link_window(void)
+{
+	if (linkprotocol != LINK_ETHER)
+		return uip_link_mss() * 2;
+	return UIP_RECEIVE_WINDOW;
+}
+
 static void copy_ip_string(char *dst, size_t dstlen, ipaddr_t ip)
 {
 	const char *src;

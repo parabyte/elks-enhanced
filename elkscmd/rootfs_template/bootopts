@@ -2,10 +2,9 @@
 #TZ=MDT6
 #LOCALIP=10.0.2.16
 #HOSTNAME=elks16
-#console=ttyS0,19200
 console=tty1
 sb=0x220,5,1
-#net=slip
+net=slip
 #ne0=12,0x300,,0x80
 #wd0=10,0x300,0xCC00,0x80
 #3c0=11,0x330,,0x80
@@ -33,9 +32,9 @@ hma=kernel
 #kstack
 #strace
 #FTRACE=1
-net=slip
+#net=slip
 #debug=1
 #istack
-#console=ttyS0,19200 3
+#console=ttyS0,115200 3
 #MOUSE_PORT=/dev/ttyS1
 #DEBUG_PORT=none
