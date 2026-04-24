@@ -20,7 +20,7 @@ ifdef CONFIG_IMG_EXTRA_IMAGES
 TARGETS += images
 endif
 
-.PHONY: all clean
+.PHONY: all clean filecard20
 
 all: $(TARGETS)
 
@@ -57,6 +57,22 @@ images-minix: fd360-minix fd720-minix fd1200-minix fd1440-minix fd2880-minix
 images-fat: fd360-fat fd720-fat fd1200-fat fd1440-fat fd2880-fat
 
 images-hd: hd32-minix hd32mbr-minix hd64-minix hd64mbr-minix hd32-fat hd32mbr-fat
+
+filecard20:
+	echo CONFIG_APPS_HD=y		> Config
+	echo CONFIG_IMG_HD=y		>> Config
+	echo CONFIG_IMG_EXT2=y		>> Config
+	echo CONFIG_IMG_DEV=y		>> Config
+	echo CONFIG_IMG_BOOT=y		>> Config
+	echo CONFIG_IMG_INCLUDE_ESD=y	>> Config
+	echo CONFIG_IMG_BLOCKS=20910	>> Config
+	echo CONFIG_IMG_SECT=17		>> Config
+	echo CONFIG_IMG_HEAD=4		>> Config
+	echo CONFIG_IMG_CYL=615		>> Config
+	sed -n -e '/CONFIG_TIME_/p'	>> Config < $(TOPDIR)/.config
+	sed -n -e '/CONFIG_APP_OSS/p'	>> Config < $(TOPDIR)/.config
+	$(MAKE) -f Make.image "CONFIG=$(TOPDIR)/image/Config" NAME=filecard20
+	rm Config
 
 fd360-minix:
 	echo CONFIG_APPS_360K=y		> Config

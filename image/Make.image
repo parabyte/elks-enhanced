@@ -56,10 +56,12 @@ template:
 	-chmod 777 $(DESTDIR)/tmp
 	find $(DESTDIR) -name .keep -delete
 	$(MAKE) -C $(ELKSCMD_DIR) -f Make.install install "CONFIG=$(CONFIG)"
+ifdef CONFIG_IMG_INCLUDE_ESD
 	@if [ -f "$(abspath $(TOPDIR)/../esd-elks/Makefile)" ]; then \
 		$(MAKE) -C "$(abspath $(TOPDIR)/../esd-elks)" \
 			ELKS_TOP="$(TOPDIR)" DESTDIR="$(DESTDIR)" install; \
 	fi
+endif
 	-chmod 1755 $(DESTDIR)/bin/romprg
 ifdef CONFIG_APPS_360K
 	-rm $(DESTDIR)/etc/hosts
@@ -124,6 +126,25 @@ endif
 
 # Create Ext2 filesystem from template
 ext2fs: template
+ifdef CONFIG_IMG_HD
+	rm -f $(TARGET_FILE) $(TARGET_FILE).p1
+	truncate -s $$((($(CONFIG_IMG_SECT) * $(CONFIG_IMG_HEAD) * $(CONFIG_IMG_CYL) - $(CONFIG_IMG_SECT)) * 512)) $(TARGET_FILE).p1
+ifdef CONFIG_IMG_DEV
+	fakeroot sh -ec 'PATH="/sbin:/usr/sbin:$$PATH"; \
+		$(MAKE) -f Make.devices "MKDEV=sh $(IMG_DIR)/mkhostdev.sh $(DESTDIR)" && \
+		"$(EXT2_MKFS)" $(VERBOSE) -F -d "$(DESTDIR)" $(EXT2_MKFSOPTS) "$(TARGET_FILE).p1"'
+else
+	$(EXT2_MKFS) $(VERBOSE) -F -d $(DESTDIR) $(EXT2_MKFSOPTS) $(TARGET_FILE).p1
+endif
+ifdef CONFIG_IMG_BOOT
+	setboot $(TARGET_FILE).p1 $(BPB) $(FD_EXT2_BOOT)
+endif
+	dd if=/dev/zero bs=512 count=$(CONFIG_IMG_SECT) status=none | cat - $(TARGET_FILE).p1 > $(TARGET_FILE)
+ifdef CONFIG_IMG_BOOT
+	setboot $(TARGET_FILE) -P$(CONFIG_IMG_SECT),$(CONFIG_IMG_HEAD),$(CONFIG_IMG_CYL) -Sm $(BOOTBLOCKS_DIR)/mbr.bin
+endif
+	rm -f $(TARGET_FILE).p1
+else
 	rm -f $(TARGET_FILE)
 	truncate -s $(TARGET_BLKS)K $(TARGET_FILE)
 ifdef CONFIG_IMG_DEV
@@ -135,6 +156,7 @@ else
 endif
 ifdef CONFIG_IMG_BOOT
 	setboot $(TARGET_FILE) $(BPB) $(FD_EXT2_BOOT)
+endif
 endif
 
 # Create FAT filesystem from template

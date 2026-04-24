@@ -142,6 +142,8 @@ misc_utils/ecalc                :miscutil                           :1440k
 oss/ossinfo                     :oss
 oss/oss_beep                    :oss
 oss/ossdsp                      :oss
+oss/ossdsp ::bin/wavplay        :oss
+oss/ossdsp ::bin/pcmplay        :oss
 # esd/esdplay moved to external esd-elks package
 elvis/elvis ::bin/vi            :elvis              :720k
 minix1/banner                   :minix1                 :1200k
