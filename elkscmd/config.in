@@ -25,6 +25,11 @@ mainmenu_option next_comment
 		busyelks 'minix3'		CONFIG_APP_MINIX3		y
 		busyelks 'miscutils'	CONFIG_APP_MISC_UTILS	y
 		bool 'oss (OSS userland; 8-bit ISA DMA audio)'	CONFIG_APP_OSS		n
+		if [ "$CONFIG_INET" == "y" ]; then
+			bool 'esd-elks (TCP audio daemon/client; needs /dev/dsp)' CONFIG_APP_ESD_ELKS n
+		else
+			comment '(esd-elks needs TCP/IP sockets)'
+		fi
 		bool 'mad16cfg (OPTi 82C929A; needs /dev/port)'	CONFIG_APP_MAD16CFG	n
 		bool 'Text UI'			CONFIG_APP_TUI  		y
 		bool 'BASIC'			CONFIG_APP_BASIC		y

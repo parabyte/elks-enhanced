@@ -1,3 +1,11 @@
 # External application working trees fetched by buildext.sh.
 *
 !.gitignore
+!/esd-elks/
+!/esd-elks/Makefile
+!/esd-elks/README.md
+!/esd-elks/esd.c
+!/esd-elks/esdplay.c
+/esd-elks/*.o
+/esd-elks/esd
+/esd-elks/esdplay

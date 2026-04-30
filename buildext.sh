@@ -15,6 +15,7 @@
 #       dcc             ia6-elf-gcc     DCC self-compiling C compiler for ELKS
 #       dflat           ia16-elf-gcc    D-Flat TUI memopad/library
 #       elkirc          ia16-elf-gcc    IRC for ELKS
+#       esd_elks        ia16-elf-gcc    Enlightened Sound Daemon subset
 #       owc_libc        OpenWatcom      ELKS C Library compiled by OWC
 #       owc_elkscmd     OpenWatcom      Some elkscmd/ programs compiled by OWC
 #       c86_toolchain   OpenWatcom/C86  C86 Toolchain, header files and examples
@@ -234,6 +235,15 @@ elkirc()
     echo "elkirc build complete"
 }
 
+esd_elks()
+{
+    echo "Building esd-elks..."
+    cd $TOPDIR/extapps/esd-elks
+    make clean
+    make ELKS_TOP=$TOPDIR
+    echo "esd-elks build complete"
+}
+
 elks_viewer()
 {
     echo "Building elks-viewer..."
@@ -326,6 +336,7 @@ make_all()
     dcc
     dflat
     elkirc
+    esd_elks
     if [ -n "$WATCOM" ] ; then
         owc_libc
         owc_elkscmd

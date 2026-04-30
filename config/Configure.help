@@ -427,6 +427,14 @@ CONFIG_APP_MAD16CFG
   82C929A (MAD16 Pro) when using Sound Blaster mode. Requires kernel
   /dev/port read and write.
 
+esd-elks userland daemon/client
+CONFIG_APP_ESD_ELKS
+  Build and install esd-elks, a compact Enlightened Sound Daemon subset
+  for ELKS. It provides esd, a TCP listener that writes raw unsigned
+  8-bit mono PCM to /dev/dsp or /dev/audio, and esdplay, a matching
+  client. Requires TCP/IP sockets; the daemon also needs OSS /dev/dsp
+  or /dev/audio at runtime.
+
 MAD16 / OPTi 82C929: apply mad16cfg XT defaults (kernel, before SB reset)
 CONFIG_SB_OPTI82C929
   When the ISA /dev/dsp driver is enabled, say Y if the machine has an

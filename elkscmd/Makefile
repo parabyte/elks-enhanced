@@ -49,6 +49,10 @@ ifeq ($(wildcard $(BASEDIR)/test/Makefile),)
 IA16DIRS := $(filter-out test, $(IA16DIRS))
 endif
 
+ifeq ($(CONFIG_APP_ESD_ELKS), y)
+IA16DIRS += ../extapps/esd-elks
+endif
+
 OWCDIRS =       \
     basic       \
     fsck_dos    \
