@@ -65,7 +65,7 @@ ifdef CONFIG_IMG_INCLUDE_ESD
 			ELKS_TOP="$(TOPDIR)" DESTDIR="$(DESTDIR)" install; \
 	fi
 endif
-	-chmod 1755 $(DESTDIR)/bin/romprg
+	@if [ -f "$(DESTDIR)/bin/romprg" ]; then chmod 1755 "$(DESTDIR)/bin/romprg"; fi
 ifdef CONFIG_APPS_360K
 	-rm $(DESTDIR)/etc/hosts
 	-rm $(DESTDIR)/etc/net.cfg

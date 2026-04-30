@@ -109,6 +109,7 @@ endif
 
 ##############################################################################
 # Direct WD1002A-WX1/Xebec MFM hard drive devices.
+ifdef CONFIG_BLK_DEV_MFMHD
 	$(MKDEV) /dev/mfma  b 7 0
 	$(MKDEV) /dev/mfma1 b 7 1
 	$(MKDEV) /dev/mfma2 b 7 2
@@ -125,6 +126,7 @@ endif
 	$(MKDEV) /dev/mfmb5 b 7 13
 	$(MKDEV) /dev/mfmb6 b 7 14
 	$(MKDEV) /dev/mfmb7 b 7 15
+endif
 
 ##############################################################################
 # Pseudo-TTY master devices. 

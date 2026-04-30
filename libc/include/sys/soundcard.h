@@ -7,20 +7,19 @@
 #define SOUND_VERSION OSS_VERSION
 #define OPEN_SOUND_SYSTEM
 
-#define OSS_SIOCPARM_MASK 0x1fffU
-#define OSS_SIOC_VOID     0x00000000U
-#define OSS_SIOC_OUT      0x20000000U
-#define OSS_SIOC_IN       0x40000000U
+#define OSS_SIOCPARM_MASK 0x1fffUL
+#define OSS_SIOC_VOID     0x00000000UL
+#define OSS_SIOC_OUT      0x20000000UL
+#define OSS_SIOC_IN       0x40000000UL
 #define OSS_SIOC_INOUT    (OSS_SIOC_IN | OSS_SIOC_OUT)
 
-#define OSS__SIO(x, y) \
-	((int)(OSS_SIOC_VOID | (((x) & 0xff) << 8) | ((y) & 0xff)))
-#define OSS__SIOR(x, y, t) \
-	((int)(OSS_SIOC_OUT | (((sizeof(t)) & OSS_SIOCPARM_MASK) << 16) | (((x) & 0xff) << 8) | ((y) & 0xff)))
-#define OSS__SIOW(x, y, t) \
-	((int)(OSS_SIOC_IN | (((sizeof(t)) & OSS_SIOCPARM_MASK) << 16) | (((x) & 0xff) << 8) | ((y) & 0xff)))
-#define OSS__SIOWR(x, y, t) \
-	((int)(OSS_SIOC_INOUT | (((sizeof(t)) & OSS_SIOCPARM_MASK) << 16) | (((x) & 0xff) << 8) | ((y) & 0xff)))
+#define OSS__SIOC(dir, x, y, len) \
+	((int)(((dir) | ((((unsigned long)(len)) & OSS_SIOCPARM_MASK) << 16) | \
+	((((unsigned long)(x)) & 0xffUL) << 8) | (((unsigned long)(y)) & 0xffUL)) & 0xffffUL))
+#define OSS__SIO(x, y)       OSS__SIOC(OSS_SIOC_VOID, x, y, 0)
+#define OSS__SIOR(x, y, t)   OSS__SIOC(OSS_SIOC_OUT, x, y, sizeof(t))
+#define OSS__SIOW(x, y, t)   OSS__SIOC(OSS_SIOC_IN, x, y, sizeof(t))
+#define OSS__SIOWR(x, y, t)  OSS__SIOC(OSS_SIOC_INOUT, x, y, sizeof(t))
 
 #define __SIO    OSS__SIO
 #define __SIOR   OSS__SIOR

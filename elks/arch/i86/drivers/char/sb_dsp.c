@@ -26,6 +26,7 @@
 #include <linuxmt/kernel.h>
 #include <linuxmt/sched.h>
 #include <linuxmt/mm.h>
+#include <linuxmt/memory.h>
 #include <linuxmt/errno.h>
 #include <linuxmt/string.h>
 #include <linuxmt/soundcard.h>
@@ -1034,7 +1035,7 @@ void INITPROC sb_dsp_init(void)
 	}
 	sb_dma_cache();
 	sb_rate_cache(sb_rate);
-	sb_bounce_phys = SB_LINADDR(kernel_ds, (word_t)(unsigned long)sb_bounce);
+	sb_bounce_phys = SB_LINADDR(kernel_ds, (word_t)_FP_OFF(sb_bounce));
 	if ((sb_bounce_phys & 0xFFFFUL) + (unsigned long)SB_BOUNCE > 0x10000UL) {
 		printk("sb: dma buffer crosses 64k\n");
 		return;

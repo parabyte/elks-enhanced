@@ -201,10 +201,10 @@ TAGS += :end
 SHELL=/bin/bash
 install:
 	@echo "TAGS=$(TAGS)" | tr -d ' '
-ifdef CONFIG_APPS_HD
-	awk /`echo "$(TAGS)" | tr -d ' '`/{print} $(PACKAGE) | sed '/^#/d' | grep -v ':test' > Filelist
-else
+ifdef CONFIG_APP_TEST
 	awk /`echo "$(TAGS)" | tr -d ' '`/{print} $(PACKAGE) | sed '/^#/d' > Filelist
+else
+	awk /`echo "$(TAGS)" | tr -d ' '`/{print} $(PACKAGE) | sed '/^#/d' | grep -v ':test' > Filelist
 endif
 	@while IFS= read -r line; \
 	do \
@@ -263,11 +263,11 @@ endif
 				[ ! -d $(DESTDIR)/$$instdir ] && mkdir -p $(DESTDIR)/$$instdir; \
 			fi; \
 		fi; \
-		echo install $$file to $$instdir; \
 		if [ ! -e $$file ]; \
 		then \
-			echo "SKIPPED $$file (file not found)"; \
+			continue; \
 		else \
+			echo install $$file to $$instdir; \
 			if [ "$$link" == "yes" ]; \
 			then \
 				echo ln -s $$(basename $$file) $$instdir; \
