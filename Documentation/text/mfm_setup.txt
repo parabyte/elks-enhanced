@@ -19,12 +19,18 @@ Important build options:
   CONFIG_MFMHD_BIOS_SUPER        Common WD1002A-WX1 geometry switch table
   CONFIG_MFMHD_BIOS_G/H          Alternate WD1002A-WX1 geometry tables
   CONFIG_MFMHD_STEP_CODE         WD1002/Xebec command step-rate bits
+  CONFIG_MFMHD_SLOW              Conservative timing profile by default
   CONFIG_MFMHD_DRIVEn_*          Optional fixed cylinders, heads, sectors
 
 Set the CHS override values to 0 to use controller-reported geometry.  Use
 fixed CHS values only when the controller switch table or Seagate geometry
 command does not match the attached disk.  A common 20 MB FileCard-style layout
 is 612 cylinders, 4 heads, and 17 sectors.
+
+On very slow CPUs or marginal early controllers, add mfm=slow to /bootopts.
+This forces the slowest WD1002/Xebec step-rate code, uses longer command phase
+and disk-settle timeouts, and reduces repeated retry messages.  Use mfm=fast
+to override CONFIG_MFMHD_SLOW on a specific boot.
 
 Device names
 ------------
@@ -43,6 +49,8 @@ When CONFIG_BLK_DEV_MFMHD is enabled, the image build creates:
 Use root=mfma1 in /bootopts to mount the first MFM partition as root:
 
   root=mfma1
+  noatime
+  mfm=slow
 
 Use /dev/mfma for whole-disk operations such as writing a prepared disk image:
 

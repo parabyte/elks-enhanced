@@ -50,8 +50,32 @@ static void show(void)
 
 static int usage(void)
 {
-	errmsg("usage: mount [-a][-q][-t minix|fat|ext2][-o ro|remount,{rw|ro}] <device> <directory>\n");
+	errmsg("usage: mount [-a][-q][-t minix|fat|ext2][-o ro|rw|remount|noatime[,...]] <device> <directory>\n");
     return 1;
+}
+
+static int parse_options(char *option, int *flags)
+{
+	char *next;
+
+	while (option && *option) {
+		next = strchr(option, ',');
+		if (next)
+			*next++ = '\0';
+
+		if (!strcmp(option, "ro"))
+			*flags |= MS_RDONLY;
+		else if (!strcmp(option, "rw"))
+			*flags &= ~MS_RDONLY;
+		else if (!strcmp(option, "remount"))
+			*flags |= MS_REMOUNT;
+		else if (!strcmp(option, "noatime"))
+			*flags |= MS_NOATIME;
+		else
+			return -1;
+		option = next;
+	}
+	return 0;
 }
 
 int main(int argc, char **argv)
@@ -101,13 +125,7 @@ int main(int argc, char **argv)
 				}
 
 				option = *argv++;
-				if (!strcmp(option, "ro"))
-					flags |= MS_RDONLY;
-				else if (!strcmp(option, "remount,rw"))
-					flags |= MS_REMOUNT;
-				else if (!strcmp(option, "remount,ro"))
-					flags |= MS_REMOUNT|MS_RDONLY;
-				else {
+				if (parse_options(option, &flags)) {
 					return usage();
 				}
 				argc--;

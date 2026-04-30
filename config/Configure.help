@@ -850,6 +850,13 @@ CONFIG_MFMHD_STEP_CODE
   Low three bits sent in command byte 5. Leave this at 0 unless the drive
   requires a specific WD1002/Xebec step-rate value.
 
+Slow MFM timing profile
+CONFIG_MFMHD_SLOW
+  Enables the conservative MFM profile at boot by default. This uses the
+  slowest command step-rate code, longer select/phase/disk/reset timeouts,
+  and quieter retry logging. The same behavior can be selected per boot with
+  the boot option mfm=slow, or disabled with mfm=fast.
+
 MFM geometry override
 CONFIG_MFMHD_DRIVE0_CYLINDERS
   Set drive override cylinders/heads/sectors only when the controller switch

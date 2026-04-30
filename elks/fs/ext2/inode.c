@@ -28,12 +28,15 @@
 #endif
 
 #define EXT2_I_BLOCKS_PER_BLOCK	(BLOCK_SIZE >> 9)
+#define EXT2_PREALLOC_BLOCKS		3
 
 static void ext2_write_inode(register struct inode *inode);
 static void ext2_put_inode(register struct inode *inode);
 static void ext2_free_inode(register struct inode *inode);
 static void ext2_write_super(register struct super_block *sb);
 static void ext2_set_ops(register struct inode *inode);
+static void ext2_discard_prealloc(register struct super_block *sb);
+static void ext2_discard_prealloc_inode(register struct inode *inode);
 
 static struct super_operations ext2_sops = {
 	ext2_read_inode,
@@ -155,7 +158,7 @@ static void ext2_dec_iblocks(struct ext2_inode *raw_inode)
 		raw_inode->i_blocks = 0;
 }
 
-static block32_t ext2_new_block(struct super_block *sb)
+static block32_t ext2_new_block(struct super_block *sb, int zero)
 {
 	register struct buffer_head *bh;
 	register struct buffer_head *gdbh;
@@ -209,12 +212,14 @@ static block32_t ext2_new_block(struct super_block *sb)
 		unmap_brelse(gdbh);
 		sbi->s_last_block_group = group;
 		ext2_mark_super_dirty(sb);
-		bh = getblk32(sb->s_dev, block);
-		if (bh) {
-			zero_buffer(bh, 0, BLOCK_SIZE);
-			mark_buffer_uptodate(bh, 1);
-			mark_buffer_dirty(bh);
-			brelse(bh);
+		if (zero) {
+			bh = getblk32(sb->s_dev, block);
+			if (bh) {
+				zero_buffer(bh, 0, BLOCK_SIZE);
+				mark_buffer_uptodate(bh, 1);
+				mark_buffer_dirty(bh);
+				brelse(bh);
+			}
 		}
 		return block;
 	}
@@ -267,6 +272,164 @@ static void ext2_free_block(struct super_block *sb, block32_t block)
 		mark_buffer_clean(bh);
 		brelse(bh);
 	}
+}
+
+static void ext2_clear_prealloc(struct ext2_sb_info *sbi)
+{
+	sbi->s_prealloc_ino = 0;
+	sbi->s_prealloc_block = 0;
+	sbi->s_prealloc_lblock = 0;
+	sbi->s_prealloc_count = 0;
+}
+
+static void ext2_discard_prealloc(register struct super_block *sb)
+{
+	struct ext2_sb_info *sbi;
+	block32_t block;
+	unsigned char count;
+
+	if (!sb)
+		return;
+	sbi = EXT2_SB(sb);
+	count = sbi->s_prealloc_count;
+	if (!count)
+		return;
+
+	block = sbi->s_prealloc_block;
+	ext2_clear_prealloc(sbi);
+	while (count--)
+		ext2_free_block(sb, block++);
+}
+
+static void ext2_discard_prealloc_inode(register struct inode *inode)
+{
+	struct ext2_sb_info *sbi;
+
+	if (!inode || !inode->i_sb)
+		return;
+	sbi = EXT2_SB(inode->i_sb);
+	if (sbi->s_prealloc_count && sbi->s_prealloc_ino == inode->i_ino)
+		ext2_discard_prealloc(inode->i_sb);
+}
+
+static block32_t ext2_take_prealloc(register struct inode *inode, block_t lblock)
+{
+	struct ext2_sb_info *sbi;
+	block32_t nr;
+
+	sbi = EXT2_SB(inode->i_sb);
+	if (!sbi->s_prealloc_count)
+		return 0;
+	if (sbi->s_prealloc_ino != inode->i_ino ||
+	    sbi->s_prealloc_lblock != (block32_t)lblock) {
+		ext2_discard_prealloc(inode->i_sb);
+		return 0;
+	}
+
+	nr = sbi->s_prealloc_block++;
+	sbi->s_prealloc_lblock++;
+	sbi->s_prealloc_count--;
+	if (!sbi->s_prealloc_count)
+		ext2_clear_prealloc(sbi);
+	return nr;
+}
+
+static void ext2_prealloc_after(register struct inode *inode, block_t lblock,
+				block32_t first)
+{
+	register struct buffer_head *bh;
+	register struct buffer_head *gdbh;
+	struct ext2_group_desc *gdp;
+	struct ext2_sb_info *sbi;
+	unsigned short group;
+	unsigned short bit;
+	unsigned short group_blocks;
+	unsigned char count;
+
+	if (!inode || !inode->i_sb || !S_ISREG(inode->i_mode))
+		return;
+	sbi = EXT2_SB(inode->i_sb);
+	if (sbi->s_prealloc_count)
+		ext2_discard_prealloc(inode->i_sb);
+	if (!first || first < sbi->s_first_data_block ||
+	    first >= sbi->s_blocks_count)
+		return;
+
+	group = (unsigned short)((first - sbi->s_first_data_block) /
+		sbi->s_blocks_per_group);
+	bit = (unsigned short)(first - ext2_group_first_block(inode->i_sb,
+		group));
+	group_blocks = ext2_group_blocks(inode->i_sb, group);
+	if (bit >= group_blocks)
+		return;
+
+	gdbh = ext2_get_group_desc(inode->i_sb, group, &gdp);
+	if (!gdbh)
+		return;
+	if (!gdp->bg_free_blocks_count) {
+		unmap_brelse(gdbh);
+		return;
+	}
+	bh = bread32(inode->i_sb->s_dev, gdp->bg_block_bitmap);
+	if (!bh) {
+		unmap_brelse(gdbh);
+		return;
+	}
+	map_buffer(bh);
+	count = 0;
+	while (count < EXT2_PREALLOC_BLOCKS &&
+	       (unsigned short)(bit + count) < group_blocks &&
+	       first + count < sbi->s_blocks_count) {
+		if (test_bit(bit + count, bh->b_data))
+			break;
+		if (set_bit(bit + count, bh->b_data))
+			break;
+		count++;
+	}
+	if (count) {
+		mark_buffer_dirty(bh);
+		if (gdp->bg_free_blocks_count >= count)
+			gdp->bg_free_blocks_count -= count;
+		else
+			gdp->bg_free_blocks_count = 0;
+		if (sbi->s_free_blocks_count >= count)
+			sbi->s_free_blocks_count -= count;
+		else
+			sbi->s_free_blocks_count = 0;
+		mark_buffer_dirty(gdbh);
+		sbi->s_prealloc_ino = inode->i_ino;
+		sbi->s_prealloc_block = first;
+		sbi->s_prealloc_lblock = (block32_t)lblock;
+		sbi->s_prealloc_count = count;
+		ext2_mark_super_dirty(inode->i_sb);
+	}
+	unmap_brelse(bh);
+	unmap_brelse(gdbh);
+}
+
+static block32_t ext2_new_data_block(register struct inode *inode,
+				     block_t lblock, int create)
+{
+	struct ext2_sb_info *sbi;
+	block32_t nr;
+	int nozero;
+
+	nozero = create & GETBLK_NOZERO;
+	if (!nozero)
+		ext2_discard_prealloc_inode(inode);
+
+	nr = nozero ? ext2_take_prealloc(inode, lblock) : 0;
+	if (nr) {
+		sbi = EXT2_SB(inode->i_sb);
+		if (!sbi->s_prealloc_count)
+			ext2_prealloc_after(inode, lblock + 1, nr + 1);
+		return nr;
+	}
+
+	nr = ext2_new_block(inode->i_sb, !nozero);
+	if (nr && nozero)
+		ext2_prealloc_after(inode, lblock + 1, nr + 1);
+	return nr;
 }
 
 struct inode *ext2_new_inode(struct inode *dir, mode_t mode)
@@ -527,16 +690,19 @@ struct buffer_head *ext2_getblk(struct inode *inode, block_t block, int create)
 	struct ext2_inode *raw_inode;
 	__u32 *ind;
 	block32_t nr;
+	block_t lblock;
 	unsigned short index;
 	unsigned short index2;
 
+	lblock = block;
 	ibh = ext2_get_inode(inode, &raw_inode);
 	if (!ibh)
 		return NULL;
 
 	if (block < EXT2_NDIR_BLOCKS) {
 		if (!raw_inode->i_block[block] && create) {
-			raw_inode->i_block[block] = ext2_new_block(inode->i_sb);
+			raw_inode->i_block[block] =
+				ext2_new_data_block(inode, lblock, create);
 			if (raw_inode->i_block[block]) {
 				ext2_inc_iblocks(raw_inode);
 				mark_buffer_dirty(ibh);
@@ -552,7 +718,8 @@ struct buffer_head *ext2_getblk(struct inode *inode, block_t block, int create)
 	block -= EXT2_NDIR_BLOCKS;
 	if (block < EXT2_ADDR_PER_BLOCK) {
 		if (!raw_inode->i_block[EXT2_IND_BLOCK] && create) {
-			raw_inode->i_block[EXT2_IND_BLOCK] = ext2_new_block(inode->i_sb);
+			raw_inode->i_block[EXT2_IND_BLOCK] =
+				ext2_new_block(inode->i_sb, 1);
 			if (raw_inode->i_block[EXT2_IND_BLOCK]) {
 				ext2_inc_iblocks(raw_inode);
 				mark_buffer_dirty(ibh);
@@ -571,7 +738,7 @@ struct buffer_head *ext2_getblk(struct inode *inode, block_t block, int create)
 		map_buffer(bh);
 		ind = (__u32 *)bh->b_data;
 		if (!ind[block] && create) {
-			ind[block] = ext2_new_block(inode->i_sb);
+			ind[block] = ext2_new_data_block(inode, lblock, create);
 			if (ind[block]) {
 				ext2_inc_iblocks(raw_inode);
 				mark_buffer_dirty(bh);
@@ -591,7 +758,8 @@ struct buffer_head *ext2_getblk(struct inode *inode, block_t block, int create)
 	index2 = (unsigned short)(block % EXT2_ADDR_PER_BLOCK);
 
 	if (!raw_inode->i_block[EXT2_DIND_BLOCK] && create) {
-		raw_inode->i_block[EXT2_DIND_BLOCK] = ext2_new_block(inode->i_sb);
+		raw_inode->i_block[EXT2_DIND_BLOCK] =
+			ext2_new_block(inode->i_sb, 1);
 		if (raw_inode->i_block[EXT2_DIND_BLOCK]) {
 			ext2_inc_iblocks(raw_inode);
 			mark_buffer_dirty(ibh);
@@ -611,7 +779,7 @@ struct buffer_head *ext2_getblk(struct inode *inode, block_t block, int create)
 	map_buffer(bh);
 	ind = (__u32 *)bh->b_data;
 	if (!ind[index] && create) {
-		ind[index] = ext2_new_block(inode->i_sb);
+		ind[index] = ext2_new_block(inode->i_sb, 1);
 		if (ind[index]) {
 			ext2_inc_iblocks(raw_inode);
 			mark_buffer_dirty(bh);
@@ -634,7 +802,7 @@ struct buffer_head *ext2_getblk(struct inode *inode, block_t block, int create)
 	map_buffer(bh2);
 	ind = (__u32 *)bh2->b_data;
 	if (!ind[index2] && create) {
-		ind[index2] = ext2_new_block(inode->i_sb);
+		ind[index2] = ext2_new_data_block(inode, lblock, create);
 		if (ind[index2]) {
 			ext2_inc_iblocks(raw_inode);
 			mark_buffer_dirty(bh2);
@@ -749,8 +917,10 @@ static void ext2_write_inode(register struct inode *inode)
 
 static void ext2_write_super(register struct super_block *sb)
 {
-	if (!(sb->s_flags & MS_RDONLY))
+	if (!(sb->s_flags & MS_RDONLY)) {
+		ext2_discard_prealloc(sb);
 		ext2_commit_super(sb);
+	}
 	sb->s_dirt = 0;
 }
 
@@ -854,6 +1024,7 @@ void ext2_truncate(register struct inode *inode)
 	if (!(S_ISREG(inode->i_mode) || S_ISDIR(inode->i_mode) ||
 	      S_ISLNK(inode->i_mode)))
 		return;
+	ext2_discard_prealloc_inode(inode);
 
 	bh = ext2_get_inode(inode, &raw_inode);
 	if (!bh)
@@ -892,6 +1063,7 @@ void ext2_truncate(register struct inode *inode)
 
 static void ext2_put_inode(register struct inode *inode)
 {
+	ext2_discard_prealloc_inode(inode);
 	if (!inode->i_nlink) {
 		inode->i_size = 0;
 		ext2_truncate(inode);
@@ -903,6 +1075,7 @@ void ext2_put_super(register struct super_block *sb)
 {
 	lock_super(sb);
 	if (!(sb->s_flags & MS_RDONLY)) {
+		ext2_discard_prealloc(sb);
 		EXT2_SB(sb)->s_state = EXT2_SB(sb)->s_mount_state;
 		ext2_commit_super(sb);
 	}
@@ -920,6 +1093,7 @@ int ext2_remount(register struct super_block *sb, int *flags, char *data)
 		return 0;
 
 	if (*flags & MS_RDONLY) {
+		ext2_discard_prealloc(sb);
 		sbi->s_state = sbi->s_mount_state;
 		ext2_commit_super(sb);
 		sb->s_dirt = 0;
@@ -997,6 +1171,7 @@ struct super_block *ext2_read_super(register struct super_block *s, char *data,
 	sbi->s_last_block_group = 0;
 	sbi->s_last_inode_group = 0;
 	sbi->s_inode_table_valid = 0;
+	ext2_clear_prealloc(sbi);
 
 	groups = es->s_blocks_count - es->s_first_data_block;
 	groups += es->s_blocks_per_group - 1;

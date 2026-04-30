@@ -79,6 +79,7 @@
 #define MS_NODEV            4   /* disallow access to device special files */
 #define MS_REMOUNT         32   /* alter flags of a mounted FS */
 #define MS_AUTOMOUNT       64   /* auto mount based on superblock */
+#define MS_NOATIME        128   /* do not update inode access times */
 #define S_APPEND          256   /* append-only file */
 
 #if UNUSED
@@ -91,7 +92,7 @@
 /*
  * Flags that can be altered by MS_REMOUNT
  */
-#define MS_RMT_MASK (MS_RDONLY)
+#define MS_RMT_MASK (MS_RDONLY | MS_NOATIME)
 
 #ifdef __KERNEL__
 
@@ -106,8 +107,12 @@
 
 #define IS_RDONLY(inode) (((inode)->i_sb) && ((inode)->i_sb->s_flags & MS_RDONLY))
 #define IS_NODEV(inode) ((inode)->i_flags & MS_NODEV)
+#define IS_NOATIME(inode) ((inode)->i_flags & MS_NOATIME)
 
 #define IS_APPEND(inode) ((inode)->i_flags & S_APPEND)
+
+#define GETBLK_CREATE      1
+#define GETBLK_NOZERO      2
 
 #if UNUSED
 #define IS_NOSUID(inode) ((inode)->i_flags & MS_NOSUID)

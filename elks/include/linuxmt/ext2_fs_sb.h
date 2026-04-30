@@ -24,6 +24,11 @@ struct ext2_sb_info {
 	__u32	s_inode_table_block;
 	__u16	s_inode_table_group;
 	__u8	s_inode_table_valid;
+	/* Tiny sequential reservation cache; no data buffers are kept here. */
+	__u32	s_prealloc_ino;
+	__u32	s_prealloc_block;
+	__u32	s_prealloc_lblock;
+	__u8	s_prealloc_count;
 };
 
 #endif

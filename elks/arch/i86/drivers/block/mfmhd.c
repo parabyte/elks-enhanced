@@ -158,6 +158,10 @@
 #define MFM_DISK_TICKS          (HZ * 12)
 #define MFM_DIAG_TICKS          (HZ * 20)
 #define MFM_SELECT_TICKS        (HZ * 2)
+#define MFM_SLOW_PHASE_TICKS    (HZ * 4)
+#define MFM_SLOW_DISK_TICKS     (HZ * 24)
+#define MFM_SLOW_DIAG_TICKS     (HZ * 40)
+#define MFM_SLOW_SELECT_TICKS   (HZ * 4)
 #define MFM_FORMAT_TICKS        (HZ * 60L * 60L)
 #define MFM_SINGLE_RECOVER_OK   64
 #define MFM_DEFAULT_ECC_LENGTH  11
@@ -362,6 +366,9 @@
 #ifndef CONFIG_MFMHD_UNSAFE_CTRL_IOCTLS
 #define CONFIG_MFMHD_UNSAFE_CTRL_IOCTLS 0
 #endif
+#ifndef CONFIG_MFMHD_SLOW
+#define CONFIG_MFMHD_SLOW       0
+#endif
 
 #define STATUS(port)            inb_p((port) + MFM_HD_STATUS)
 #define DATA(port)              inb_p((port) + MFM_HD_DATA)
@@ -520,6 +527,7 @@ static int mfmhd_irq_map[MFM_MAX_CONTROLLERS] = { MFM_HD1_IRQ, MFM_HD2_IRQ };
 static unsigned char mfmhd_control_shadow[MFM_MAX_CONTROLLERS];
 static int mfmhd_quiet_probe;
 static char *mfmhd_bounce;
+int mfmhd_slow_profile = CONFIG_MFMHD_SLOW;
 
 int mfmhd_debug_stage;
 int mfmhd_debug_drive;
@@ -631,6 +639,8 @@ mfmhd_default_cmd_control(void)
 #if CONFIG_MFMHD_ECC_IMMEDIATE
     cmd_control |= MFM_CCB_R2_IMMEDIATE_ECC;
 #endif
+    if (mfmhd_slow_profile)
+        cmd_control &= ~MFM_CCB_STEP_MASK;
     return mfmhd_sanitize_cmd_control(cmd_control);
 }
 
@@ -649,6 +659,8 @@ mfmhd_drive_cmd_control(int drive)
 {
     if (drive < 0 || drive >= MFM_MAX_DRIVES)
         return mfmhd_default_cmd_control();
+    if (mfmhd_slow_profile)
+        drive_info[drive].cmd_control &= ~MFM_CCB_STEP_MASK;
     return mfmhd_sanitize_cmd_control(drive_info[drive].cmd_control);
 }
 
@@ -791,6 +803,8 @@ mfmhd_init_ports(void)
     else
         printk("mfmhd: %s profile, BIOS table=%s, ports 0x%x/0x%x\n",
             mfmhd_controller_name(), mfmhd_bios_name(), io_ports[0], io_ports[1]);
+    if (mfmhd_slow_profile)
+        printk("mfmhd: slow timing profile enabled\n");
 }
 
 static unsigned int
@@ -1043,6 +1057,24 @@ mfmhd_command_expects_data_phase(unsigned char op)
 }
 
 static jiff_t
+mfmhd_phase_ticks(void)
+{
+    return mfmhd_slow_profile ? MFM_SLOW_PHASE_TICKS : MFM_PHASE_TICKS;
+}
+
+static jiff_t
+mfmhd_select_ticks(void)
+{
+    return mfmhd_slow_profile ? MFM_SLOW_SELECT_TICKS : MFM_SELECT_TICKS;
+}
+
+static jiff_t
+mfmhd_diag_ticks(void)
+{
+    return mfmhd_slow_profile ? MFM_SLOW_DIAG_TICKS : MFM_DIAG_TICKS;
+}
+
+static jiff_t
 mfmhd_command_wait_ticks(unsigned char op)
 {
     switch (op) {
@@ -1056,17 +1088,17 @@ mfmhd_command_wait_ticks(unsigned char op)
     case MFM_CMD_READ_ECC_BURST:
     case MFM_CMD_INIT_DRIVE_PARAMETERS:
     case MFM_CMD_ST11_GET_GEOMETRY:
-        return MFM_DISK_TICKS;
+        return mfmhd_slow_profile ? MFM_SLOW_DISK_TICKS : MFM_DISK_TICKS;
     case MFM_CMD_BUFFER_DIAGNOSTIC:
     case MFM_CMD_DRIVE_DIAGNOSTIC:
     case MFM_CMD_CONTROLLER_DIAGNOSTIC:
-        return MFM_DIAG_TICKS;
+        return mfmhd_diag_ticks();
     case MFM_CMD_FORMAT_DRIVE:
     case MFM_CMD_FORMAT_TRACK:
     case MFM_CMD_FORMAT_BAD_TRACK:
         return MFM_FORMAT_TICKS;
     default:
-        return MFM_PHASE_TICKS;
+        return mfmhd_phase_ticks();
     }
 }
 
@@ -1115,6 +1147,54 @@ mfmhd_phase_timeout(unsigned int port, int drive, unsigned char op,
     return -1;
 }
 
+static unsigned int
+mfmhd_data_in_burst(unsigned int port, unsigned char **pread,
+    unsigned int count)
+{
+    unsigned char *buf;
+    unsigned char st;
+    unsigned int done;
+
+    buf = pread ? *pread : NULL;
+    done = 0;
+    do {
+        if (buf)
+            *buf++ = DATA(port);
+        else
+            (void)DATA(port);
+        done++;
+        if (--count == 0)
+            break;
+        st = STATUS(port);
+    } while ((st & (MFM_STAT_READY | MFM_STAT_PHASE_MASK)) ==
+        (MFM_STAT_READY | MFM_PHASE_DATA_IN));
+    if (pread)
+        *pread = buf;
+    return done;
+}
+
+static unsigned int
+mfmhd_data_out_burst(unsigned int port, unsigned char **pwrite,
+    unsigned int count)
+{
+    unsigned char *buf;
+    unsigned char st;
+    unsigned int done;
+
+    buf = *pwrite;
+    done = 0;
+    do {
+        DATA_OUT(port, *buf++);
+        done++;
+        if (--count == 0)
+            break;
+        st = STATUS(port);
+    } while ((st & (MFM_STAT_READY | MFM_STAT_PHASE_MASK)) ==
+        (MFM_STAT_READY | MFM_PHASE_DATA_OUT));
+    *pwrite = buf;
+    return done;
+}
+
 static int
 mfmhd_cmd_len(unsigned int port, unsigned char *cmdblk, unsigned int cmdlen,
     unsigned char *read, unsigned int rlen, unsigned char *write,
@@ -1128,6 +1208,7 @@ mfmhd_cmd_len(unsigned int port, unsigned char *cmdblk, unsigned int cmdlen,
     unsigned int data_in;
     unsigned int data_out;
     unsigned int dummy_out;
+    unsigned int done_count;
     jiff_t phase_deadline;
     unsigned char phase;
     unsigned char st;
@@ -1179,10 +1260,10 @@ mfmhd_cmd_len(unsigned int port, unsigned char *cmdblk, unsigned int cmdlen,
     mfmhd_write_control(port, MFM_CTL_PIO_POLLED);
 
     if (mfmhd_wait_status(port, MFM_STAT_SELECT, MFM_STAT_SELECT,
-            MFM_SELECT_TICKS, "select/busy timeout"))
+            mfmhd_select_ticks(), "select/busy timeout"))
         return -1;
 
-    phase_deadline = jiffies + MFM_PHASE_TICKS;
+    phase_deadline = jiffies + mfmhd_phase_ticks();
     while (1) {
         st = STATUS(port);
         if (st == 0xff)
@@ -1207,7 +1288,7 @@ mfmhd_cmd_len(unsigned int port, unsigned char *cmdblk, unsigned int cmdlen,
             cmdleft--;
             cmd_sent++;
             phase_deadline = jiffies + (cmdleft ?
-                MFM_PHASE_TICKS : mfmhd_command_wait_ticks(op));
+                mfmhd_phase_ticks() : mfmhd_command_wait_ticks(op));
             break;
 
         case MFM_PHASE_DATA_OUT:
@@ -1222,14 +1303,14 @@ mfmhd_cmd_len(unsigned int port, unsigned char *cmdblk, unsigned int cmdlen,
                     return mfmhd_phase_timeout(port, cmd_drive, op,
                         "unexpected data-out phase", st);
                 DATA_OUT(port, 0);
-                phase_deadline = jiffies + MFM_PHASE_TICKS;
+                phase_deadline = jiffies + mfmhd_phase_ticks();
                 break;
             }
-            DATA_OUT(port, *write++);
-            outleft--;
-            data_out++;
+            done_count = mfmhd_data_out_burst(port, &write, outleft);
+            outleft -= done_count;
+            data_out += done_count;
             phase_deadline = jiffies + (outleft ?
-                MFM_PHASE_TICKS : mfmhd_command_wait_ticks(op));
+                mfmhd_phase_ticks() : mfmhd_command_wait_ticks(op));
             break;
 
         case MFM_PHASE_DATA_IN:
@@ -1240,15 +1321,11 @@ mfmhd_cmd_len(unsigned int port, unsigned char *cmdblk, unsigned int cmdlen,
             if (!inleft)
                 return mfmhd_phase_timeout(port, cmd_drive, op,
                     "unexpected data-in phase", st);
-            if (read) {
-                *read = DATA(port);
-                read++;
-            } else {
-                (void)DATA(port);
-            }
-            inleft--;
-            data_in++;
-            phase_deadline = jiffies + MFM_PHASE_TICKS;
+            done_count = mfmhd_data_in_burst(port, read ? &read : NULL,
+                inleft);
+            inleft -= done_count;
+            data_in += done_count;
+            phase_deadline = jiffies + mfmhd_phase_ticks();
             break;
 
         case MFM_PHASE_STATUS_IN:
@@ -1271,7 +1348,7 @@ done:
             cmdleft, inleft, outleft);
 #endif
 
-    if (mfmhd_wait_status(port, 0, MFM_STAT_SELECT, MFM_SELECT_TICKS,
+    if (mfmhd_wait_status(port, 0, MFM_STAT_SELECT, mfmhd_select_ticks(),
             "busy clear timeout")) {
         if (cmd_drive >= 0 && cmd_drive < MFM_MAX_DRIVES)
             drive_info[cmd_drive].cmd_error_count++;
@@ -1500,7 +1577,7 @@ mfmhd_reset_controller(unsigned int port)
     for (i = 0; i < 256; i++)
         (void)STATUS(port);
 
-    i = mfmhd_wait_status(port, 0, MFM_STAT_SELECT, MFM_DIAG_TICKS,
+    i = mfmhd_wait_status(port, 0, MFM_STAT_SELECT, mfmhd_diag_ticks(),
         "reset busy clear timeout");
     mfmhd_write_control(port, MFM_CTL_PIO_POLLED);
     mfmhd_debug_set(i ? 22 : 21, -1, port, i ? -1 : 0);
@@ -2163,9 +2240,11 @@ mfmhd_rw_chunk(int drive, sector_t lba, unsigned int sectors, char *buffer,
     for (retry = 0; retry < MFM_RETRIES; retry++) {
         if (retry) {
             drive_info[drive].retry_count++;
-            printk("mfmhd: /dev/mfm%c retry %u %s lba=%lu unit=%u n=%u\n",
-                'a' + (unsigned char)drive, retry,
-                write ? "write" : "read", (unsigned long)lba, unit, sectors);
+            if (!mfmhd_slow_profile || retry == MFM_RETRIES - 1)
+                printk("mfmhd: /dev/mfm%c retry %u %s lba=%lu unit=%u n=%u\n",
+                    'a' + (unsigned char)drive, retry,
+                    write ? "write" : "read", (unsigned long)lba, unit,
+                    sectors);
             mfmhd_recalibrate_drive(port, (int)unit);
         }
 
@@ -2583,8 +2662,10 @@ void do_mfmhd_request(void)
     sector_t pass;
     sector_t part_size;
     char *buff;
+    char *iobuf;
     int minor;
     int drive;
+    int direct;
     int xfer;
 
     while (1) {
@@ -2621,21 +2702,23 @@ void do_mfmhd_request(void)
 
         start = req->rq_sector + mfmhd_part[minor].start_sect;
         buff = req->rq_buffer;
+        direct = (req->rq_seg == kernel_ds);
         left = count;
 
         while (left > 0) {
             pass = left;
             if (pass > MFMHD_MAX_BURST)
                 pass = MFMHD_MAX_BURST;
-            if (pass > MFM_BOUNCE_SECTORS)
+            if (!direct && pass > MFM_BOUNCE_SECTORS)
                 pass = MFM_BOUNCE_SECTORS;
+            iobuf = direct ? buff : mfmhd_bounce;
 
-            if (req->rq_cmd == WRITE)
+            if (req->rq_cmd == WRITE && !direct)
                 xms_fmemcpyw(mfmhd_bounce, kernel_ds, buff, req->rq_seg,
                     (unsigned int)(pass * (MFM_SECTOR_BYTES >> 1)));
 
             xfer = mfmhd_rw_chunk(drive, start, (unsigned int)pass,
-                mfmhd_bounce, req->rq_cmd == WRITE);
+                iobuf, req->rq_cmd == WRITE);
             if (xfer < 0) {
                 drive_info[drive].io_error_count++;
                 printk("mfmhd: io error drive=%d start=%lu cmd=%s\n", drive,
@@ -2644,7 +2727,7 @@ void do_mfmhd_request(void)
                 break;
             }
 
-            if (req->rq_cmd == READ)
+            if (req->rq_cmd == READ && !direct)
                 xms_fmemcpyw(buff, req->rq_seg, mfmhd_bounce, kernel_ds,
                     (unsigned int)(xfer * (MFM_SECTOR_BYTES >> 1)));
 

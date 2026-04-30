@@ -19,6 +19,7 @@
 #define MS_SYNCHRONOUS	   16	/* writes are synced at once */
 #define MS_REMOUNT	   32	/* alter flags of a mounted FS */
 #define MS_AUTOMOUNT	   64	/* auto mount based on superblock */
+#define MS_NOATIME	  128	/* do not update inode access times */
 
 int mount(const char *dev, const char *dir, int type, int flags);
 int umount(const char *dir);

@@ -3,9 +3,13 @@
 #LOCALIP=10.0.2.16
 #HOSTNAME=elks16
 console=ttyS1,115200
-root=mfma1
+root=boot
+noatime
+mfm=slow
 # Use root=boot to mount the BIOS device that loaded /linux.
 # Use noroot=mfm to fall back to that boot source if root=mfma* is present.
+# Use mfm=slow on 4.77 MHz or slower machines, or mfm=fast to override it.
+noroot=mfm
 
 # Use sb=0x220,5,1 when an SB-compatible card is installed.
 sb=off
@@ -25,8 +29,7 @@ hma=kernel
 #xtide=3 # 0=ATA, 1=XTIDEv1, 2=XTIDEv2 (high speed), 3=XTCF, 4=SOLO86
 #xtide=1	# for XTIDE rev1 high/low latch adapters
 disable=df0,fd0
-#root=boot
-#noroot=mfm
+#root=mfma1
 #root=cfa1
 #root=hda1 ro
 #root=df0

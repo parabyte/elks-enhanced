@@ -55,6 +55,7 @@ mainmenu_option next_comment
 				H CONFIG_MFMHD_BIOS_H" Super
 		fi
 		int '  Command step-rate code' CONFIG_MFMHD_STEP_CODE 0
+		bool '  Slow timing profile by default' CONFIG_MFMHD_SLOW n
 		int '  Drive 0 cylinders override (0 uses controller)' CONFIG_MFMHD_DRIVE0_CYLINDERS 0
 		int '  Drive 0 heads override (0 uses controller)' CONFIG_MFMHD_DRIVE0_HEADS 0
 		int '  Drive 0 sectors override (0 uses controller)' CONFIG_MFMHD_DRIVE0_SECTORS 0

@@ -60,7 +60,7 @@ size_t block_read(struct inode *inode, struct file *filp, char *buf, size_t coun
 	count -= chars;
     }
 #ifdef FIXME
-    if (!IS_RDONLY(inode)) inode->i_atime = current_time();
+    if (!IS_RDONLY(inode) && !IS_NOATIME(inode)) inode->i_atime = current_time();
 #endif
     return read;
 #else
@@ -82,10 +82,18 @@ size_t block_write(struct inode *inode, struct file *filp, char *buf, size_t cou
 
     while (count > 0) {
 	register struct buffer_head *bh;
+	int create;
 
 	block = (block32_t)(filp->f_pos >> BLOCK_SIZE_BITS);
+	/* Offset to block/offset */
+	offset = ((size_t)filp->f_pos) & (BLOCK_SIZE - 1);
+	chars = BLOCK_SIZE - offset;
+	if (chars > count) chars = count;
 	if (inode->i_op->getblk) {
-	    bh = inode->i_op->getblk(inode, (block_t)block, 1);
+	    create = GETBLK_CREATE;
+	    if (offset == 0 && chars == BLOCK_SIZE)
+		create |= GETBLK_NOZERO;
+	    bh = inode->i_op->getblk(inode, (block_t)block, create);
 	} else {
 	    bh = getblk32(inode->i_rdev, block);
 	}
@@ -93,10 +101,6 @@ size_t block_write(struct inode *inode, struct file *filp, char *buf, size_t cou
 	    if (!written) written = -ENOSPC;
 	    break;
 	}
-	/* Offset to block/offset */
-	offset = ((size_t)filp->f_pos) & (BLOCK_SIZE - 1);
-	chars = BLOCK_SIZE - offset;
-	if (chars > count) chars = count;
 	/*
 	 *      Read the block in, unless we
 	 *      are writing a whole block.

@@ -53,6 +53,9 @@ int ata_mode = CONFIG_ATA_MODE_DEFAULT; /* /bootopts xtide= overrides this */
 #else
 int ata_mode = -1;              /* =AUTO default set ATA CF driver mode automatically */
 #endif
+#ifdef CONFIG_BLK_DEV_MFMHD
+extern int mfmhd_slow_profile;  /* /bootopts mfm=slow */
+#endif
 char running_qemu;
 static int boot_console;
 static segext_t umbtotal;
@@ -666,6 +669,10 @@ static int INITPROC parse_options(void)
             root_mountflags &= ~MS_RDONLY;
             continue;
         }
+        if (!strcmp(line,"noatime")) {
+            root_mountflags |= MS_NOATIME;
+            continue;
+        }
         if (!strcmp(line,"strace")) {
             tracing |= TRACE_STRACE;
             continue;
@@ -722,6 +729,17 @@ static int INITPROC parse_options(void)
             ata_mode = (int)simple_strtol(line+6, 10);
             continue;
         }
+#ifdef CONFIG_BLK_DEV_MFMHD
+        if (!strncmp(line,"mfm=",4)) {
+            if (!strcmp(line+4, "slow") || !strcmp(line+4, "1") ||
+                    !strcmp(line+4, "on"))
+                mfmhd_slow_profile = 1;
+            else if (!strcmp(line+4, "fast") || !strcmp(line+4, "0") ||
+                    !strcmp(line+4, "off"))
+                mfmhd_slow_profile = 0;
+            continue;
+        }
+#endif
         if (!strncmp(line,"cache=",6)) {
             nr_map_bufs = (int)simple_strtol(line+6, 10);
             continue;
