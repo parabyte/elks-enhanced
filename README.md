@@ -1,11 +1,5 @@
 # ELKS Enhanced
 
-This repository comes from the business source trees used in my day job, where
-we deploy and maintain PC/104-based systems. That internal tree is now being
-made available for public consumption in a cleaner form.
-
-It has also been merged recently with current ELKS, and the networking stack
-appears to be in good working shape after the merge.
 
 ELKS Enhanced is a maintained ELKS fork for Intel IA16 systems: 8086, 8088,
 80186, 80188, 80286, NEC V20/V30 and close compatibles. It targets real XT/AT
