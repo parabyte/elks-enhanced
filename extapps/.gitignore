@@ -9,3 +9,8 @@
 /esd-elks/*.o
 /esd-elks/esd
 /esd-elks/esdplay
+!/sbvol/
+!/sbvol/Makefile
+!/sbvol/sbvol.c
+/sbvol/*.o
+/sbvol/sbvol

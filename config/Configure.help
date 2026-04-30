@@ -435,6 +435,19 @@ CONFIG_APP_ESD_ELKS
   client. Requires TCP/IP sockets; the daemon also needs OSS /dev/dsp
   or /dev/audio at runtime.
 
+sbvol userland volume control
+CONFIG_APP_SBVOL
+  Build and install sbvol, a small terminal UI for the ELKS Sound Blaster
+  /dev/dsp play-volume ioctl. It changes only the driver PCM output volume
+  and needs the ISA DMA audio driver at runtime.
+
+SB Pro stereo playback
+CONFIG_SB_STEREO
+  Add compile-time optional 8-bit stereo playback support for SB Pro-style
+  mixers by using the CT1345 output filter stereo bit and scaling the DSP
+  time constant by the active channel count, as in the old Linux SB Pro
+  driver. Say N for the smallest mono-only driver.
+
 MAD16 / OPTi 82C929: apply mad16cfg XT defaults (kernel, before SB reset)
 CONFIG_SB_OPTI82C929
   When the ISA /dev/dsp driver is enabled, say Y if the machine has an

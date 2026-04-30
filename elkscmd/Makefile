@@ -53,6 +53,10 @@ ifeq ($(CONFIG_APP_ESD_ELKS), y)
 IA16DIRS += ../extapps/esd-elks
 endif
 
+ifeq ($(CONFIG_APP_SBVOL), y)
+IA16DIRS += ../extapps/sbvol
+endif
+
 OWCDIRS =       \
     basic       \
     fsck_dos    \

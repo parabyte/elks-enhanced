@@ -1,7 +1,8 @@
 /*
  * 8-bit ISA DMA only: primary 8237, channels 1 or 3, memory-to-I/O playback.
- * OSS /dev/dsp ioctls; mono U8. No 16-bit ISA DMA (channels 5–7), no SB16
- * high-DMA mode. Uses the classic SB 2.0-style DSP 0x14 / time-constant path.
+ * OSS /dev/dsp ioctls; mono U8 by default. No 16-bit ISA DMA (channels 5–7),
+ * no SB16 high-DMA mode. Uses the classic SB 2.0-style DSP 0x14 /
+ * time-constant path.
  *
  * Tested-class compatibles: Sound Blaster 2.0/Pro layout; OPTi 82C929 (MAD16 Pro)
  * in Sound Blaster Pro mode (same DSP ports; use SET BLASTER=A220 I5 D1 or
@@ -13,7 +14,7 @@
  * discards samples (no DMA); GETTRIGGER returns the stored mask.
  *
  * FIONREAD: always 0 (no recording buffer). SNDCTL_DSP_CHANNELS: *arg==0
- * returns channel count (1) without changing configuration.
+ * returns channel count without changing configuration.
  */
 
 #include <linuxmt/config.h>
@@ -62,6 +63,12 @@ static unsigned int sb_base;
 static unsigned char sb_dma;
 static unsigned char sb_irq_line;
 static unsigned int sb_rate = 8000;
+#ifdef CONFIG_SB_STEREO
+static unsigned char sb_channels = 1;
+#define SB_BYTE_RATE(r) ((r) * (unsigned int)sb_channels)
+#else
+#define SB_BYTE_RATE(r) (r)
+#endif
 static unsigned char sb_present;
 static unsigned char sb_opened;
 static __u32 sb_bytes_played;
@@ -109,14 +116,24 @@ static int dsp_cmd(unsigned char v)
 
 static void sb_rate_cache(unsigned int rate)
 {
+#ifdef CONFIG_SB_STEREO
+	unsigned int byte_rate = SB_BYTE_RATE(rate);
+	unsigned int tc = 256U - (1000000U / byte_rate);
+#else
 	unsigned int tc = 256U - (1000000U / rate);
+#endif
 
 	sb_rate = rate;
 	if (tc > 255U)
 		tc = 255U;
 	sb_timeconst = (unsigned char)tc;
+#ifdef CONFIG_SB_STEREO
+	sb_full_play_ticks = (((jiff_t)SB_BOUNCE * (jiff_t)HZ) +
+		(jiff_t)byte_rate - 1) / (jiff_t)byte_rate;
+#else
 	sb_full_play_ticks = (((jiff_t)SB_BOUNCE * (jiff_t)HZ) +
 		(jiff_t)rate - 1) / (jiff_t)rate;
+#endif
 	if (sb_full_play_ticks < 1)
 		sb_full_play_ticks = 1;
 }
@@ -124,11 +141,19 @@ static void sb_rate_cache(unsigned int rate)
 static jiff_t sb_play_ticks(unsigned int len)
 {
 	jiff_t ticks;
+#ifdef CONFIG_SB_STEREO
+	unsigned int byte_rate = SB_BYTE_RATE(sb_rate);
+#endif
 
 	if (len == SB_BOUNCE)
 		return sb_full_play_ticks;
+#ifdef CONFIG_SB_STEREO
+	ticks = (((jiff_t)len * (jiff_t)HZ) + (jiff_t)byte_rate - 1) /
+		(jiff_t)byte_rate;
+#else
 	ticks = (((jiff_t)len * (jiff_t)HZ) + (jiff_t)sb_rate - 1) /
 		(jiff_t)sb_rate;
+#endif
 	return (ticks < 1) ? 1 : ticks;
 }
 
@@ -579,6 +604,31 @@ static void sb_mixer_write(unsigned char reg, unsigned char value)
 	inb(d);
 }
 
+#ifdef CONFIG_SB_STEREO
+static unsigned char sb_mixer_read(unsigned char reg)
+{
+	unsigned a = sb_base + 4u;
+	unsigned d = sb_base + 5u;
+
+	outb(reg, a);
+	return inb(d);
+}
+
+static void sb_mixer_stereo_apply(void)
+{
+	unsigned char v;
+
+	if (sb_dsp_ver_major != 0 && sb_dsp_ver_major < 3)
+		return;
+	v = sb_mixer_read(0x0e);
+	if (sb_channels == 2)
+		v |= 0x02;
+	else
+		v &= ~0x02;
+	sb_mixer_write(0x0e, v);
+}
+#endif
+
 static unsigned char sb_mixer_lr_byte(unsigned left, unsigned right)
 {
 	if (sb_dsp_ver_major >= 4) {
@@ -725,6 +775,11 @@ static int sb_open(struct inode *inode, struct file *file)
 	sb_trig = PCM_ENABLE_OUTPUT;
 	sb_active = 0;
 	sb_dma_done = 0;
+#ifdef CONFIG_SB_STEREO
+	sb_channels = 1;
+	sb_rate_cache(sb_rate);
+	sb_mixer_stereo_apply();
+#endif
 	sb_opened = 1;
 	return 0;
 }
@@ -827,6 +882,22 @@ static int sb_ioctl(struct inode *inode, struct file *file, int cmd, char *arg)
 		ret = sb_get_arg32(arg, &v);
 		if (ret < 0)
 			return ret;
+#ifdef CONFIG_SB_STEREO
+		if (v == 0) {
+			v = sb_channels;
+			return sb_put_arg32(arg, v);
+		}
+		if (v != 1 && v != 2)
+			return -EINVAL;
+		if (v == 2 && sb_dsp_ver_major != 0 && sb_dsp_ver_major < 3)
+			return -EINVAL;
+		if ((unsigned char)v != sb_channels) {
+			sb_channels = (unsigned char)v;
+			sb_rate_cache(sb_rate);
+			sb_mixer_stereo_apply();
+		}
+		return sb_put_arg32(arg, v);
+#else
 		if (v == 0) {
 			v = 1;
 			return sb_put_arg32(arg, v);
@@ -835,13 +906,26 @@ static int sb_ioctl(struct inode *inode, struct file *file, int cmd, char *arg)
 			return -EINVAL;
 		v = 1;
 		return sb_put_arg32(arg, v);
+#endif
 	case SNDCTL_DSP_STEREO:
 		ret = sb_get_arg32(arg, &v);
 		if (ret < 0)
 			return ret;
+#ifdef CONFIG_SB_STEREO
+		if (v != 0 && v != 1)
+			return -EINVAL;
+		if (v != 0 && sb_dsp_ver_major != 0 && sb_dsp_ver_major < 3)
+			return -EINVAL;
+		sb_channels = (v != 0) ? 2 : 1;
+		sb_rate_cache(sb_rate);
+		sb_mixer_stereo_apply();
+		v = (sb_channels == 2) ? 1 : 0;
+		return sb_put_arg32(arg, v);
+#else
 		if (v != 0)
 			return -EINVAL;
 		return 0;
+#endif
 	case SNDCTL_DSP_GETBLKSIZE:
 		v = (oss_int32_t)SB_BOUNCE;
 		return sb_put_arg32(arg, v);
@@ -932,7 +1016,11 @@ static int sb_ioctl(struct inode *inode, struct file *file, int cmd, char *arg)
 		ret = sb_get_arg32(arg, &v);
 		if (ret < 0)
 			return ret;
+#ifdef CONFIG_SB_STEREO
+		v = (sb_channels == 2) ? 3 : 1;
+#else
 		v = 1; /* mono (front-left only) */
+#endif
 		return sb_put_arg32(arg, v);
 	case SNDCTL_DSP_BIND_CHANNEL:
 		ret = sb_get_arg32(arg, &v);
@@ -1058,6 +1146,9 @@ void INITPROC sb_dsp_init(void)
 		return;
 	}
 	sb_mixer_init_default();
+#ifdef CONFIG_SB_STEREO
+	sb_mixer_stereo_apply();
+#endif
 	sb_present = 1;
 
 	if (register_chrdev(DSP_MAJOR, "dsp", &sb_dsp_fops) != 0) {

@@ -179,6 +179,10 @@ ifdef CONFIG_APP_ESD_ELKS
 	TAGS += :esd|
 endif
 
+ifdef CONFIG_APP_SBVOL
+	TAGS += :sbvol|
+endif
+
 ifdef CONFIG_APP_MAD16CFG
 	TAGS += :mad16cfg|
 endif

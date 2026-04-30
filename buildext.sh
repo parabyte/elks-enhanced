@@ -16,6 +16,7 @@
 #       dflat           ia16-elf-gcc    D-Flat TUI memopad/library
 #       elkirc          ia16-elf-gcc    IRC for ELKS
 #       esd_elks        ia16-elf-gcc    Enlightened Sound Daemon subset
+#       sbvol           ia16-elf-gcc    Sound Blaster volume TUI
 #       owc_libc        OpenWatcom      ELKS C Library compiled by OWC
 #       owc_elkscmd     OpenWatcom      Some elkscmd/ programs compiled by OWC
 #       c86_toolchain   OpenWatcom/C86  C86 Toolchain, header files and examples
@@ -244,6 +245,15 @@ esd_elks()
     echo "esd-elks build complete"
 }
 
+sbvol()
+{
+    echo "Building sbvol..."
+    cd $TOPDIR/extapps/sbvol
+    make clean
+    make ELKS_TOP=$TOPDIR
+    echo "sbvol build complete"
+}
+
 elks_viewer()
 {
     echo "Building elks-viewer..."
@@ -337,6 +347,7 @@ make_all()
     dflat
     elkirc
     esd_elks
+    sbvol
     if [ -n "$WATCOM" ] ; then
         owc_libc
         owc_elkscmd
