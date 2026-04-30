@@ -4,6 +4,8 @@
 #HOSTNAME=elks16
 console=tty1
 root=mfma1
+# Use root=boot to mount the BIOS device that loaded /linux.
+# Use noroot=mfm to fall back to that boot source if root=mfma* is present.
 
 # Use sb=0x220,5,1 when an SB-compatible card is installed.
 sb=off
@@ -23,6 +25,8 @@ hma=kernel
 #xtide=3 # 0=ATA, 1=XTIDEv1, 2=XTIDEv2 (high speed), 3=XTCF
 #xtide=1	# for PCem
 #disable=hda
+#root=boot
+#noroot=mfm
 #root=cfa1
 #root=hda1 ro
 #root=df0

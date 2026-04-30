@@ -54,6 +54,8 @@ This section contains some HOWTOs to help using ELKS.
 
 * [Notes on networking code](https://raw.githubusercontent.com/jbruchon/elks/master/Documentation/text/networking.txt)
 
+* [ISA sound and XT MFM storage setup](text/hardware_setup.txt)
+
 ### File system
 
 * [Notes on the filesystem](https://raw.githubusercontent.com/jbruchon/elks/master/Documentation/text/fs.txt)

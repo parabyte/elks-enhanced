@@ -72,6 +72,8 @@ static char hasopts;
 static int args = 2;    /* room for argc and av[0] */
 static int envs;
 static int argv_slen;
+static kdev_t boot_source_dev;
+static char no_mfm_root;
 #if ENV
 static char *envp_init[MAX_INIT_ENVS];
 #endif
@@ -89,6 +91,7 @@ extern int boot_rootdev;
 static int INITPROC parse_options(void);
 static void INITPROC finalize_options(void);
 static char * INITPROC option(char *s);
+static int INITPROC is_mfm_dev(kdev_t dev);
 #endif /* CONFIG_BOOTOPTS */
 
 static void FARPROC far_start_kernel(void);
@@ -205,6 +208,7 @@ static void INITPROC early_kernel_init(void)
 #endif
     ROOT_DEV = SETUP_ROOT_DEV;      /* default root device from boot loader */
 #ifdef CONFIG_BOOTOPTS
+    boot_source_dev = ROOT_DEV;
     opts.nextumb = opts.umbseg;     /* init static structure variables */
     init_command = argv_init[1];    /* default startup task 1 */
     hasopts = parse_options();      /* parse options found in /bootops */
@@ -420,6 +424,11 @@ int INITPROC dev_disabled(int dev)
 }
 
 #ifdef CONFIG_BOOTOPTS
+static int INITPROC is_mfm_dev(kdev_t dev)
+{
+    return MAJOR(dev) == MFMHD_MAJOR;
+}
+
 /*
  * Convert a /dev/ name to device number.
  */
@@ -601,10 +610,26 @@ static int INITPROC parse_options(void)
          * check for kernel options first..
          */
         if (!strncmp(line,"root=",5)) {
-            int dev = parse_dev(line+5);
-            debug("root %s=%D\n", line+5, dev);
+            char *root = line + 5;
+            int dev;
+
+            if (!strcmp(root, "boot") || !strcmp(root, "source")) {
+                ROOT_DEV = boot_source_dev;
+                boot_rootdev = 0;  /* allow BIOS boot-drive translation */
+                continue;
+            }
+
+            dev = parse_dev(root);
+            debug("root %s=%D\n", root, dev);
             ROOT_DEV = (kdev_t)dev;
             boot_rootdev = dev;    /* stop translation in device_setup*/
+            continue;
+        }
+        if (!strncmp(line,"noroot=",7)) {
+            char *root = line + 7;
+
+            if (!strcmp(root, "mfm") || !strcmp(root, "mfmhd"))
+                no_mfm_root = 1;
             continue;
         }
         if (!strncmp(line,"console=",8)) {
@@ -745,6 +770,11 @@ static int INITPROC parse_options(void)
             else printk(errmsg_initenvs);
         }
 #endif
+    }
+    if (no_mfm_root && is_mfm_dev(ROOT_DEV)) {
+        printk("root: MFM root disabled, using boot source\n");
+        ROOT_DEV = boot_source_dev;
+        boot_rootdev = 0;  /* allow BIOS boot-drive translation */
     }
     debug("\n");
     return 1;   /* success*/
