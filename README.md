@@ -1,5 +1,7 @@
 # ELKS Enhanced
 
+I created this for my own enjoyment on my own systems, 
+not anticipating supporting this unless you desperately desperately want to see this working on your system
 
 ELKS Enhanced is a maintained ELKS fork for Intel IA16 systems: 8086, 8088,
 80186, 80188, 80286, NEC V20/V30 and close compatibles. It targets real XT/AT
