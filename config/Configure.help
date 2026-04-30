@@ -773,9 +773,42 @@ CONFIG_BLK_DEV_SSD_SD
   Select this driver if you have an 8018x or NEC V25 CPU and you have some GPIO lines
   available for a bit-banged SPI driver that can be used with the ssd SD card driver.
 
-ATA CF Hard Disk support
+ATA CF/IDE drive support
 CONFIG_BLK_DEV_ATA_CF
-  Select this driver to use ATA support for CF devices.
+  Select this driver to use direct ATA support for CF cards, real IDE hard
+  disks, XTIDE adapters, XTCF adapters, and SOLO/86 IDE ports. The driver uses
+  LBA28 addressing and reports the full LBA size where possible instead of
+  clipping large disks to legacy CHS geometry.
+
+ATA/XTIDE default mode
+CONFIG_ATA_MODE_DEFAULT
+  Default controller access mode. Use -1 for automatic selection, 0 for
+  standard 16-bit ATA at 0x1f0, 1 for XTIDE rev1 high/low latch adapters,
+  2 for XTIDE rev2 high-speed register layout, 3 for XTCF, or 4 for SOLO/86.
+  The /bootopts xtide= option overrides this setting at boot.
+
+Standard ATA base I/O port
+CONFIG_ATA_BASE_PORT
+  Base port for standard ATA mode, normally 0x1f0.
+
+XTIDE/XTCF base I/O port
+CONFIG_ATA_XTIDE_BASE_PORT
+  Base port for XTIDE and XTCF modes, normally 0x300.
+
+SOLO/86 ATA base I/O port
+CONFIG_ATA_SOLO86_BASE_PORT
+  Base port for SOLO/86 ATA mode, normally 0x40.
+
+ATAPI CD-ROM packet support
+CONFIG_ATA_ATAPI
+  Adds packet-command read support for ATAPI CD-ROM drives attached to the ATA
+  driver. ATAPI media is exposed read-only as 512-byte logical sectors by
+  caching each 2048-byte CD-ROM block.
+
+Flush ATA write cache on final close
+CONFIG_ATA_FLUSH_CACHE
+  Sends ATA FLUSH CACHE when the final open file reference to an ATA disk is
+  released. This is useful for real IDE disks and CF media with write caching.
 
 XT MFM hard drive support
 CONFIG_BLK_DEV_MFMHD

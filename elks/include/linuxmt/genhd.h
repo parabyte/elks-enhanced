@@ -72,6 +72,9 @@ struct drive_infot              /* CHS per drive*/
     int heads;
     int sector_size;
     int fdtype;                 /* floppy fd_types[] index  or HARDDISK if hd */
+    sector_t total_sectors;     /* native 512-byte sectors when known */
+    unsigned char read_only;
+    unsigned char removable;
 };
 
 struct gendisk                  /* general disk information struct */

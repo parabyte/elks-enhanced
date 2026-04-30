@@ -45,7 +45,10 @@
 
 #define ATA_CMD_READ        0x20
 #define ATA_CMD_WRITE       0x30
+#define ATA_CMD_PACKET      0xA0
+#define ATA_CMD_PKT_ID      0xA1
 #define ATA_CMD_ID          0xEC
+#define ATA_CMD_FLUSH       0xE7
 #define ATA_CMD_FEAT        0xEF
 
 /* ATA status bits */
@@ -71,9 +74,12 @@
 #define ATA_CAPS_DMA        0x100
 #define ATA_CAPS_LBA        0x200
 
+#define ATA_LBA28_SECTORS   0x10000000UL
+
 /* ATA subdriver */
 
 #define ATA_SECTOR_SIZE     512
+#define ATAPI_SECTOR_SIZE   2048
 
 extern int ata_mode;        /* ATA CF driver operating mode, /bootopts xtide= */
 
@@ -82,5 +88,6 @@ struct drive_infot;
 int ATPROC ata_init(int drive, struct drive_infot *drivep);
 int ATPROC ata_read(unsigned int drive, sector_t sector, char *buf, ramdesc_t seg);
 int ATPROC ata_write(unsigned int drive, sector_t sector, char *buf, ramdesc_t seg);
+int ATPROC ata_flush(unsigned int drive);
 
 #endif /* !__ARCH_8086_ATA_H*/

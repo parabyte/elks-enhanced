@@ -2,7 +2,7 @@
 #TZ=MDT6
 #LOCALIP=10.0.2.16
 #HOSTNAME=elks16
-console=tty1
+console=ttyS1,115200
 root=mfma1
 # Use root=boot to mount the BIOS device that loaded /linux.
 # Use noroot=mfm to fall back to that boot source if root=mfma* is present.
@@ -22,9 +22,9 @@ hma=kernel
 #disable=hda,cfa,df0,fd0
 #disable=cfa
 #disable=hda
-#xtide=3 # 0=ATA, 1=XTIDEv1, 2=XTIDEv2 (high speed), 3=XTCF
-#xtide=1	# for PCem
-#disable=hda
+#xtide=3 # 0=ATA, 1=XTIDEv1, 2=XTIDEv2 (high speed), 3=XTCF, 4=SOLO86
+#xtide=1	# for XTIDE rev1 high/low latch adapters
+disable=df0,fd0
 #root=boot
 #noroot=mfm
 #root=cfa1

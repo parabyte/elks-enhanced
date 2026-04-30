@@ -339,7 +339,11 @@ static void GENPROC clear_partition(struct gendisk *hd)
     for (i = 0; i < hd->num_drives << hd->minor_shift; i++) {
         if ((i & ((1 << hd->minor_shift) - 1)) == 0) {
             //hdp->start_sect = 0;
-            hdp->nr_sects = (sector_t)drivep->sectors * drivep->heads * drivep->cylinders;
+            if (drivep->total_sectors)
+                hdp->nr_sects = drivep->total_sectors;
+            else
+                hdp->nr_sects = (sector_t)drivep->sectors *
+                    drivep->heads * drivep->cylinders;
             if (hdp->nr_sects == 0)
                 hdp->start_sect = NOPART;
             drivep++;
@@ -395,10 +399,16 @@ void GENPROC show_drive_info(struct drive_infot *drivep, const char *name, int d
     for (; count; count--, drive++) {
         if (drivep->cylinders != 0) {
             unit = UNITS;
-            size = (unsigned long)drivep->sectors * 5;  /* 0.1 kB units */
-            if (drivep->sector_size == 1024)
-                size <<= 1;
-            size *= ((unsigned long) drivep->cylinders) * drivep->heads;
+            if (drivep->total_sectors) {
+                size = (unsigned long)drivep->total_sectors * 5;
+                if (drivep->sector_size == 1024)
+                    size <<= 1;
+            } else {
+                size = (unsigned long)drivep->sectors * 5;  /* 0.1 kB units */
+                if (drivep->sector_size == 1024)
+                    size <<= 1;
+                size *= ((unsigned long) drivep->cylinders) * drivep->heads;
+            }
 
             /* Select appropriate unit */
             while (size > 99999 && unit[1]) {

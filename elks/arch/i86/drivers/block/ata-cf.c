@@ -129,6 +129,9 @@ static void ata_cf_release(struct inode *inode, struct file *filp)
 
     if (--access_count[drive] == 0) {
         fsync_dev(dev);
+#ifdef CONFIG_ATA_FLUSH_CACHE
+        (void)ata_flush(drive);
+#endif
         invalidate_inodes(dev);
         invalidate_buffers(dev);
     }

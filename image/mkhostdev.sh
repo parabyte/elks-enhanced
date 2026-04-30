@@ -18,7 +18,10 @@ rm -f "$target"
 mknod "$target" "$type" "$major" "$minor"
 
 if [ -n "$uid" ] && [ -n "$gid" ]; then
-	chown "$uid:$gid" "$target"
+	if ! chown "$uid:$gid" "$target"; then
+		# Some fakeroot builds record the fake owner but still return EINVAL.
+		[ -n "${FAKEROOTKEY:-}" ] || exit 1
+	fi
 fi
 
 if [ -n "$mode" ]; then

@@ -30,7 +30,15 @@ mainmenu_option next_comment
       bool 'Interface SD card with hardware SPI'	CONFIG_HW_SPI	y
 	fi
 
-	bool 'ATA-CF drive support'	        CONFIG_BLK_DEV_ATA_CF	n
+	bool 'ATA-CF/IDE drive support'	        CONFIG_BLK_DEV_ATA_CF	n
+	if [ "$CONFIG_BLK_DEV_ATA_CF" == "y" ]; then
+		int '  ATA/XTIDE default mode (-1 auto, 0 ATA, 1 XTIDEv1, 2 XTIDEv2, 3 XTCF, 4 SOLO86)' CONFIG_ATA_MODE_DEFAULT -1
+		hex '  Standard ATA base I/O port' CONFIG_ATA_BASE_PORT 0x1F0
+		hex '  XTIDE/XTCF base I/O port' CONFIG_ATA_XTIDE_BASE_PORT 0x300
+		hex '  SOLO/86 ATA base I/O port' CONFIG_ATA_SOLO86_BASE_PORT 0x40
+		bool '  ATAPI CD-ROM packet support' CONFIG_ATA_ATAPI y
+		bool '  Flush ATA write cache on final close' CONFIG_ATA_FLUSH_CACHE y
+	fi
 
 	bool 'XT MFM hard drive support' CONFIG_BLK_DEV_MFMHD n
 	if [ "$CONFIG_BLK_DEV_MFMHD" == "y" ]; then

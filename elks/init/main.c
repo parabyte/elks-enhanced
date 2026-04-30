@@ -48,7 +48,11 @@ int root_mountflags;
 int tracing;
 int nr_ext_bufs, nr_xms_bufs, nr_map_bufs;
 int xms_bootopts;
+#ifdef CONFIG_ATA_MODE_DEFAULT
+int ata_mode = CONFIG_ATA_MODE_DEFAULT; /* /bootopts xtide= overrides this */
+#else
 int ata_mode = -1;              /* =AUTO default set ATA CF driver mode automatically */
+#endif
 char running_qemu;
 static int boot_console;
 static segext_t umbtotal;

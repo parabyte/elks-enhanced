@@ -55,6 +55,7 @@
 #include <linuxmt/prectimer.h>
 #include <arch/io.h>
 #include <arch/irq.h>
+#include <arch/segment.h>
 
 /* hardware controller access modes, override using xtide= in /bootopts */
 #define MODE_ATA        0       /* standard - ATA at ports 0x1F0/0x3F6 */
@@ -70,14 +71,36 @@
 #define XFER_8_XTCF     1       /* XTCF set 8-bit feature cmd, then xfer lo then hi */
 #define XFER_8_XTIDEv1  2       /* XTIDEv1 8-bit xfer hi at data+8 then lo at data+0 */
 
+#define ATA_DEV_NONE    0
+#define ATA_DEV_DISK    1
+#define ATA_DEV_ATAPI   2
+
+#define ATA_RW_RETRIES  3
+
 /* configurable options */
 #define FASTIO          1       /* =1 to use ASM in/out instructions for I/O */
 #define EMUL_XTCF       0       /* =1 to force XTCF xfer mode for use with PCem */
 
+#ifndef CONFIG_ATA_BASE_PORT
+#define CONFIG_ATA_BASE_PORT       0x1F0
+#endif
+#ifndef CONFIG_ATA_XTIDE_BASE_PORT
+#define CONFIG_ATA_XTIDE_BASE_PORT 0x300
+#endif
+#ifndef CONFIG_ATA_SOLO86_BASE_PORT
+#define CONFIG_ATA_SOLO86_BASE_PORT 0x40
+#endif
+
 static int xfer_mode = AUTO;    /* change this to force a particular I/O xfer method */
 
 /* default base port (change if required) ATA, XTIDEv1, XTIDEv2,  XTCF, SOLO86 */
-static unsigned int def_base_ports[5] = { 0x1F0, 0x300,   0x300, 0x300, 0x40 };
+static unsigned int def_base_ports[5] = {
+    CONFIG_ATA_BASE_PORT,
+    CONFIG_ATA_XTIDE_BASE_PORT,
+    CONFIG_ATA_XTIDE_BASE_PORT,
+    CONFIG_ATA_XTIDE_BASE_PORT,
+    CONFIG_ATA_SOLO86_BASE_PORT
+};
 
 /* control register offsets from base ports (should not need changing) */
 static unsigned int ctrl_offsets[5] =   { 0x200,  0x08,    0x08,  0x10, 0x10 };
@@ -103,6 +126,20 @@ static unsigned int xlate_XTIDEv2[8] = {
 
 static unsigned int ata_base_port;
 static unsigned int ata_ctrl_port;
+static unsigned char ata_devtype[2];
+static unsigned char ata_use_lba[2];
+static unsigned int ata_heads[2];
+static unsigned int ata_sectors[2];
+static sector_t ata_total_sectors[2];
+static unsigned char ata_last_status;
+static unsigned char ata_last_error;
+#ifdef CONFIG_ATA_ATAPI
+static unsigned char *atapi_buffer;
+static unsigned char atapi_packet[12];
+static unsigned char atapi_cache_valid;
+static unsigned char atapi_cache_drive;
+static sector_t atapi_cache_lba;
+#endif
 
 /**********************************************************************
  * ATA support functions
@@ -131,6 +168,65 @@ static void ATPROC OUTB(unsigned int byte, int reg)
     outb(byte, BASE(reg));
 }
 
+static sector_t ATPROC ata_get_lba28_total(unsigned short *buffer)
+{
+    return ((sector_t)buffer[ATA_INFO_SECT_HI] << 16) | buffer[ATA_INFO_SECT_LO];
+}
+
+static void ATPROC ata_set_synth_geometry(struct drive_infot *drivep, sector_t total)
+{
+    sector_t cylinders;
+    int heads = 16;
+    int sectors = 63;
+
+    if (total >= (sector_t)1024 * 16 * 63)
+        heads = 255;
+
+    cylinders = total / ((sector_t)heads * sectors);
+    if (cylinders == 0)
+        cylinders = 1;
+    if (cylinders > 65535UL)
+        cylinders = 65535UL;
+
+    drivep->cylinders = (unsigned int)cylinders;
+    drivep->heads = heads;
+    drivep->sectors = sectors;
+}
+
+static int ATPROC ata_valid_chs(unsigned short *buffer)
+{
+    return buffer[ATA_INFO_CYLS] != 0 && buffer[ATA_INFO_CYLS] <= 0x7F00 &&
+        buffer[ATA_INFO_HEADS] != 0 && buffer[ATA_INFO_HEADS] <= 16 &&
+        buffer[ATA_INFO_SPT] != 0 && buffer[ATA_INFO_SPT] <= 63;
+}
+
+static sector_t ATPROC ata_get_chs_total(unsigned short *buffer)
+{
+    return (sector_t)buffer[ATA_INFO_CYLS] *
+        buffer[ATA_INFO_HEADS] * buffer[ATA_INFO_SPT];
+}
+
+static void ATPROC ata_set_chs_geometry(struct drive_infot *drivep,
+    unsigned short *buffer)
+{
+    drivep->cylinders = buffer[ATA_INFO_CYLS];
+    drivep->heads = buffer[ATA_INFO_HEADS];
+    drivep->sectors = buffer[ATA_INFO_SPT];
+}
+
+static void ATPROC ata_save_error(unsigned char status)
+{
+    ata_last_status = status;
+    ata_last_error = (status & ATA_STATUS_ERR) ? INB(ATA_REG_ERR) : 0;
+}
+
+static void ATPROC ata_print_error(char dev, const char *op, int error,
+    sector_t sector)
+{
+    printk("cf%c: %s error %d status=%x err=%x lba=%lu\n",
+        dev, op, error, ata_last_status, ata_last_error, sector);
+}
+
 /* delay 10ms */
 static void ATPROC delay_10ms(void)
 {
@@ -154,11 +250,14 @@ static int ATPROC ata_wait(unsigned int ticks)
 
         // are we done?
 
-        if ((status & ATA_STATUS_BSY) == 0)
+        if ((status & ATA_STATUS_BSY) == 0) {
+            ata_last_status = status;
             return 0;
+        }
 
     } while (!time_after(jiffies(), timeout));
 
+    ata_save_error(status);
     return -ENXIO;
 }
 
@@ -285,10 +384,16 @@ static int ATPROC ata_set8bitmode(void)
 /**
  * ATA select drive
  */
-static int ATPROC ata_select(unsigned int drive, unsigned int cmd, unsigned long sector)
+static int ATPROC ata_select(unsigned int drive, int lba, sector_t sector,
+    unsigned int head)
 {
-    unsigned char select = 0xA0 | 0x40 | (drive << 4) | ((sector >> 24) & 0x0F);
+    unsigned char select = 0xA0 | (drive << 4);
     int error;
+
+    if (lba)
+        select |= 0x40 | ((sector >> 24) & 0x0F);
+    else
+        select |= head & 0x0F;
 
     // wait for current drive to be non-busy
 
@@ -306,24 +411,62 @@ static int ATPROC ata_select(unsigned int drive, unsigned int cmd, unsigned long
 /**
  * send an ATA command to the drive
  */
-static int ATPROC ata_cmd(unsigned int drive, unsigned int cmd, unsigned long sector,
+static int ATPROC ata_cmd(unsigned int drive, unsigned int cmd, sector_t sector,
     unsigned int count)
 {
     int error, wait;
     unsigned char status;
+    unsigned int cyl, head, sect;
+    sector_t tmp;
 
+    if (cmd == ATA_CMD_READ || cmd == ATA_CMD_WRITE) {
+        if (ata_use_lba[drive]) {
+            if (sector >= ATA_LBA28_SECTORS)
+                return -EINVAL;
+            error = ata_select(drive, 1, sector, 0);
+            if (error)
+                return error;
+
+            OUTB(0x00, ATA_REG_FEAT);
+            OUTB(count, ATA_REG_CNT);
+            OUTB((unsigned char) (sector),       ATA_REG_LBA_LO);
+            OUTB((unsigned char) (sector >> 8),  ATA_REG_LBA_MD);
+            OUTB((unsigned char) (sector >> 16), ATA_REG_LBA_HI); // FIXME OUTB compiler bug here
+        } else {
+            if (!ata_heads[drive] || !ata_sectors[drive] ||
+                    sector >= ata_total_sectors[drive])
+                return -EINVAL;
+
+            tmp = sector / ata_sectors[drive];
+            sect = (unsigned int)(sector % ata_sectors[drive]) + 1;
+            head = (unsigned int)(tmp % ata_heads[drive]);
+            cyl = (unsigned int)(tmp / ata_heads[drive]);
+            if (cyl > 0xFFFF)
+                return -EINVAL;
+
+            error = ata_select(drive, 0, 0, head);
+            if (error)
+                return error;
+
+            OUTB(0x00, ATA_REG_FEAT);
+            OUTB(count, ATA_REG_CNT);
+            OUTB((unsigned char)sect,        ATA_REG_LBA_LO);
+            OUTB((unsigned char)cyl,         ATA_REG_LBA_MD);
+            OUTB((unsigned char)(cyl >> 8),  ATA_REG_LBA_HI);
+        }
+    } else {
+        error = ata_select(drive, 0, 0, 0);
+        if (error)
+            return error;
+
+        OUTB(0x00, ATA_REG_FEAT);
+        OUTB(count, ATA_REG_CNT);
+        OUTB(0x00, ATA_REG_LBA_LO);
+        OUTB(0x00, ATA_REG_LBA_MD);
+        OUTB(0x00, ATA_REG_LBA_HI);
+    }
 
     // send command
-
-    error = ata_select(drive, cmd, sector);
-    if (error)
-        return error;
-
-    OUTB(0x00, ATA_REG_FEAT);
-    OUTB(count, ATA_REG_CNT);
-    OUTB((unsigned char) (sector),       ATA_REG_LBA_LO);
-    OUTB((unsigned char) (sector >> 8),  ATA_REG_LBA_MD);
-    OUTB((unsigned char) (sector >> 16), ATA_REG_LBA_HI); // FIXME OUTB compiler bug here
     OUTB(cmd, ATA_REG_CMD);
 
 
@@ -344,11 +487,44 @@ static int ATPROC ata_cmd(unsigned int drive, unsigned int cmd, unsigned long se
 
     status = INB(ATA_REG_STATUS);
 
-    if (status & (ATA_STATUS_ERR|ATA_STATUS_DFE))
+    if (status & (ATA_STATUS_ERR|ATA_STATUS_DFE)) {
+        ata_save_error(status);
         return -EIO;
+    }
 
-    if (! (status & ATA_STATUS_DRQ))
+    if (! (status & ATA_STATUS_DRQ)) {
+        ata_save_error(status);
         return -EINVAL;
+    }
+    return 0;
+}
+
+static int ATPROC ata_nondata_cmd(unsigned int drive, unsigned int cmd,
+    unsigned int ticks)
+{
+    int error;
+    unsigned char status;
+
+    error = ata_select(drive, 0, 0, 0);
+    if (error)
+        return error;
+
+    OUTB(0x00, ATA_REG_FEAT);
+    OUTB(0x00, ATA_REG_CNT);
+    OUTB(0x00, ATA_REG_LBA_LO);
+    OUTB(0x00, ATA_REG_LBA_MD);
+    OUTB(0x00, ATA_REG_LBA_HI);
+    OUTB(cmd, ATA_REG_CMD);
+
+    error = ata_wait(ticks);
+    if (error)
+        return error;
+
+    status = INB(ATA_REG_STATUS);
+    if (status & (ATA_STATUS_ERR|ATA_STATUS_DFE)) {
+        ata_save_error(status);
+        return -EIO;
+    }
     return 0;
 }
 
@@ -359,20 +535,17 @@ static int ATPROC ata_cmd(unsigned int drive, unsigned int cmd, unsigned long se
  * drive  : physical drive number (0 or 1)
  * *buffer: pointer to buffer containing 512 bytes of space
  */
-static int ATPROC ata_identify(unsigned int drive, unsigned char __far *buf)
+static int ATPROC ata_identify_cmd(unsigned int drive, unsigned int cmd,
+    unsigned char __far *buf)
 {
     int error;
 
 
     // send command
 
-    error = ata_cmd(drive, ATA_CMD_ID, 0, 0);
+    error = ata_cmd(drive, cmd, 0, 0);
     if (error)
-    {
-        printk("cf%c: ATA at %x/%x xtide=%d,%d not found (%d)\n",
-            drive+'a', ata_base_port, ata_ctrl_port, ata_mode, xfer_mode, error);
         return error;
-    }
 
     // read data
 
@@ -380,6 +553,129 @@ static int ATPROC ata_identify(unsigned int drive, unsigned char __far *buf)
 
     return 0;
 }
+
+#ifdef CONFIG_ATA_ATAPI
+static void ATPROC atapi_clear_packet(void)
+{
+    int i;
+
+    for (i = 0; i < 12; i++)
+        atapi_packet[i] = 0;
+}
+
+static sector_t ATPROC atapi_get_be32(unsigned char *p)
+{
+    return ((sector_t)p[0] << 24) | ((sector_t)p[1] << 16) |
+        ((sector_t)p[2] << 8) | p[3];
+}
+
+static int ATPROC atapi_packet_cmd(unsigned int drive, unsigned int bytes,
+    unsigned int ticks)
+{
+    int error;
+    unsigned int got;
+    unsigned char status;
+
+    error = ata_select(drive, 0, 0, 0);
+    if (error)
+        return error;
+
+    OUTB(0x00, ATA_REG_FEAT);
+    OUTB(0x00, ATA_REG_CNT);
+    OUTB(0x00, ATA_REG_LBA_LO);
+    OUTB((unsigned char)bytes, ATA_REG_LBA_MD);
+    OUTB((unsigned char)(bytes >> 8), ATA_REG_LBA_HI);
+    OUTB(ATA_CMD_PACKET, ATA_REG_CMD);
+
+    error = ata_wait(WAIT_1SEC);
+    if (error)
+        return error;
+
+    status = INB(ATA_REG_STATUS);
+    if ((status & (ATA_STATUS_ERR|ATA_STATUS_DFE)) || !(status & ATA_STATUS_DRQ)) {
+        ata_save_error(status);
+        return -EIO;
+    }
+
+    write_ioport(BASE(ATA_REG_DATA), (unsigned char __far *)atapi_packet, 12);
+
+    error = ata_wait(ticks);
+    if (error)
+        return error;
+
+    status = INB(ATA_REG_STATUS);
+    if (status & (ATA_STATUS_ERR|ATA_STATUS_DFE)) {
+        ata_save_error(status);
+        return -EIO;
+    }
+    if (!(status & ATA_STATUS_DRQ)) {
+        ata_save_error(status);
+        return -EINVAL;
+    }
+
+    got = (unsigned int)INB(ATA_REG_LBA_MD) |
+        ((unsigned int)INB(ATA_REG_LBA_HI) << 8);
+    if (got == 0 || got > bytes)
+        got = bytes;
+    read_ioport(BASE(ATA_REG_DATA), (unsigned char __far *)atapi_buffer, got);
+    (void)ata_wait(WAIT_50MS);
+    return 0;
+}
+
+static int ATPROC atapi_read_capacity(unsigned int drive, sector_t *sectorsp)
+{
+    int error;
+    sector_t last_lba;
+    sector_t block_len;
+
+    atapi_clear_packet();
+    atapi_packet[0] = 0x25;         /* READ CAPACITY(10) */
+    error = atapi_packet_cmd(drive, 8, WAIT_10SEC);
+    if (error)
+        return error;
+
+    last_lba = atapi_get_be32(atapi_buffer);
+    block_len = atapi_get_be32(atapi_buffer + 4);
+    if (block_len != ATAPI_SECTOR_SIZE) {
+        printk("cf%c: ATAPI sector size %lu unsupported\n",
+            drive + 'a', block_len);
+        return -EINVAL;
+    }
+
+    *sectorsp = (last_lba + 1) << 2;    /* expose as 512-byte sectors */
+    return 0;
+}
+
+static int ATPROC atapi_read_512(unsigned int drive, sector_t sector,
+    char *buf, ramdesc_t seg)
+{
+    int error;
+    sector_t cd_lba = sector >> 2;
+    unsigned int offset = (unsigned int)(sector & 3) << 9;
+
+    if (!atapi_cache_valid || atapi_cache_drive != drive ||
+            atapi_cache_lba != cd_lba) {
+        atapi_clear_packet();
+        atapi_packet[0] = 0x28;     /* READ(10) */
+        atapi_packet[2] = (unsigned char)(cd_lba >> 24);
+        atapi_packet[3] = (unsigned char)(cd_lba >> 16);
+        atapi_packet[4] = (unsigned char)(cd_lba >> 8);
+        atapi_packet[5] = (unsigned char)cd_lba;
+        atapi_packet[8] = 1;        /* one 2048-byte block */
+
+        error = atapi_packet_cmd(drive, ATAPI_SECTOR_SIZE, WAIT_10SEC);
+        if (error)
+            return error;
+
+        atapi_cache_valid = 1;
+        atapi_cache_drive = (unsigned char)drive;
+        atapi_cache_lba = cd_lba;
+    }
+
+    xms_fmemcpyb(buf, seg, atapi_buffer + offset, kernel_ds, ATA_SECTOR_SIZE);
+    return 0;
+}
+#endif
 
 
 /**********************************************************************
@@ -484,8 +780,17 @@ int ATPROC ata_init(int drive, struct drive_infot *drivep)
 {
     unsigned short *buffer;
     sector_t total;
+    int error;
 
     drivep->cylinders = 0;      // invalidate device
+    drivep->total_sectors = 0;
+    drivep->read_only = 0;
+    drivep->removable = 0;
+    ata_devtype[drive] = ATA_DEV_NONE;
+    ata_use_lba[drive] = 0;
+    ata_heads[drive] = 0;
+    ata_sectors[drive] = 0;
+    ata_total_sectors[drive] = 0;
 
     buffer = (unsigned short *) heap_alloc(ATA_SECTOR_SIZE, HEAP_TAG_DRVR|HEAP_TAG_CLEAR);
     if (!buffer)
@@ -493,37 +798,85 @@ int ATPROC ata_init(int drive, struct drive_infot *drivep)
 
     // identify drive
 
-    if (ata_identify(drive, (unsigned char __far *) buffer) == 0)
+    error = ata_identify_cmd(drive, ATA_CMD_ID, (unsigned char __far *)buffer);
+    if (error == 0)
     {
-        drivep->cylinders = buffer[ATA_INFO_CYLS];  // FIXME if 0 no cfa: displayed
-        drivep->sectors = buffer[ATA_INFO_SPT];
-        drivep->heads = buffer[ATA_INFO_HEADS];
+        int lba;
+
+        total = ata_get_lba28_total(buffer);
+        lba = (total != 0 && (buffer[ATA_INFO_CAPS] & ATA_CAPS_LBA));
+        if (lba) {
+            if (total > ATA_LBA28_SECTORS) {
+                printk("cf%c: LBA28 limit, clipping %lu sectors\n",
+                    drive+'a', total);
+                total = ATA_LBA28_SECTORS;
+            }
+            ata_set_synth_geometry(drivep, total);
+            ata_use_lba[drive] = 1;
+        } else if (ata_valid_chs(buffer)) {
+            total = ata_get_chs_total(buffer);
+            ata_set_chs_geometry(drivep, buffer);
+            ata_use_lba[drive] =
+                (ata_mode == MODE_XTIDEv1 || ata_mode == MODE_XTIDEv2);
+        } else {
+            printk("cf%c: ATA identify unsupported format VER %x/%d xtide=%d,%d\n",
+                drive+'a', buffer[ATA_INFO_VER_MAJ], buffer[ATA_INFO_SECT_SZ],
+                ata_mode, xfer_mode);
+            goto out;
+        }
+
+        drivep->total_sectors = total;
         drivep->sector_size = ATA_SECTOR_SIZE;
         drivep->fdtype = HARDDISK;
+        ata_devtype[drive] = ATA_DEV_DISK;
+        ata_heads[drive] = drivep->heads;
+        ata_sectors[drive] = drivep->sectors;
+        ata_total_sectors[drive] = total;
         show_drive_info(drivep, "cf", drive, 1, " ");
 
-        // now display extra info: ATA LBA sector total, version and sector size
+        // now display extra info: ATA sector total, version and sector size
 
-        total = (sector_t)buffer[ATA_INFO_SECT_HI] << 16 | buffer[ATA_INFO_SECT_LO];
-        printk("%luK VER %x/%d xtide=%d,%d", total >> 1, buffer[ATA_INFO_VER_MAJ],
-            buffer[ATA_INFO_SECT_SZ], ata_mode, xfer_mode);
+        printk("%luK %s VER %x/%d xtide=%d,%d\n", total >> 1,
+            lba ? "LBA28" : (ata_use_lba[drive] ? "CHS/LBA" : "CHS"),
+            buffer[ATA_INFO_VER_MAJ], buffer[ATA_INFO_SECT_SZ],
+            ata_mode, xfer_mode);
+    }
+#ifdef CONFIG_ATA_ATAPI
+    else if (ata_identify_cmd(drive, ATA_CMD_PKT_ID,
+                (unsigned char __far *)buffer) == 0)
+    {
+        if (!atapi_buffer) {
+            atapi_buffer = heap_alloc(ATAPI_SECTOR_SIZE,
+                HEAP_TAG_DRVR|HEAP_TAG_CLEAR);
+            if (!atapi_buffer)
+                goto out;
+        }
 
-        // Sanity check
-        if ((buffer[ATA_INFO_CYLS] == 0 || buffer[ATA_INFO_CYLS] > 0x7F00) ||
-            (buffer[ATA_INFO_HEADS] == 0 || buffer[ATA_INFO_HEADS] > 16) ||
-            (buffer[ATA_INFO_SPT] == 0 || buffer[ATA_INFO_SPT] > 63))
-        {
-            printk(" (unsupported format)");
-            drivep->cylinders = 0;
+        if (atapi_read_capacity(drive, &total) == 0) {
+            ata_set_synth_geometry(drivep, total);
+            drivep->total_sectors = total;
+            drivep->sector_size = ATA_SECTOR_SIZE;
+            drivep->fdtype = HARDDISK;
+            drivep->read_only = 1;
+            drivep->removable = 1;
+            ata_devtype[drive] = ATA_DEV_ATAPI;
+            atapi_cache_valid = 0;
+            show_drive_info(drivep, "cf", drive, 1, " ");
+            printk("%luK ATAPI CD-ROM xtide=%d,%d\n", total >> 1,
+                ata_mode, xfer_mode);
+        } else {
+            printk("cf%c: ATAPI device not ready\n", drive+'a');
         }
-        if (! (buffer[ATA_INFO_CAPS] & ATA_CAPS_LBA))   // ATA LBA support?
-        {
-            printk(" (missing LBA)");
-            drivep->cylinders = 0;
-        }
-        printk("\n");
+    }
+#endif
+    else
+    {
+        printk("cf%c: ATA at %x/%x xtide=%d,%d not found (%d)\n",
+            drive+'a', ata_base_port, ata_ctrl_port, ata_mode, xfer_mode,
+            error);
     }
 
+out:
     heap_free(buffer);
 
     return drivep->cylinders;
@@ -541,13 +894,31 @@ int ATPROC ata_read(unsigned int drive, sector_t sector, char *buf, ramdesc_t se
 {
     unsigned char __far *buffer;
     int error;
+    int retry;
+
+#ifdef CONFIG_ATA_ATAPI
+    if (ata_devtype[drive] == ATA_DEV_ATAPI) {
+        for (retry = 0; retry < ATA_RW_RETRIES; retry++) {
+            error = atapi_read_512(drive, sector, buf, seg);
+            if (!error)
+                return 0;
+        }
+        ata_print_error((char)(drive+'a'), "atapi read", error, sector);
+        return error;
+    }
+#endif
 
     // send command
 
-    error = ata_cmd(drive, ATA_CMD_READ, sector, 1);
-    if (error)
+    for (retry = 0; retry < ATA_RW_RETRIES; retry++) {
+        error = ata_cmd(drive, ATA_CMD_READ, sector, 1);
+        if (!error)
+            break;
+    }
+    if (error) {
+        ata_print_error((char)(drive+'a'), "read", error, sector);
         return error;
-
+    }
 
     // read data
 
@@ -582,14 +953,23 @@ int ATPROC ata_write(unsigned int drive, sector_t sector, char *buf, ramdesc_t s
 {
     unsigned char __far *buffer;
     int error;
+    int retry;
     unsigned char status;
 
+    if (ata_devtype[drive] == ATA_DEV_ATAPI)
+        return -EROFS;
 
     // send command
 
-    error = ata_cmd(drive, ATA_CMD_WRITE, sector, 1);
-    if (error)
+    for (retry = 0; retry < ATA_RW_RETRIES; retry++) {
+        error = ata_cmd(drive, ATA_CMD_WRITE, sector, 1);
+        if (!error)
+            break;
+    }
+    if (error) {
+        ata_print_error((char)(drive+'a'), "write", error, sector);
         return error;
+    }
 
 
     // write data
@@ -618,8 +998,18 @@ int ATPROC ata_write(unsigned int drive, sector_t sector, char *buf, ramdesc_t s
 
     status = INB(ATA_REG_STATUS);
 
-    if (status & (ATA_STATUS_ERR|ATA_STATUS_DFE))
+    if (status & (ATA_STATUS_ERR|ATA_STATUS_DFE)) {
+        ata_save_error(status);
+        ata_print_error((char)(drive+'a'), "write", -EIO, sector);
         return -EIO;
+    }
 
     return 0;
+}
+
+int ATPROC ata_flush(unsigned int drive)
+{
+    if (ata_devtype[drive] != ATA_DEV_DISK)
+        return 0;
+    return ata_nondata_cmd(drive, ATA_CMD_FLUSH, WAIT_10SEC);
 }
