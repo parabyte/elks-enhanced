@@ -55,6 +55,9 @@ template:
 	cp -a $(TEMPLATE_DIR) $(DESTDIR)
 	-chmod 777 $(DESTDIR)/tmp
 	find $(DESTDIR) -name .keep -delete
+ifdef CONFIG_IMG_SKIP_CDAUDIO
+	-rm -rf $(DESTDIR)/mnt/cd1 $(DESTDIR)/mnt/cd2
+endif
 	$(MAKE) -C $(ELKSCMD_DIR) -f Make.install install "CONFIG=$(CONFIG)"
 ifdef CONFIG_IMG_INCLUDE_ESD
 	@if [ -f "$(abspath $(TOPDIR)/../esd-elks/Makefile)" ]; then \
@@ -116,7 +119,7 @@ endif
 #	mfs $(VERBOSE) $(TARGET_FILE) genfs $(MINIX_MKFSOPTS) $(DESTDIR)
 ifdef CONFIG_IMG_DEV
 	# command to make char/block devices in image (no sudo required)
-	$(MAKE) -f Make.devices "MKDEV=mfs $(TARGET_FILE) mknod"
+	$(MAKE) -f Make.devices "MKDEV=mfs $(TARGET_FILE) mknod" "CONFIG=$(CONFIG)"
 endif
 ifdef CONFIG_IMG_BOOT
 	setboot $(TARGET_FILE) $(BPB) $(FD_MINIX_BOOT)
@@ -131,7 +134,7 @@ ifdef CONFIG_IMG_HD
 	truncate -s $$((($(CONFIG_IMG_SECT) * $(CONFIG_IMG_HEAD) * $(CONFIG_IMG_CYL) - $(CONFIG_IMG_SECT)) * 512)) $(TARGET_FILE).p1
 ifdef CONFIG_IMG_DEV
 	fakeroot sh -ec 'PATH="/sbin:/usr/sbin:$$PATH"; \
-		$(MAKE) -f Make.devices "MKDEV=sh $(IMG_DIR)/mkhostdev.sh $(DESTDIR)" && \
+		$(MAKE) -f Make.devices "MKDEV=sh $(IMG_DIR)/mkhostdev.sh $(DESTDIR)" "CONFIG=$(CONFIG)" && \
 		"$(EXT2_MKFS)" $(VERBOSE) -F -d "$(DESTDIR)" $(EXT2_MKFSOPTS) "$(TARGET_FILE).p1"'
 else
 	$(EXT2_MKFS) $(VERBOSE) -F -d $(DESTDIR) $(EXT2_MKFSOPTS) $(TARGET_FILE).p1
@@ -149,7 +152,7 @@ else
 	truncate -s $(TARGET_BLKS)K $(TARGET_FILE)
 ifdef CONFIG_IMG_DEV
 	fakeroot sh -ec 'PATH="/sbin:/usr/sbin:$$PATH"; \
-		$(MAKE) -f Make.devices "MKDEV=sh $(IMG_DIR)/mkhostdev.sh $(DESTDIR)" && \
+		$(MAKE) -f Make.devices "MKDEV=sh $(IMG_DIR)/mkhostdev.sh $(DESTDIR)" "CONFIG=$(CONFIG)" && \
 		"$(EXT2_MKFS)" $(VERBOSE) -F -d "$(DESTDIR)" $(EXT2_MKFSOPTS) "$(TARGET_FILE)"'
 else
 	$(EXT2_MKFS) $(VERBOSE) -F -d $(DESTDIR) $(EXT2_MKFSOPTS) $(TARGET_FILE)
@@ -204,7 +207,7 @@ endif
 
 romfs: template
 	-rm -f romfs.devices
-	$(MAKE) -f Make.devices "MKDEV=echo >> romfs.devices"
+	$(MAKE) -f Make.devices "MKDEV=echo >> romfs.devices" "CONFIG=$(CONFIG)"
 	mkromfs -d romfs.devices $(DESTDIR)
 	-rm -f romfs.devices
 

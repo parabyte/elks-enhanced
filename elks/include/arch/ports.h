@@ -10,11 +10,12 @@
  *  2*  WD 80x3   (/dev/wd0) CONFIG_ETH_WD          Optional on XT, not available on AT
  *  3   Com2    (/dev/ttyS1) CONFIG_CHAR_DEV_RS     Optional
  *  4   Com1    (/dev/ttyS0) CONFIG_CHAR_DEV_RS     Optional
- *  5*  Com3    (/dev/ttyS2) CONFIG_CHAR_DEV_RS     Optional
+ *  5*  SB /dev/dsp (OPTi)   CONFIG_CHAR_DEV_DSP    Typical SB Pro / MAD16 8-bit DMA
  *  5*  HW IDE hard drive    CONFIG_BLK_DEV_HD      Non-working directhd.c
  *  6   HW floppy drive      CONFIG_BLK_DEV_FD      Optional
  *  7   Unused (LPT, Com4)
  *  8   Unused (RTC)
+ *  9*  Com3    (/dev/ttyS2) CONFIG_CHAR_DEV_RS     Default IRQ (frees 5 for SB); comirq=
  *  9*  3C509/EL3 (/dev/3c0) CONFIG_ETH_EL3         Optional
  * 10*  WD 80x3   (/dev/wd0) CONFIG_ETH_WD          Optional
  * 11*  3C509/EL3 (/dev/3c0) CONFIG_ETH_EL3         Optional
@@ -51,7 +52,8 @@
 #define COM2_IRQ        3               /* unregistered unless COM2_PORT found*/
 
 #define COM3_PORT       0x3e8
-#define COM3_IRQ        5               /* unregistered unless COM3_PORT found*/
+/* IRQ 9 default frees IRQ 5 for ISA SB / OPTi MAD16; cards jumpered COM3=5: comirq=4,3,5,7 */
+#define COM3_IRQ        9               /* unregistered unless COM3_PORT found*/
 
 #define COM4_PORT       0x2e8
 #define COM4_IRQ        7               /* unregistered unless COM4_PORT found*/

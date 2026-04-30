@@ -1,4 +1,5 @@
 #include <linuxmt/mm.h>
+#include <linuxmt/config.h>
 #include <linuxmt/errno.h>
 #include <linuxmt/string.h>
 #include <linuxmt/sysctl.h>
@@ -14,12 +15,57 @@ struct sysctl {
 static int malloc_debug;
 static int net_debug;
 
+#ifdef CONFIG_BLK_DEV_MFMHD
+extern int mfmhd_debug_stage;
+extern int mfmhd_debug_drive;
+extern int mfmhd_debug_port;
+extern int mfmhd_debug_status;
+extern int mfmhd_debug_cmd;
+extern int mfmhd_debug_csb;
+extern int mfmhd_debug_sense0;
+extern int mfmhd_debug_sense1;
+extern int mfmhd_debug_sense2;
+extern int mfmhd_debug_sense3;
+extern int mfmhd_debug_hdcnt;
+extern int mfmhd_debug_error;
+extern int mfmhd_debug_count;
+extern int mfmhd_debug_fail_stage;
+extern int mfmhd_debug_fail_drive;
+extern int mfmhd_debug_fail_port;
+extern int mfmhd_debug_fail_status;
+extern int mfmhd_debug_fail_cmd;
+extern int mfmhd_debug_fail_csb;
+extern int mfmhd_debug_fail_error;
+#endif
+
 struct sysctl sysctl[] = {
     { "kern.debug",         &debug_level        },  /* debug level (^P toggled) */
     { "kern.strace",        &tracing            },  /* strace=1, kstack=2 */
     { "kern.console",       (int *)&dev_console },  /* console */
     { "malloc.debug",       &malloc_debug       },
     { "net.debug",          &net_debug          },
+#ifdef CONFIG_BLK_DEV_MFMHD
+    { "mfmhd.stage",        &mfmhd_debug_stage  },
+    { "mfmhd.drive",        &mfmhd_debug_drive  },
+    { "mfmhd.port",         &mfmhd_debug_port   },
+    { "mfmhd.status",       &mfmhd_debug_status },
+    { "mfmhd.cmd",          &mfmhd_debug_cmd    },
+    { "mfmhd.csb",          &mfmhd_debug_csb    },
+    { "mfmhd.sense0",       &mfmhd_debug_sense0 },
+    { "mfmhd.sense1",       &mfmhd_debug_sense1 },
+    { "mfmhd.sense2",       &mfmhd_debug_sense2 },
+    { "mfmhd.sense3",       &mfmhd_debug_sense3 },
+    { "mfmhd.hdcnt",        &mfmhd_debug_hdcnt  },
+    { "mfmhd.error",        &mfmhd_debug_error  },
+    { "mfmhd.count",        &mfmhd_debug_count  },
+    { "mfmhd.fail_stage",   &mfmhd_debug_fail_stage  },
+    { "mfmhd.fail_drive",   &mfmhd_debug_fail_drive  },
+    { "mfmhd.fail_port",    &mfmhd_debug_fail_port   },
+    { "mfmhd.fail_status",  &mfmhd_debug_fail_status },
+    { "mfmhd.fail_cmd",     &mfmhd_debug_fail_cmd    },
+    { "mfmhd.fail_csb",     &mfmhd_debug_fail_csb    },
+    { "mfmhd.fail_error",   &mfmhd_debug_fail_error  },
+#endif
 };
 
 static char ctlname[CTL_MAXNAMESZ];

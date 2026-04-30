@@ -37,6 +37,7 @@ PRGS = \
 	decomp \
 	sysctl \
 	clock \
+	mad16cfg \
 	# EOL
 
 HOSTPRGS = hostdecomp
@@ -90,6 +91,9 @@ else
 clock: clock.o
 	$(LD) $(LDFLAGS) -o clock clock.o $(LDLIBS)
 endif
+
+mad16cfg: mad16cfg.o
+	$(LD) $(LDFLAGS) -maout-heap=4096 -maout-stack=2048 -o mad16cfg mad16cfg.o $(LDLIBS)
 
 exitemu: exitemu.o
 	$(LD) $(LDFLAGS) -o exitemu exitemu.o $(LDLIBS)

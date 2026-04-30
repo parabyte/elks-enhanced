@@ -35,8 +35,13 @@ int boot_rootdev;       /* set by /bootopts options if configured*/
 
 void INITPROC device_init(void)
 {
-    chr_dev_init();
+    /*
+     * Initialise block controllers before late character devices.  This lets
+     * the XT MFM driver force WD1002-style adapters into polled PIO before an
+     * SB-compatible DSP driver claims a shared IRQ such as IRQ5.
+     */
     blk_dev_init();
+    chr_dev_init();
 
 #if defined(CONFIG_BLK_DEV_BFD) || defined(CONFIG_BLK_DEV_BHD) || \
     defined(CONFIG_BLK_DEV_FD) || defined(CONFIG_BLK_DEV_ATA_CF)

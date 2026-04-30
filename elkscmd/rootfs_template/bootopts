@@ -3,12 +3,15 @@
 #LOCALIP=10.0.2.16
 #HOSTNAME=elks16
 console=tty1
-sb=0x220,5,1
+root=mfma1
+
+# Use sb=0x220,5,1 when an SB-compatible card is installed.
+sb=off
 #net=slip
 #ne0=12,0x300,,0x80
 #wd0=10,0x300,0xCC00,0x80
 #3c0=11,0x330,,0x80
-#comirq=,,7,10
+comirq=4,3
 #umb=0xC000:0x800,0xD000:0x1000
 hma=kernel
 #xms=on

@@ -36,7 +36,7 @@ main(void)
 			int32_t caps = 0;
 			int32_t blksz = 0;
 			int32_t odelay = 0;
-			int32_t pvol = (100 | (100 << 8));
+			int32_t pvol = -1;
 			int32_t rate = 0;
 			int32_t trig = PCM_ENABLE_OUTPUT;
 			int32_t chq = 0;

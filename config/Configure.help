@@ -411,6 +411,35 @@ CONFIG_CHAR_DEV_MEM
   Saying yes include support for the various memory character devices.
   Currently only mem, kmem, zero, null and full are supported.
 
+/dev/port read access
+CONFIG_CHAR_DEV_MEM_PORT_READ
+  When enabled, /dev/port (minor 4) supports read(2) as inb() from the
+  I/O port set by lseek. Needed for diagnostics and some userland tools.
+
+/dev/port write access
+CONFIG_CHAR_DEV_MEM_PORT_WRITE
+  When enabled, /dev/port supports write(2) as outb() to the port set by
+  lseek. Dangerous on real hardware; required for mad16cfg and similar.
+
+mad16cfg userland utility
+CONFIG_APP_MAD16CFG
+  Build and install mad16cfg, an XT-safe configuration tool for OPTi
+  82C929A (MAD16 Pro) when using Sound Blaster mode. Requires kernel
+  /dev/port read and write.
+
+MAD16 / OPTi 82C929: apply mad16cfg XT defaults (kernel, before SB reset)
+CONFIG_SB_OPTI82C929
+  When the ISA /dev/dsp driver is enabled, say Y if the machine has an
+  OPTi 82C929 (MAD16 Pro) or compatible in Sound Blaster mode. The kernel
+  unlocks the chip and writes MC1..MC6 (0xF8D--0xF92) once with the
+  Linux MAD16/OPTi C929 bring-up bytes adapted for XT-safe SB mode:
+  CD/IDE decode off, SB Pro 3.x, MPU off, wave/attn on, and MC5 set to
+  the Linux C929 base value 0xa5 (reserved bit 7, SHPASS, and reserved
+  bits 2/0 set; SPACCESS clear). MC3 IRQ/DMA/SB port tracks your sb=
+  boot line or SB_* kconfig instead of Linux's WSS-only disable value.
+  Say N for a plain Sound Blaster or other SB-compatible: no I/O to the
+  OPTi window and the driver behaves as stock SB-only.
+
 Enable standard parallel (printer) ports
 CONFIG_CHAR_DEV_LP
   Include support for parallel port devices.
@@ -726,6 +755,58 @@ CONFIG_BLK_DEV_SSD_SD
 ATA CF Hard Disk support
 CONFIG_BLK_DEV_ATA_CF
   Select this driver to use ATA support for CF devices.
+
+XT MFM hard drive support
+CONFIG_BLK_DEV_MFMHD
+  Select this driver for XT-style Xebec-command MFM controllers including
+  Western Digital WD1002A-WX1-compatible boards and Seagate ST11M/R
+  FileCard-class controllers. The driver uses polled PIO and ELKS jiffies
+  timeouts, so it does not depend on a fixed CPU clock rate.
+
+Primary MFM I/O port
+CONFIG_MFMHD_PRIMARY_PORT
+  Primary controller base I/O port. WD1002A-WX1 boards normally use 0x320.
+
+Secondary MFM I/O port
+CONFIG_MFMHD_SECONDARY_PORT
+  Secondary controller base I/O port. WD1002A-WX1 boards can use 0x324.
+
+MFM drives to probe
+CONFIG_MFMHD_ACTIVE_DRIVES
+  Number of MFM units to probe, starting at /dev/mfma. Use 1 or 2 for a
+  single XT MFM controller.
+
+MFM controller profile
+CONFIG_MFMHD_CTRL_WD1002
+  Select WD1002A-WX1 for Western Digital-compatible controllers using switch
+  table geometry. Select Seagate-ST11-FileCard for Seagate ST11M/R and
+  FileCard-class controllers, which provide command geometry through the ST11
+  0xf8 command. If that command is unavailable and no CHS override is set, the
+  driver falls back to FileCard 20 split-unit geometry: /dev/mfma is exposed as
+  one 612/4/17 disk, while controller commands address two 306/4/17 units so
+  neither illegal head-4 nor illegal cylinder-306 commands are issued.
+
+WD1002A-WX1 BIOS geometry table
+CONFIG_MFMHD_BIOS_SUPER
+  Selects which WD1002A-WX1 switch table is used when no explicit CHS
+  override is configured. Super BIOS is the common default.
+
+Command step-rate code
+CONFIG_MFMHD_STEP_CODE
+  Low three bits sent in command byte 5. Leave this at 0 unless the drive
+  requires a specific WD1002/Xebec step-rate value.
+
+MFM geometry override
+CONFIG_MFMHD_DRIVE0_CYLINDERS
+  Set drive override cylinders/heads/sectors only when the controller switch
+  table or Seagate geometry command does not match the disk. A value of 0 uses
+  the controller-reported geometry.
+
+MFM maintenance ioctls
+CONFIG_MFMHD_DIAG_IOCTLS
+  Adds diagnostic, format, long-sector, buffer, and raw controller option
+  ioctls. Leave this off on small 8086 kernels; normal read/write, partition
+  handling, and HDIO_GETGEO do not require it.
 
 #############################################################################
 

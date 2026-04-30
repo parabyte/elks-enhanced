@@ -30,6 +30,10 @@
 
 #include "blk.h"
 
+#ifdef CONFIG_BLK_DEV_MFMHD
+extern struct gendisk *mfmhd_init(void);
+#endif
+
 /*
  * The request-struct contains all necessary data
  * to load a number of sectors into memory
@@ -369,6 +373,10 @@ void INITPROC blk_dev_init(void)
 
 #ifdef CONFIG_BLK_DEV_HD
     struct gendisk *hddisk = directhd_init();
+#endif
+
+#ifdef CONFIG_BLK_DEV_MFMHD
+    mfmhd_init();
 #endif
 
 #ifdef CONFIG_BLK_DEV_FD

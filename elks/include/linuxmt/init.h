@@ -38,6 +38,10 @@ extern void INITPROC sock_init(void);
 extern void INITPROC tty_init(void);
 extern int  INITPROC xms_init(void);
 
+#ifdef CONFIG_CHAR_DEV_DSP
+extern void INITPROC sb_bootopts_parse(char *line);
+#endif
+
 extern void INITPROC device_init(void);
 
 extern void INITPROC tz_init(const char *tzstr);

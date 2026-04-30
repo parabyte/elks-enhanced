@@ -175,6 +175,10 @@ ifdef CONFIG_APP_OSS
 	TAGS += :oss|
 endif
 
+ifdef CONFIG_APP_MAD16CFG
+	TAGS += :mad16cfg|
+endif
+
 #
 # System startup
 ifdef CONFIG_SYS_DEFSHELL_SASH

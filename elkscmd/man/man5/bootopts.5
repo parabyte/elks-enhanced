@@ -62,6 +62,31 @@ file, with everything commented out:
 .PP
 Devices can be specified by /dev/ prefix or without, the latter is preferable to save space.
 .PP
+The
+.I console=
+option may list several devices separated by commas, with an optional trailing numeric baud rate for serial.
+Kernel
+.B printk
+messages (including driver diagnostics such as sound or DMA traces) are sent to the
+.B last
+device in the list.
+Thus
+.B console=tty1,ttyS1,115200
+keeps
+.B /dev/tty1
+for a local screen while sending the kernel log to
+.B ttyS1
+at 115200 baud.
+.PP
+The
+.B debug=
+option sets
+.B debug_level
+(e.g.
+.B debug=1
+)
+for extra kernel messages where enabled (e.g. some block I/O paths).
+.PP
 Of particular importance is the
 .I init=
 option which tells the kernel which program to start after initialization. The default is
@@ -85,6 +110,8 @@ init=/bin/sh HOME=/ TERM=ansi
 console=ttyS0, console=/dev/tty2, etc
 console=ttyS0,38400
 console=tty1
+console=tty1,ttyS1,115200   # kernel log on serial (last device), VGA tty1 for getty
+debug=1                     # raise debug_level
 root=fd1, root=/dev/fd1, root=hda[1-4], hdb[1-4], hdc[1-4]
 net=eth, net=slip, net=cslip  starts predefined network configurations
 ro, rw		The root filesystem may be mounted rw or read only

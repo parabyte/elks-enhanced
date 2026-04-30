@@ -355,19 +355,21 @@ static struct dev_name_struct {
     const char *name;
     int num;
 } devices[] = {
-	/* the 6 partitionable drives must be first */
+	/* the 8 partitionable drives must be first */
 	{ "hda",     DEV_HDA },         /* 0 */
 	{ "hdb",     DEV_HDB },
 	{ "hdc",     DEV_HDC },
 	{ "hdd",     DEV_HDD },
 	{ "cfa",     DEV_CFA },
 	{ "cfb",     DEV_CFB },
-	{ "fd0",     DEV_FD0 },         /* 6 */
+	{ "mfma",    DEV_MFMA },
+	{ "mfmb",    DEV_MFMB },
+	{ "fd0",     DEV_FD0 },         /* 8 */
 	{ "fd1",     DEV_FD1 },
-	{ "df0",     DEV_DF0 },         /* 8 */
+	{ "df0",     DEV_DF0 },         /* 10 */
 	{ "df1",     DEV_DF1 },
 	{ "rom",     DEV_ROM },
-	{ "ttyS0",   DEV_TTYS0 },       /* 11 */
+	{ "ttyS0",   DEV_TTYS0 },       /* 13 */
 	{ "ttyS1",   DEV_TTYS1 },
 	{ "tty1",    DEV_TTY1 },
 	{ "tty2",    DEV_TTY2 },
@@ -385,17 +387,18 @@ char *root_dev_name(kdev_t dev)
     int i;
     unsigned int mask;
 #define NAMEOFF 13
-    static char name[18] = "ROOTDEV=/dev/";
+    static char name[20] = "ROOTDEV=/dev/";
 
     name[8] = '/';
-    for (i=0; i<11; i++) {
-        mask = (i < 6)? 0xfff8: 0xffff;
+    for (i=0; i<13; i++) {
+        mask = (i < 8)? 0xfff8: 0xffff;
         if (devices[i].num == (dev & mask)) {
             strcpy(&name[NAMEOFF], devices[i].name);
-            if (i < 6) {
+            if (i < 8) {
                 if (dev & 0x07) {
-                    name[NAMEOFF+3] = '0' + (dev & 7);
-                    name[NAMEOFF+4] = '\0';
+                    int off = NAMEOFF + strlen(devices[i].name);
+                    name[off] = '0' + (dev & 7);
+                    name[off+1] = '\0';
                 }
             }
             return name;
@@ -437,6 +440,51 @@ static int INITPROC parse_dev(char * line)
         dev++;
     } while (dev->name);
     return (base + atoi(line));
+}
+
+static int INITPROC str_is_uint(const char *p)
+{
+    if (!p || !*p)
+        return 0;
+    while (*p) {
+        if (*p < '0' || *p > '9')
+            return 0;
+        p++;
+    }
+    return 1;
+}
+
+/*
+ * console=ttyS1,115200 or console=tty1,ttyS1,115200
+ * printk (kernel log) uses the last device in the list; a trailing numeric
+ * field sets serial baud via rs_setbaud() on ttySn.
+ */
+static dev_t INITPROC parse_console_bootdev(char *spec, int *baudp)
+{
+    char *last_comma, *p, *sep;
+    dev_t d, last = 0;
+
+    *baudp = 0;
+    last_comma = NULL;
+    for (p = spec; *p; p++) {
+        if (*p == ',')
+            last_comma = p;
+    }
+    if (last_comma && str_is_uint(last_comma + 1)) {
+        *baudp = (int)simple_strtol(last_comma + 1, 10);
+        *last_comma = '\0';
+    }
+    p = spec;
+    do {
+        sep = strchr(p, ',');
+        if (sep)
+            *sep++ = '\0';
+        d = (dev_t)parse_dev(p);
+        if (d)
+            last = d;
+        p = sep;
+    } while (p);
+    return last;
 }
 
 static void INITPROC comirq(char *line)
@@ -560,18 +608,24 @@ static int INITPROC parse_options(void)
             continue;
         }
         if (!strncmp(line,"console=",8)) {
-            int dev = parse_dev(line+8);
-            char *p = strchr(line+8, ',');
-            if (p) {
-                *p++ = 0;
+            char spec[80];
+            int baud = 0;
+            dev_t dev;
+            char *arg = line + 8;
+            size_t i;
+
+            /* no strncpy in kernel link */
+            for (i = 0; i < sizeof(spec) - 1 && arg[i]; i++)
+                spec[i] = arg[i];
+            spec[i] = '\0';
+            dev = parse_console_bootdev(spec, &baud);
+            if (dev == 0)
+                dev = (dev_t)parse_dev(arg);
 #ifdef CONFIG_CHAR_DEV_RS
-                /* set serial console baud rate*/
-                rs_setbaud(dev, simple_strtol(p, 10));
+            if (baud > 0 && MINOR(dev) >= RS_MINOR_OFFSET)
+                rs_setbaud(dev, (unsigned long)baud);
 #endif
-            }
-
-
-            debug("console %s=%D,", line+8, dev);
+            debug("console %s=%D baud=%d,", arg, dev, baud);
             boot_console = dev;
             continue;
         }
@@ -612,6 +666,12 @@ static int INITPROC parse_options(void)
             parse_nic(line+4, &netif_parms[ETH_EL3]);
             continue;
         }
+#ifdef CONFIG_CHAR_DEV_DSP
+        if (!strncmp(line, "sb=", 3)) {
+            sb_bootopts_parse(line + 3);
+            continue;
+        }
+#endif
         if (!strncmp(line,"debug=", 6)) {
             debug_level = (int)simple_strtol(line+6, 10);
             continue;

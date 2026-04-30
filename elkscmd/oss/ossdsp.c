@@ -25,7 +25,9 @@
 #define O_RDWR 2
 #endif
 
-static char buf[256];
+#define DSP_BUFSIZE 8192
+
+static char buf[DSP_BUFSIZE];
 static unsigned char hdr[12];
 static unsigned char skipbuf[64];
 
