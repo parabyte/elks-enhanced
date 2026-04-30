@@ -1,0 +1,239 @@
+ELKS direct IDE, XT-IDE, XTCF, and ATAPI setup
+==============================================
+
+Driver scope
+------------
+
+Enable CONFIG_BLK_DEV_ATA_CF for the direct ATA-CF/IDE driver.  The driver can
+talk directly to one ATA-style controller and up to two attached devices:
+
+  /dev/cfa   first device, normally IDE master
+  /dev/cfa1  first partition on the first device
+  ...
+  /dev/cfa7  seventh partition slot on the first device
+  /dev/cfb   second device, normally IDE slave
+  /dev/cfb1  first partition on the second device
+  ...
+  /dev/cfb4  fourth partition node created by the default image rules
+
+This is separate from the BIOS hard disk driver.  BIOS disks appear as
+/dev/hda, /dev/hdb, and so on.  The direct IDE driver appears as /dev/cfa and
+/dev/cfb even when the same physical disk is also visible through an XT-IDE
+BIOS.
+
+Supported controller modes
+--------------------------
+
+The driver supports several register layouts.  Select the default at build time
+with CONFIG_ATA_MODE_DEFAULT, or override it at boot with xtide= in /bootopts.
+
+  -1  auto
+       Use XTCF mode on 8088/8086 systems, standard ATA on 286+ systems.
+       Auto is convenient for generic images, but for real XT-IDE high/low
+       latch boards it is better to set the mode explicitly.
+
+   0  standard ATA
+       16-bit ATA command block at 0x1f0 and device control at 0x3f6.
+       Use this for PC/AT-class ISA IDE controllers, not for an 8-bit XT-IDE
+       latch adapter.
+
+   1  XTIDE rev1 / high-low latch
+       Base port normally 0x300, device control normally 0x30e.  Data transfers
+       use the XT-IDE high/low byte latch layout.  This is the mode to try
+       first for classic XT-IDE rev1 compatible boards and 16-bit IDE devices
+       connected through an 8-bit high/low latch adapter.
+
+   2  XTIDE rev2 high-speed layout
+       Base port normally 0x300 with the XTIDE rev2 swapped address-line
+       register layout.  Use this only when the adapter is configured for that
+       layout.
+
+   3  XTCF
+       Base port normally 0x300, device control normally 0x31c, with shifted
+       register offsets.  The driver tries to enable ATA 8-bit transfer mode
+       and falls back if the device or adapter rejects it.
+
+   4  SOLO/86
+       SOLO/86 ATA layout, base port normally 0x40.
+
+For an XT machine with a real IDE disk on an XT-IDE high/low latch adapter, use
+mode 1:
+
+  xtide=1
+
+Build-time configuration
+------------------------
+
+In menuconfig, enable:
+
+  Block device drivers
+    ATA-CF/IDE drive support
+
+Then set the options for the target hardware:
+
+  CONFIG_BLK_DEV_ATA_CF=y
+  CONFIG_ATA_MODE_DEFAULT=1
+  CONFIG_ATA_XTIDE_BASE_PORT=0x300
+  CONFIG_ATA_ATAPI=y
+  CONFIG_ATA_FLUSH_CACHE=y
+
+Use CONFIG_ATA_MODE_DEFAULT=1 for XT-IDE rev1/high-low latch adapters.  If the
+same kernel must boot on several systems, keep CONFIG_ATA_MODE_DEFAULT=-1 and
+put the correct xtide= line in each system's /bootopts.
+
+The base I/O ports are compile-time settings:
+
+  CONFIG_ATA_BASE_PORT          standard ATA base, normally 0x1f0
+  CONFIG_ATA_XTIDE_BASE_PORT    XTIDE and XTCF base, normally 0x300
+  CONFIG_ATA_SOLO86_BASE_PORT   SOLO/86 base, normally 0x40
+
+If the XT-IDE card is jumpered to a port other than 0x300, change
+CONFIG_ATA_XTIDE_BASE_PORT before building the image.  The boot-time xtide=
+option selects the mode, not the base port.
+
+/bootopts examples
+------------------
+
+XT-IDE rev1 or high/low latch adapter, direct IDE root filesystem:
+
+  xtide=1
+  root=cfa1
+  disable=hda
+
+disable=hda is useful when an XT-IDE BIOS also exposes the same disk through
+the BIOS hard disk driver.  It prevents the BIOS copy of the disk from being
+registered as /dev/hda, while leaving the direct IDE device available as
+/dev/cfa.
+
+Generic image that boots from whatever device loaded /linux, while still
+probing the direct IDE driver:
+
+  root=boot
+  xtide=1
+
+Standard PC/AT ISA IDE controller:
+
+  xtide=0
+  root=cfa1
+
+XTCF adapter:
+
+  xtide=3
+  root=cfa1
+
+ATAPI CD-ROM on the second IDE position:
+
+  xtide=1
+
+The CD-ROM will appear as /dev/cfb if it is the second detected device.  It is
+read-only and is exposed through 512-byte logical sectors even though ATAPI
+media uses 2048-byte physical sectors.
+
+Using a real 80 GB IDE disk
+---------------------------
+
+The driver uses LBA28 when the drive reports it.  LBA28 can address
+268435456 512-byte sectors, which is 128 GiB binary or about 137 GB decimal.
+An 80 GB IDE disk is inside that addressing limit.
+
+Large disks should still be partitioned conservatively for ELKS.  The direct
+driver can identify and address a large LBA28 disk, but ELKS boot tools,
+filesystem tools, and small-memory systems are much happier with a modest
+partition at the front of the disk.  A practical setup is:
+
+  /dev/cfa1   ELKS root, near the start of the disk
+  /dev/cfa2   optional data or transfer partition
+
+Keep the bootable ELKS root partition small enough for the filesystem and tools
+you actually use.  Do not assume that an old ELKS userspace can comfortably
+format, check, or copy an entire 80 GB partition.
+
+Basic disk setup from ELKS
+--------------------------
+
+After booting an installer or maintenance image with the direct IDE driver
+enabled:
+
+1. Confirm the probe output.
+
+   A working disk probe prints a cf device line and an ATA summary such as
+   LBA28, CHS/LBA, or CHS, followed by xtide mode numbers.  For a high/low
+   latch adapter, the first xtide number should be 1.
+
+2. Partition the disk.
+
+     fdisk /dev/cfa
+
+   Create a small primary partition at the start of the disk for ELKS root.
+
+3. Format the partition.
+
+     mkfs.ext2 /dev/cfa1
+
+4. Copy or install the system files.
+
+   If the running root has the same filesystem type as the target and makeboot
+   supports the path you are using:
+
+     makeboot -s /dev/cfa1
+
+   Otherwise copy the files by the installer method you normally use, then make
+   sure the target contains /linux and /bootopts.
+
+5. Set the installed /bootopts.
+
+     xtide=1
+     root=cfa1
+     disable=hda
+
+6. Sync before power-off or reboot.
+
+     sync
+
+Booting through an XT-IDE BIOS
+------------------------------
+
+An XT-IDE BIOS can load the ELKS boot sector and /linux.  After the kernel is
+running, CONFIG_BLK_DEV_ATA_CF lets ELKS talk to the IDE controller directly
+instead of using BIOS INT 13h.
+
+Use root=cfa1 when you want the direct IDE driver to mount the root filesystem.
+Use root=boot when you want ELKS to mount the BIOS device that loaded /linux.
+
+If both BIOS and direct drivers are enabled, the same disk may appear twice:
+once as /dev/hda through BIOS and once as /dev/cfa through the direct driver.
+Use disable=hda when you want only the direct driver path.
+
+ATAPI CD-ROM notes
+------------------
+
+Enable CONFIG_ATA_ATAPI to probe ATAPI packet devices.  The driver supports
+read-only packet reads with 2048-byte CD-ROM blocks cached and presented as
+512-byte logical sectors to the block layer.
+
+The ATAPI path is useful for reading ISO9660 or raw CD media when the rest of
+the system has the filesystem support needed.  Writes are rejected.  Removable
+media should be inserted before boot so READ CAPACITY can succeed during probe.
+
+Troubleshooting
+---------------
+
+If no cf device is found, check the mode first.  A high/low latch XT-IDE board
+usually needs xtide=1.  XTCF hardware usually needs xtide=3.  Standard AT IDE
+uses xtide=0.
+
+If the mode is right but the probe still fails, check the base I/O port.  Most
+XT-IDE and XTCF setups use 0x300, but the driver uses the compiled
+CONFIG_ATA_XTIDE_BASE_PORT value.  Change that option and rebuild if the card
+is jumpered elsewhere.
+
+If the system mounts the wrong disk, check root= and disable=.  Use root=cfa1
+for direct IDE root.  Use disable=hda if the XT-IDE BIOS path is registering
+the same disk as a BIOS hard drive.
+
+If writes appear to work but data is missing after reset, keep
+CONFIG_ATA_FLUSH_CACHE enabled and run sync before rebooting or powering off.
+
+If an ATAPI CD-ROM is detected but reads fail, make sure media is present at
+boot and that the drive reports 2048-byte sectors.  Other ATAPI sector sizes
+are rejected by this driver.

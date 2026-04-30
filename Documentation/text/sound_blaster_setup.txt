@@ -1,0 +1,108 @@
+ELKS Sound Blaster and MAD16 audio setup
+========================================
+
+Sound Blaster compatible audio
+------------------------------
+
+Enable the ISA DMA audio driver with CONFIG_CHAR_DEV_DSP.  The driver exposes
+/dev/dsp and /dev/audio as OSS-style character devices using major 5, minor 0.
+It supports 8-bit ISA DMA playback on DMA channel 1 or 3.  Mono unsigned
+8-bit PCM is the default format; CONFIG_SB_STEREO adds SB Pro style stereo
+playback support when the hardware supports it.
+
+The compile-time defaults are:
+
+  CONFIG_SB_PORT    Sound Blaster base I/O port, normally 0x220
+  CONFIG_SB_IRQ     Sound Blaster IRQ, commonly 5 or 7 on XT-class systems
+  CONFIG_SB_DMA     8-bit DMA channel, 1 or 3
+  CONFIG_SB_BOUNCE  DMA bounce buffer size
+
+/bootopts can override the compiled port, IRQ, and DMA without rebuilding:
+
+  sb=0x220,5,1
+
+The port may also be written as decimal:
+
+  sb=544,5,1
+
+To build one kernel that can also run on machines without a sound card, leave
+CONFIG_CHAR_DEV_DSP enabled and disable probing at boot:
+
+  sb=off
+
+sb=no and sb=0 are accepted aliases for sb=off.
+
+OPTi 82C929 / MAD16 Pro cards
+-----------------------------
+
+OPTi 82C929 based MAD16 Pro cards can be used by forcing the card into Sound
+Blaster compatible mode, then using the normal ELKS Sound Blaster driver.
+The ELKS driver does not use the Windows Sound System codec path.
+
+There are two supported setup paths.
+
+1. Kernel setup before Sound Blaster reset
+
+Enable CONFIG_SB_OPTI82C929 with CONFIG_CHAR_DEV_DSP.  At boot the kernel
+unlocks the OPTi control window and applies an XT-safe Sound Blaster profile
+before it resets the DSP.  The active SB port, IRQ, and DMA come from sb= in
+/bootopts when present, otherwise from CONFIG_SB_PORT, CONFIG_SB_IRQ, and
+CONFIG_SB_DMA.
+
+Example /bootopts:
+
+  sb=0x220,5,1
+
+The built-in profile disables WSS, CD-ROM, IDE, and MPU decode, selects
+SB Pro compatible mode, and leaves only the Sound Blaster compatible path for
+the ELKS /dev/dsp driver.
+
+2. Userland setup with mad16cfg
+
+Build CONFIG_APP_MAD16CFG and enable /dev/port read and write support with:
+
+  CONFIG_CHAR_DEV_MEM_PORT_READ
+  CONFIG_CHAR_DEV_MEM_PORT_WRITE
+
+Then configure the card from ELKS:
+
+  mad16cfg defaults
+
+or explicitly:
+
+  mad16cfg set mode sb sb_port 0x220 sb_irq 5 sb_dma 1
+
+mad16cfg accepts only XT-safe routes: SB IRQ 5 or 7 and DMA 1 or 3.  It forces
+WSS and CD-ROM/IDE decode off.  Keep /bootopts sb= matched to the card setting,
+for example sb=0x220,5,1.
+
+Basic use
+---------
+
+The driver accepts simple OSS-style writes to /dev/dsp or /dev/audio.  The
+most portable format is unsigned 8-bit mono PCM at a modest sample rate.
+Applications that assume 16-bit samples, DMA channels above 3, or PCI/AC97
+style audio will need conversion before playback.
+
+For a diagnostic boot, start with the most common XT-friendly settings:
+
+  sb=0x220,5,1
+
+If the machine has another ISA card using IRQ 5, try IRQ 7:
+
+  sb=0x220,7,1
+
+Troubleshooting
+---------------
+
+If the machine boots but audio is silent, first confirm that sb= in /bootopts
+matches the card jumpers or mad16cfg settings.  A wrong IRQ can make playback
+appear to hang until the DMA buffer times out.
+
+If a MAD16 card conflicts with an IDE or CD-ROM interface, use the built-in
+CONFIG_SB_OPTI82C929 setup or mad16cfg.  Both paths intentionally disable the
+MAD16 WSS, IDE, CD-ROM, and MPU decode paths so the card behaves like a simple
+Sound Blaster compatible device.
+
+If the same kernel image is shared between machines, use sb=off on systems
+without an ISA sound card so the driver does not probe missing hardware.

@@ -1,145 +1,27 @@
-ELKS ISA sound and XT MFM storage setup
-=======================================
+ELKS hardware setup
+===================
 
-Sound Blaster compatible audio
-------------------------------
+This page is an index for hardware-specific setup notes.  The detailed
+instructions are split by device class so a storage setup does not have to
+share one long file with sound-card setup.
 
-Enable the ISA DMA audio driver with CONFIG_CHAR_DEV_DSP.  The driver exposes
-/dev/dsp and /dev/audio as OSS-style character devices using major 5, minor 0.
-It supports 8-bit ISA DMA playback on DMA channel 1 or 3.  Mono unsigned
-8-bit PCM is the default format; CONFIG_SB_STEREO adds SB Pro style stereo
-playback support when the hardware supports it.
+Sound
+-----
 
-The compile-time defaults are:
+  sound_blaster_setup.txt
 
-  CONFIG_SB_PORT    Sound Blaster base I/O port, normally 0x220
-  CONFIG_SB_IRQ     Sound Blaster IRQ, commonly 5 or 7 on XT-class systems
-  CONFIG_SB_DMA     8-bit DMA channel, 1 or 3
-  CONFIG_SB_BOUNCE  DMA bounce buffer size
+Sound Blaster compatible ISA audio, /dev/dsp, /dev/audio, boot-time sb=
+options, and OPTi 82C929 / MAD16 Pro cards forced into Sound Blaster mode.
 
-/bootopts can override the compiled port, IRQ, and DMA without rebuilding:
+Storage
+-------
 
-  sb=0x220,5,1
+  mfm_setup.txt
 
-The port may also be written as decimal:
+XT-class WD1002A-WX1, Xebec command-block, Seagate ST11, and FileCard-class
+MFM hard disk setup using the direct MFM driver and /dev/mfma devices.
 
-  sb=544,5,1
+  ide_xtide_setup.txt
 
-To build one kernel that can also run on machines without a sound card, leave
-CONFIG_CHAR_DEV_DSP enabled and disable probing at boot:
-
-  sb=off
-
-sb=no and sb=0 are accepted aliases for sb=off.
-
-OPTi 82C929 / MAD16 Pro cards
------------------------------
-
-OPTi 82C929 based MAD16 Pro cards can be used by forcing the card into Sound
-Blaster compatible mode, then using the normal ELKS Sound Blaster driver.
-The ELKS driver does not use the Windows Sound System codec path.
-
-There are two supported setup paths.
-
-1. Kernel setup before Sound Blaster reset
-
-Enable CONFIG_SB_OPTI82C929 with CONFIG_CHAR_DEV_DSP.  At boot the kernel
-unlocks the OPTi control window and applies an XT-safe Sound Blaster profile
-before it resets the DSP.  The active SB port, IRQ, and DMA come from sb= in
-/bootopts when present, otherwise from CONFIG_SB_PORT, CONFIG_SB_IRQ, and
-CONFIG_SB_DMA.
-
-Example /bootopts:
-
-  sb=0x220,5,1
-
-The built-in profile disables WSS, CD-ROM, IDE, and MPU decode, selects
-SB Pro compatible mode, and leaves only the Sound Blaster compatible path for
-the ELKS /dev/dsp driver.
-
-2. Userland setup with mad16cfg
-
-Build CONFIG_APP_MAD16CFG and enable /dev/port read and write support with:
-
-  CONFIG_CHAR_DEV_MEM_PORT_READ
-  CONFIG_CHAR_DEV_MEM_PORT_WRITE
-
-Then configure the card from ELKS:
-
-  mad16cfg defaults
-
-or explicitly:
-
-  mad16cfg set mode sb sb_port 0x220 sb_irq 5 sb_dma 1
-
-mad16cfg accepts only XT-safe routes: SB IRQ 5 or 7 and DMA 1 or 3.  It forces
-WSS and CD-ROM/IDE decode off.  Keep /bootopts sb= matched to the card setting,
-for example sb=0x220,5,1.
-
-XT MFM hard disk driver
-----------------------
-
-Enable CONFIG_BLK_DEV_MFMHD for XT-style Xebec command-block MFM controllers.
-The driver is intended for WD1002A-WX1 "Quebec" compatible boards, Seagate
-ST11M/ST11R and FileCard-class controllers, and compatible 17-sector ST-506/412
-MFM disks.  It is not an IDE, ATA, ESDI, or 26-sector RLL driver.
-
-Important build options:
-
-  CONFIG_MFMHD_PRIMARY_PORT      Primary base I/O port, normally 0x320
-  CONFIG_MFMHD_SECONDARY_PORT    Secondary base I/O port, normally 0x324
-  CONFIG_MFMHD_ACTIVE_DRIVES     Number of drives to probe, starting at mfma
-  CONFIG_MFMHD_CTRL_WD1002       WD1002A-WX1 compatible controller profile
-  CONFIG_MFMHD_CTRL_SEAGATE      Seagate ST11/FileCard controller profile
-  CONFIG_MFMHD_BIOS_SUPER        Common WD1002A-WX1 geometry switch table
-  CONFIG_MFMHD_BIOS_G/H          Alternate WD1002A-WX1 geometry tables
-  CONFIG_MFMHD_STEP_CODE         WD1002/Xebec command step-rate bits
-  CONFIG_MFMHD_DRIVEn_*          Optional fixed cylinders, heads, sectors
-
-Set the CHS override values to 0 to use controller-reported geometry.  Use
-fixed CHS values only when the controller switch table or Seagate geometry
-command does not match the attached disk.  A common 20 MB FileCard-style layout
-is 612 cylinders, 4 heads, and 17 sectors.
-
-Device names
-------------
-
-When CONFIG_BLK_DEV_MFMHD is enabled, the image build creates:
-
-  /dev/mfma   first whole MFM disk
-  /dev/mfma1  first partition on the first MFM disk
-  ...
-  /dev/mfma7  seventh partition slot on the first MFM disk
-  /dev/mfmb   second whole MFM disk
-  /dev/mfmb1  first partition on the second MFM disk
-  ...
-  /dev/mfmb7  seventh partition slot on the second MFM disk
-
-Use root=mfma1 in /bootopts to mount the first MFM partition as root:
-
-  root=mfma1
-
-Use /dev/mfma for whole-disk operations such as writing a prepared disk image:
-
-  dd if=/root/mfm.img of=/dev/mfma bs=512
-  sync
-
-Boot-source root selection
---------------------------
-
-When a maintenance or installer image is booted from another disk while a bad
-MFM install is still attached, hard-coding root=hda1 or root=mfma1 can mount
-the wrong disk.  Use root=boot to mount the BIOS device that loaded /linux:
-
-  root=boot
-
-root=source is an alias for root=boot.
-
-To keep the MFM driver enabled for installation while preventing an MFM device
-from becoming root by accident, add:
-
-  noroot=mfm
-
-This leaves /dev/mfma and /dev/mfmb available for dd, fdisk, and filesystem
-tools.  Do not use disable=mfma for this installer case: disable=mfma disables
-the MFM driver itself, so there will be no MFM target to write.
+Direct ATA-CF/IDE setup for standard ATA, XT-IDE, XTCF, SOLO/86, real IDE
+hard disks, large LBA28 disks, and ATAPI CD-ROM drives.

@@ -54,7 +54,15 @@ This section contains some HOWTOs to help using ELKS.
 
 * [Notes on networking code](https://raw.githubusercontent.com/jbruchon/elks/master/Documentation/text/networking.txt)
 
-* [ISA sound and XT MFM storage setup](text/hardware_setup.txt)
+### Hardware setup
+
+* [Hardware setup index](text/hardware_setup.txt)
+
+* [Sound Blaster and MAD16 audio setup](text/sound_blaster_setup.txt)
+
+* [XT MFM hard disk setup](text/mfm_setup.txt)
+
+* [Direct IDE, XT-IDE, XTCF, and ATAPI setup](text/ide_xtide_setup.txt)
 
 ### File system
 

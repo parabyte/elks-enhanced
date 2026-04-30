@@ -1,0 +1,115 @@
+ELKS XT MFM hard disk setup
+===========================
+
+Driver scope
+------------
+
+Enable CONFIG_BLK_DEV_MFMHD for XT-style Xebec command-block MFM controllers.
+The driver is intended for WD1002A-WX1 "Quebec" compatible boards, Seagate
+ST11M/ST11R and FileCard-class controllers, and compatible 17-sector ST-506/412
+MFM disks.  It is not an IDE, ATA, ESDI, or 26-sector RLL driver.
+
+Important build options:
+
+  CONFIG_MFMHD_PRIMARY_PORT      Primary base I/O port, normally 0x320
+  CONFIG_MFMHD_SECONDARY_PORT    Secondary base I/O port, normally 0x324
+  CONFIG_MFMHD_ACTIVE_DRIVES     Number of drives to probe, starting at mfma
+  CONFIG_MFMHD_CTRL_WD1002       WD1002A-WX1 compatible controller profile
+  CONFIG_MFMHD_CTRL_SEAGATE      Seagate ST11/FileCard controller profile
+  CONFIG_MFMHD_BIOS_SUPER        Common WD1002A-WX1 geometry switch table
+  CONFIG_MFMHD_BIOS_G/H          Alternate WD1002A-WX1 geometry tables
+  CONFIG_MFMHD_STEP_CODE         WD1002/Xebec command step-rate bits
+  CONFIG_MFMHD_DRIVEn_*          Optional fixed cylinders, heads, sectors
+
+Set the CHS override values to 0 to use controller-reported geometry.  Use
+fixed CHS values only when the controller switch table or Seagate geometry
+command does not match the attached disk.  A common 20 MB FileCard-style layout
+is 612 cylinders, 4 heads, and 17 sectors.
+
+Device names
+------------
+
+When CONFIG_BLK_DEV_MFMHD is enabled, the image build creates:
+
+  /dev/mfma   first whole MFM disk
+  /dev/mfma1  first partition on the first MFM disk
+  ...
+  /dev/mfma7  seventh partition slot on the first MFM disk
+  /dev/mfmb   second whole MFM disk
+  /dev/mfmb1  first partition on the second MFM disk
+  ...
+  /dev/mfmb7  seventh partition slot on the second MFM disk
+
+Use root=mfma1 in /bootopts to mount the first MFM partition as root:
+
+  root=mfma1
+
+Use /dev/mfma for whole-disk operations such as writing a prepared disk image:
+
+  dd if=/root/mfm.img of=/dev/mfma bs=512
+  sync
+
+Boot-source root selection
+--------------------------
+
+When a maintenance or installer image is booted from another disk while a bad
+MFM install is still attached, hard-coding root=hda1 or root=mfma1 can mount
+the wrong disk.  Use root=boot to mount the BIOS device that loaded /linux:
+
+  root=boot
+
+root=source is an alias for root=boot.
+
+To keep the MFM driver enabled for installation while preventing an MFM device
+from becoming root by accident, add:
+
+  noroot=mfm
+
+This leaves /dev/mfma and /dev/mfmb available for dd, fdisk, and filesystem
+tools.  Do not use disable=mfma for this installer case: disable=mfma disables
+the MFM driver itself, so there will be no MFM target to write.
+
+Typical setup
+-------------
+
+1. Configure the controller and disk geometry in menuconfig.
+
+2. Build an ELKS image that includes CONFIG_BLK_DEV_MFMHD and the /dev/mfma
+   nodes.
+
+3. Boot from a known-good floppy, serial-drive, BIOS disk, or emulator image.
+
+4. Confirm the MFM probe messages show the expected controller profile,
+   geometry, and partition table.
+
+5. Partition or write the disk:
+
+     fdisk /dev/mfma
+
+   or, for a prepared whole-disk image:
+
+     dd if=/root/mfm.img of=/dev/mfma bs=512
+     sync
+
+6. Set /bootopts on the installed system to the partition you intend to boot:
+
+     root=mfma1
+
+For installer images, prefer root=boot plus noroot=mfm until the target disk is
+known-good.  After the installed MFM filesystem is valid, switch the installed
+/bootopts to root=mfma1.
+
+Troubleshooting
+---------------
+
+If the driver finds no disk, check the controller profile, base ports, and
+drive count first.  The WD1002A-WX1 and Seagate/FileCard paths use different
+geometry discovery methods.
+
+If the driver finds a disk but the partition table is wrong, recheck the CHS
+override values.  MFM controllers often depend on switch-selected geometry, and
+a mismatch can make a valid disk look corrupt.
+
+If an installer boots from another device while an MFM disk is attached, use
+root=boot and noroot=mfm.  That keeps the target writable as /dev/mfma without
+letting a stale MFM root filesystem take over the boot.
