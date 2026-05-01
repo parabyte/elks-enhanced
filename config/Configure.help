@@ -448,19 +448,6 @@ CONFIG_SB_STEREO
   time constant by the active channel count, as in the old Linux SB Pro
   driver. Say N for the smallest mono-only driver.
 
-MAD16 / OPTi 82C929: apply mad16cfg XT defaults (kernel, before SB reset)
-CONFIG_SB_OPTI82C929
-  When the ISA /dev/dsp driver is enabled, say Y if the machine has an
-  OPTi 82C929 (MAD16 Pro) or compatible in Sound Blaster mode. The kernel
-  unlocks the chip and writes MC1..MC6 (0xF8D--0xF92) once with the
-  Linux MAD16/OPTi C929 bring-up bytes adapted for XT-safe SB mode:
-  CD/IDE decode off, SB Pro 3.x, MPU off, wave/attn on, and MC5 set to
-  the Linux C929 base value 0xa5 (reserved bit 7, SHPASS, and reserved
-  bits 2/0 set; SPACCESS clear). MC3 IRQ/DMA/SB port tracks your sb=
-  boot line or SB_* kconfig instead of Linux's WSS-only disable value.
-  Say N for a plain Sound Blaster or other SB-compatible: no I/O to the
-  OPTi window and the driver behaves as stock SB-only.
-
 Enable standard parallel (printer) ports
 CONFIG_CHAR_DEV_LP
   Include support for parallel port devices.

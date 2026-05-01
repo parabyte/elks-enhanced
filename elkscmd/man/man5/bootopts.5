@@ -113,9 +113,23 @@ console=tty1
 console=tty1,ttyS1,115200   # kernel log on serial (last device), VGA tty1 for getty
 debug=1                     # raise debug_level
 root=fd1, root=/dev/fd1, root=hda[1-4], hdb[1-4], hdc[1-4]
+root=boot, root=source      use the BIOS device that loaded /linux
+nolocalroot=on       ignore explicit ELKS block root devices; use boot source
+nolocalroot=off      allow normal root= local block devices (default)
 net=eth, net=slip, net=cslip  starts predefined network configurations
 ro, rw		The root filesystem may be mounted rw or read only
 comirq=,7            sets non-standard IRQ (7) on COM2
+xtide=1              select direct ATA/XTIDE adapter mode
+ata=slow, ide=slow   conservative direct ATA/XTIDE timing
+ata=fast, ide=fast   normal direct ATA/XTIDE timing
+mfm=slow             conservative direct MFM timing
+mfm=fast             normal direct MFM timing
+sb=0x220,5,1         Sound Blaster DSP port, IRQ, DMA
+sb=off               do not probe the Sound Blaster DSP driver
+mad16=on             configure OPTi 82C929/MAD16 from the active sb= route
+mad16=5,1            force MAD16 IRQ/DMA; SB port follows sb=
+mad16=0x220,5,1      force MAD16 SB port, IRQ, DMA
+mad16=off            leave OPTi/MAD16 registers untouched (default)
 LOCALIP=, GATEWAY=, NETMASK=, DNSSERVER=, BAUD=, DEVICE=
 		override /etc/net.cfg defaults for serial or ethernet startup
 .fi

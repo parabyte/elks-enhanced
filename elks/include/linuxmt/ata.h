@@ -82,12 +82,15 @@
 #define ATAPI_SECTOR_SIZE   2048
 
 extern int ata_mode;        /* ATA CF driver operating mode, /bootopts xtide= */
+extern int ata_slow_profile;/* conservative ATA timing, /bootopts ata=slow */
 
 int ATPROC ata_reset(void);
 struct drive_infot;
 int ATPROC ata_init(int drive, struct drive_infot *drivep);
-int ATPROC ata_read(unsigned int drive, sector_t sector, char *buf, ramdesc_t seg);
-int ATPROC ata_write(unsigned int drive, sector_t sector, char *buf, ramdesc_t seg);
+int ATPROC ata_read(unsigned int drive, sector_t sector, char *buf, ramdesc_t seg,
+    unsigned int count);
+int ATPROC ata_write(unsigned int drive, sector_t sector, char *buf, ramdesc_t seg,
+    unsigned int count);
 int ATPROC ata_flush(unsigned int drive);
 
 #endif /* !__ARCH_8086_ATA_H*/

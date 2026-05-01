@@ -76,6 +76,7 @@ Then set the options for the target hardware:
   CONFIG_ATA_XTIDE_BASE_PORT=0x300
   CONFIG_ATA_ATAPI=y
   CONFIG_ATA_FLUSH_CACHE=y
+  CONFIG_ATA_SLOW=y        optional for very slow XT-class targets
 
 Use CONFIG_ATA_MODE_DEFAULT=1 for XT-IDE rev1/high-low latch adapters.  If the
 same kernel must boot on several systems, keep CONFIG_ATA_MODE_DEFAULT=-1 and
@@ -99,11 +100,17 @@ XT-IDE rev1 or high/low latch adapter, direct IDE root filesystem:
   xtide=1
   root=cfa1
   disable=hda
+  ata=slow
 
 disable=hda is useful when an XT-IDE BIOS also exposes the same disk through
 the BIOS hard disk driver.  It prevents the BIOS copy of the disk from being
 registered as /dev/hda, while leaving the direct IDE device available as
 /dev/cfa.
+
+ata=slow enables conservative ATA/XTIDE timing at boot.  It uses longer command
+and data-ready waits and smaller multi-sector PIO bursts, which is helpful on
+4 MHz systems, old IDE disks, long cables, or marginal high/low latch adapters.
+Use ata=fast or ide=fast to return to the normal timing profile.
 
 Generic image that boots from whatever device loaded /linux, while still
 probing the direct IDE driver:
@@ -185,6 +192,7 @@ enabled:
      xtide=1
      root=cfa1
      disable=hda
+     ata=slow
 
 6. Sync before power-off or reboot.
 

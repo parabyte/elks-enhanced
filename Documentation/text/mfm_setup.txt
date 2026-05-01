@@ -68,10 +68,10 @@ the wrong disk.  Use root=boot to mount the BIOS device that loaded /linux:
 
 root=source is an alias for root=boot.
 
-To keep the MFM driver enabled for installation while preventing an MFM device
-from becoming root by accident, add:
+To keep local block drivers enabled for installation while preventing any
+explicit local ELKS block device from becoming root by accident, add:
 
-  noroot=mfm
+  nolocalroot=on
 
 This leaves /dev/mfma and /dev/mfmb available for dd, fdisk, and filesystem
 tools.  Do not use disable=mfma for this installer case: disable=mfma disables
@@ -103,9 +103,9 @@ Typical setup
 
      root=mfma1
 
-For installer images, prefer root=boot plus noroot=mfm until the target disk is
-known-good.  After the installed MFM filesystem is valid, switch the installed
-/bootopts to root=mfma1.
+For installer images, prefer root=boot plus nolocalroot=on until the target
+disk is known-good.  After the installed MFM filesystem is valid, switch the
+installed /bootopts to root=mfma1 and nolocalroot=off.
 
 Troubleshooting
 ---------------
@@ -119,5 +119,5 @@ override values.  MFM controllers often depend on switch-selected geometry, and
 a mismatch can make a valid disk look corrupt.
 
 If an installer boots from another device while an MFM disk is attached, use
-root=boot and noroot=mfm.  That keeps the target writable as /dev/mfma without
-letting a stale MFM root filesystem take over the boot.
+root=boot and nolocalroot=on.  That keeps the target writable as /dev/mfma
+without letting a stale local root filesystem take over the boot.

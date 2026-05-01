@@ -76,6 +76,8 @@
 #define ATA_DEV_ATAPI   2
 
 #define ATA_RW_RETRIES  3
+#define ATA_FAST_XFER_SECTORS  8
+#define ATA_SLOW_XFER_SECTORS  4
 
 /* configurable options */
 #define FASTIO          1       /* =1 to use ASM in/out instructions for I/O */
@@ -121,6 +123,7 @@ static unsigned int xlate_XTIDEv2[8] = {
 #define WAIT_50MS   (5*HZ/100)      /* 5/100 sec = 50ms while busy */
 #define WAIT_1SEC   (1*HZ)          /* 1 sec wait for identify */
 #define WAIT_10SEC  (10*HZ)         /* 10 sec wait for read/write */
+#define WAIT_20SEC  (20*HZ)         /* old hardware timeout */
 
 /* end of configurable options */
 
@@ -133,6 +136,11 @@ static unsigned int ata_sectors[2];
 static sector_t ata_total_sectors[2];
 static unsigned char ata_last_status;
 static unsigned char ata_last_error;
+#ifdef CONFIG_ATA_SLOW
+int ata_slow_profile = 1;
+#else
+int ata_slow_profile;
+#endif
 #ifdef CONFIG_ATA_ATAPI
 static unsigned char *atapi_buffer;
 static unsigned char atapi_packet[12];
@@ -227,6 +235,38 @@ static void ATPROC ata_print_error(char dev, const char *op, int error,
         dev, op, error, ata_last_status, ata_last_error, sector);
 }
 
+static unsigned int ATPROC ata_select_ticks(void)
+{
+    return ata_slow_profile ? WAIT_1SEC : WAIT_50MS;
+}
+
+static unsigned int ATPROC ata_identify_ticks(void)
+{
+    return ata_slow_profile ? WAIT_10SEC : WAIT_1SEC;
+}
+
+static unsigned int ATPROC ata_rw_ticks(void)
+{
+    return ata_slow_profile ? WAIT_20SEC : WAIT_10SEC;
+}
+
+static unsigned int ATPROC ata_first_write_ticks(void)
+{
+    return ata_slow_profile ? WAIT_1SEC : WAIT_50MS;
+}
+
+static unsigned int ATPROC ata_xfer_count(unsigned int count)
+{
+    unsigned int max = ata_slow_profile ?
+        ATA_SLOW_XFER_SECTORS : ATA_FAST_XFER_SECTORS;
+
+    if (count > max)
+        count = max;
+    if (count > 255)
+        count = 255;
+    return count;
+}
+
 /* delay 10ms */
 static void ATPROC delay_10ms(void)
 {
@@ -262,10 +302,62 @@ static int ATPROC ata_wait(unsigned int ticks)
 }
 
 
+#ifdef __ia16__
+static void ATPROC xtidev1_insw(int port, unsigned int seg,
+    unsigned int offset, unsigned int count)
+{
+    unsigned int ax, cx, di;
+
+    asm volatile (
+        "push %%es\n"
+        "mov %%ax,%%es\n"
+        "cld\n"
+        "1:\n"
+        "in (%%dx),%%al\n"
+        "stosb\n"
+        "add $8,%%dx\n"
+        "in (%%dx),%%al\n"
+        "stosb\n"
+        "sub $8,%%dx\n"
+        "loop 1b\n"
+        "pop %%es\n"
+        : "=a" (ax), "=c" (cx), "=D" (di)
+        : "d" (port), "a" (seg), "D" (offset), "c" (count)
+        : "memory" );
+}
+
+static void ATPROC xtidev1_outsw(int port, unsigned int seg,
+    unsigned int offset, unsigned int count)
+{
+    unsigned int ax, cx, si;
+
+    asm volatile (
+        "push %%ds\n"
+        "mov %%ax,%%ds\n"
+        "cld\n"
+        "1:\n"
+        "lodsb\n"
+        "movb %%al,%%ah\n"
+        "add $8,%%dx\n"
+        "lodsb\n"
+        "out %%al,(%%dx)\n"
+        "sub $8,%%dx\n"
+        "movb %%ah,%%al\n"
+        "out %%al,(%%dx)\n"
+        "loop 1b\n"
+        "pop %%ds\n"
+        : "=a" (ax), "=c" (cx), "=S" (si)
+        : "d" (port), "a" (seg), "S" (offset), "c" (count)
+        : "memory" );
+}
+#endif
+
 /* read from I/O port into far buffer */
 static void ATPROC read_ioport(int port, unsigned char __far *buffer, size_t count)
 {
+#if !FASTIO || !defined(__ia16__)
     size_t i;
+#endif
 
     switch (xfer_mode) {
     case XFER_16:
@@ -292,11 +384,15 @@ static void ATPROC read_ioport(int port, unsigned char __far *buffer, size_t cou
         break;
 
     case XFER_8_XTIDEv1:
+#ifdef __ia16__
+        xtidev1_insw(port, _FP_SEG(buffer), _FP_OFF(buffer), count/2);
+#else
         for (i = 0; i < count; i+=2)
         {
             *buffer++=  inb(port);      // lo byte first when reading
             *buffer++ = inb(port+8);    // then hi byte from port+8
         }
+#endif
         break;
     }
 }
@@ -304,8 +400,10 @@ static void ATPROC read_ioport(int port, unsigned char __far *buffer, size_t cou
 /* write from far buffer to I/O port */
 static void ATPROC write_ioport(int port, unsigned char __far *buffer, size_t count)
 {
+#if !FASTIO || !defined(__ia16__)
     size_t i;
     unsigned short word;
+#endif
 
     switch (xfer_mode) {
     case XFER_16:
@@ -331,12 +429,16 @@ static void ATPROC write_ioport(int port, unsigned char __far *buffer, size_t co
         break;
 
     case XFER_8_XTIDEv1:
+#ifdef __ia16__
+        xtidev1_outsw(port, _FP_SEG(buffer), _FP_OFF(buffer), count/2);
+#else
         for (i = 0; i < count; i+=2)
         {
             word = *buffer++;           // save low byte
             outb(*buffer++, port+8);    // hi byte first to port+8
             outb(word, port);           // then lo byte to port+0
         }
+#endif
         break;
     }
 }
@@ -362,7 +464,7 @@ static int ATPROC ata_set8bitmode(void)
 
     // wait for drive to be not-busy
 
-    error = ata_wait(WAIT_50MS);
+    error = ata_wait(ata_select_ticks());
     if (error)
         return error;
 
@@ -397,7 +499,7 @@ static int ATPROC ata_select(unsigned int drive, int lba, sector_t sector,
 
     // wait for current drive to be non-busy
 
-    error = ata_wait(WAIT_50MS);
+    error = ata_wait(ata_select_ticks());
     if (error)
         return error;
 
@@ -474,9 +576,10 @@ static int ATPROC ata_cmd(unsigned int drive, unsigned int cmd, sector_t sector,
 
 
     switch (cmd) {
-    case ATA_CMD_READ:  wait = WAIT_10SEC; break;
-    case ATA_CMD_ID:    wait = WAIT_1SEC;  break;
-    default:            wait = WAIT_50MS;  break;
+    case ATA_CMD_READ:  wait = ata_rw_ticks();          break;
+    case ATA_CMD_WRITE: wait = ata_first_write_ticks(); break;
+    case ATA_CMD_ID:    wait = ata_identify_ticks();    break;
+    default:            wait = WAIT_50MS;               break;
     }
     error = ata_wait(wait);
     if (error)
@@ -493,6 +596,27 @@ static int ATPROC ata_cmd(unsigned int drive, unsigned int cmd, sector_t sector,
     }
 
     if (! (status & ATA_STATUS_DRQ)) {
+        ata_save_error(status);
+        return -EINVAL;
+    }
+    return 0;
+}
+
+static int ATPROC ata_wait_drq(unsigned int ticks)
+{
+    int error;
+    unsigned char status;
+
+    error = ata_wait(ticks);
+    if (error)
+        return error;
+
+    status = INB(ATA_REG_STATUS);
+    if (status & (ATA_STATUS_ERR|ATA_STATUS_DFE)) {
+        ata_save_error(status);
+        return -EIO;
+    }
+    if (!(status & ATA_STATUS_DRQ)) {
         ata_save_error(status);
         return -EINVAL;
     }
@@ -587,7 +711,7 @@ static int ATPROC atapi_packet_cmd(unsigned int drive, unsigned int bytes,
     OUTB((unsigned char)(bytes >> 8), ATA_REG_LBA_HI);
     OUTB(ATA_CMD_PACKET, ATA_REG_CMD);
 
-    error = ata_wait(WAIT_1SEC);
+    error = ata_wait(ata_identify_ticks());
     if (error)
         return error;
 
@@ -618,7 +742,7 @@ static int ATPROC atapi_packet_cmd(unsigned int drive, unsigned int bytes,
     if (got == 0 || got > bytes)
         got = bytes;
     read_ioport(BASE(ATA_REG_DATA), (unsigned char __far *)atapi_buffer, got);
-    (void)ata_wait(WAIT_50MS);
+    (void)ata_wait(ata_select_ticks());
     return 0;
 }
 
@@ -890,52 +1014,77 @@ out:
  * sector: sector number
  * buf/seg: I/O buffer address
  */
-int ATPROC ata_read(unsigned int drive, sector_t sector, char *buf, ramdesc_t seg)
+int ATPROC ata_read(unsigned int drive, sector_t sector, char *buf, ramdesc_t seg,
+    unsigned int count)
 {
     unsigned char __far *buffer;
     int error;
     int retry;
+    unsigned int pass, done;
+#ifdef CONFIG_FS_XMS
+#pragma GCC diagnostic ignored "-Wshift-count-overflow"
+    int use_xms = seg >> 16;
+#endif
 
 #ifdef CONFIG_ATA_ATAPI
     if (ata_devtype[drive] == ATA_DEV_ATAPI) {
-        for (retry = 0; retry < ATA_RW_RETRIES; retry++) {
-            error = atapi_read_512(drive, sector, buf, seg);
-            if (!error)
-                return 0;
+        while (count--) {
+            for (retry = 0; retry < ATA_RW_RETRIES; retry++) {
+                error = atapi_read_512(drive, sector, buf, seg);
+                if (!error)
+                    break;
+            }
+            if (error) {
+                ata_print_error((char)(drive+'a'), "atapi read", error, sector);
+                return error;
+            }
+            sector++;
+            buf += ATA_SECTOR_SIZE;
         }
-        ata_print_error((char)(drive+'a'), "atapi read", error, sector);
-        return error;
+        return 0;
     }
 #endif
 
-    // send command
+    while (count) {
+        pass = ata_xfer_count(count);
 
-    for (retry = 0; retry < ATA_RW_RETRIES; retry++) {
-        error = ata_cmd(drive, ATA_CMD_READ, sector, 1);
-        if (!error)
-            break;
-    }
-    if (error) {
-        ata_print_error((char)(drive+'a'), "read", error, sector);
-        return error;
-    }
+        for (retry = 0; retry < ATA_RW_RETRIES; retry++) {
+            error = ata_cmd(drive, ATA_CMD_READ, sector, pass);
+            if (!error)
+                break;
+        }
+        if (error) {
+            ata_print_error((char)(drive+'a'), "read", error, sector);
+            return error;
+        }
 
-    // read data
-
-#pragma GCC diagnostic ignored "-Wshift-count-overflow"
+        for (done = 0; done < pass; done++) {
 #ifdef CONFIG_FS_XMS
-    int use_xms = seg >> 16;
-    if (use_xms)
-    {
-        buffer = _MK_FP(DMASEG, 0);
-        read_ioport(BASE(ATA_REG_DATA), buffer, ATA_SECTOR_SIZE);
-        xms_fmemcpyw(buf, seg, 0, DMASEG, ATA_SECTOR_SIZE / 2);
-    }
-    else
+            if (use_xms)
+            {
+                buffer = _MK_FP(DMASEG, 0);
+                read_ioport(BASE(ATA_REG_DATA), buffer, ATA_SECTOR_SIZE);
+                xms_fmemcpyw(buf, seg, 0, DMASEG, ATA_SECTOR_SIZE / 2);
+            }
+            else
 #endif
-    {
-        buffer = _MK_FP(seg, buf);
-        read_ioport(BASE(ATA_REG_DATA), buffer, ATA_SECTOR_SIZE);
+            {
+                buffer = _MK_FP(seg, buf);
+                read_ioport(BASE(ATA_REG_DATA), buffer, ATA_SECTOR_SIZE);
+            }
+
+            buf += ATA_SECTOR_SIZE;
+            if (done + 1 < pass) {
+                error = ata_wait_drq(ata_rw_ticks());
+                if (error) {
+                    ata_print_error((char)(drive+'a'), "read", error,
+                        sector + done + 1);
+                    return error;
+                }
+            }
+        }
+        sector += pass;
+        count -= pass;
     }
 
     return 0;
@@ -949,59 +1098,74 @@ int ATPROC ata_read(unsigned int drive, sector_t sector, char *buf, ramdesc_t se
  * sector: sector number
  * buf/seg: I/O buffer address
  */
-int ATPROC ata_write(unsigned int drive, sector_t sector, char *buf, ramdesc_t seg)
+int ATPROC ata_write(unsigned int drive, sector_t sector, char *buf, ramdesc_t seg,
+    unsigned int count)
 {
     unsigned char __far *buffer;
     int error;
     int retry;
     unsigned char status;
+    unsigned int pass, done;
+#ifdef CONFIG_FS_XMS
+#pragma GCC diagnostic ignored "-Wshift-count-overflow"
+    int use_xms = seg >> 16;
+#endif
 
     if (ata_devtype[drive] == ATA_DEV_ATAPI)
         return -EROFS;
 
-    // send command
+    while (count) {
+        pass = ata_xfer_count(count);
 
-    for (retry = 0; retry < ATA_RW_RETRIES; retry++) {
-        error = ata_cmd(drive, ATA_CMD_WRITE, sector, 1);
-        if (!error)
-            break;
-    }
-    if (error) {
-        ata_print_error((char)(drive+'a'), "write", error, sector);
-        return error;
-    }
+        for (retry = 0; retry < ATA_RW_RETRIES; retry++) {
+            error = ata_cmd(drive, ATA_CMD_WRITE, sector, pass);
+            if (!error)
+                break;
+        }
+        if (error) {
+            ata_print_error((char)(drive+'a'), "write", error, sector);
+            return error;
+        }
 
-
-    // write data
-
+        for (done = 0; done < pass; done++) {
 #ifdef CONFIG_FS_XMS
-#pragma GCC diagnostic ignored "-Wshift-count-overflow"
-    int use_xms = seg >> 16;
-    if (use_xms)
-    {
-        xms_fmemcpyw(0, DMASEG, buf, seg, ATA_SECTOR_SIZE / 2);
-        buffer = _MK_FP(DMASEG, 0);
-        write_ioport(BASE(ATA_REG_DATA), buffer, ATA_SECTOR_SIZE);
-    }
-    else
+            if (use_xms)
+            {
+                xms_fmemcpyw(0, DMASEG, buf, seg, ATA_SECTOR_SIZE / 2);
+                buffer = _MK_FP(DMASEG, 0);
+                write_ioport(BASE(ATA_REG_DATA), buffer, ATA_SECTOR_SIZE);
+            }
+            else
 #endif
-    {
-        buffer = _MK_FP(seg, buf);
-        write_ioport(BASE(ATA_REG_DATA), buffer, ATA_SECTOR_SIZE);
-    }
+            {
+                buffer = _MK_FP(seg, buf);
+                write_ioport(BASE(ATA_REG_DATA), buffer, ATA_SECTOR_SIZE);
+            }
 
-    error = ata_wait(WAIT_10SEC);
-    if (error)
-        return error;
+            buf += ATA_SECTOR_SIZE;
+            if (done + 1 < pass) {
+                error = ata_wait_drq(ata_rw_ticks());
+                if (error) {
+                    ata_print_error((char)(drive+'a'), "write", error,
+                        sector + done + 1);
+                    return error;
+                }
+            }
+        }
 
-    // check for write error
+        error = ata_wait(ata_rw_ticks());
+        if (error)
+            return error;
 
-    status = INB(ATA_REG_STATUS);
+        status = INB(ATA_REG_STATUS);
+        if (status & (ATA_STATUS_ERR|ATA_STATUS_DFE)) {
+            ata_save_error(status);
+            ata_print_error((char)(drive+'a'), "write", -EIO, sector);
+            return -EIO;
+        }
 
-    if (status & (ATA_STATUS_ERR|ATA_STATUS_DFE)) {
-        ata_save_error(status);
-        ata_print_error((char)(drive+'a'), "write", -EIO, sector);
-        return -EIO;
+        sector += pass;
+        count -= pass;
     }
 
     return 0;
@@ -1011,5 +1175,5 @@ int ATPROC ata_flush(unsigned int drive)
 {
     if (ata_devtype[drive] != ATA_DEV_DISK)
         return 0;
-    return ata_nondata_cmd(drive, ATA_CMD_FLUSH, WAIT_10SEC);
+    return ata_nondata_cmd(drive, ATA_CMD_FLUSH, ata_rw_ticks());
 }

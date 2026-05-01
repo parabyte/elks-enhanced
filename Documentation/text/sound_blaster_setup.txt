@@ -39,25 +39,34 @@ OPTi 82C929 based MAD16 Pro cards can be used by forcing the card into Sound
 Blaster compatible mode, then using the normal ELKS Sound Blaster driver.
 The ELKS driver does not use the Windows Sound System codec path.
 
-There are two supported setup paths.
-
-1. Kernel setup before Sound Blaster reset
-
-Enable CONFIG_SB_OPTI82C929 with CONFIG_CHAR_DEV_DSP.  At boot the kernel
-unlocks the OPTi control window and applies an XT-safe Sound Blaster profile
-before it resets the DSP.  The active SB port, IRQ, and DMA come from sb= in
-/bootopts when present, otherwise from CONFIG_SB_PORT, CONFIG_SB_IRQ, and
-CONFIG_SB_DMA.
-
-Example /bootopts:
+The kernel leaves OPTi/MAD16 registers untouched by default so the same SB
+driver can safely boot on real Sound Blaster cards.  To enable the in-kernel
+MAD16 bring-up, keep the normal SB route in sb= and add mad16=on:
 
   sb=0x220,5,1
+  mad16=on
 
-The built-in profile disables WSS, CD-ROM, IDE, and MPU decode, selects
-SB Pro compatible mode, and leaves only the Sound Blaster compatible path for
-the ELKS /dev/dsp driver.
+mad16=on programs the card from the active SB route.  If no sb= line is present
+it uses CONFIG_SB_PORT, CONFIG_SB_IRQ, and CONFIG_SB_DMA.  The built-in profile
+matches the XT-safe mad16cfg defaults: WSS, CD-ROM, IDE, and MPU decode are
+disabled, SB Pro compatible mode is selected, and only the Sound Blaster path is
+left for /dev/dsp.
 
-2. Userland setup with mad16cfg
+If a board needs the MAD16 route forced explicitly, use either:
+
+  mad16=5,1
+  mad16=0x220,5,1
+
+The first form forces MAD16 IRQ/DMA and follows the active sb= port.  The second
+form forces MAD16 SB port, IRQ, and DMA.  Valid routes are SB port 0x220 or
+0x240, IRQ 5 or 7, and DMA 1 or 3.  Keep forced mad16= routing matched to sb=,
+for example sb=0x220,5,1 with mad16=0x220,5,1.
+
+Use mad16=off, or omit mad16= entirely, for real Sound Blaster cards and other
+SB-compatible hardware that must not receive OPTi control-window writes.
+
+Userland setup with mad16cfg
+----------------------------
 
 Build CONFIG_APP_MAD16CFG and enable /dev/port read and write support with:
 
@@ -99,10 +108,9 @@ If the machine boots but audio is silent, first confirm that sb= in /bootopts
 matches the card jumpers or mad16cfg settings.  A wrong IRQ can make playback
 appear to hang until the DMA buffer times out.
 
-If a MAD16 card conflicts with an IDE or CD-ROM interface, use the built-in
-CONFIG_SB_OPTI82C929 setup or mad16cfg.  Both paths intentionally disable the
-MAD16 WSS, IDE, CD-ROM, and MPU decode paths so the card behaves like a simple
-Sound Blaster compatible device.
+If a MAD16 card conflicts with an IDE or CD-ROM interface, use mad16=on or
+mad16cfg.  Both paths intentionally disable the MAD16 WSS, IDE, CD-ROM, and MPU
+decode paths so the card behaves like a simple Sound Blaster compatible device.
 
 If the same kernel image is shared between machines, use sb=off on systems
 without an ISA sound card so the driver does not probe missing hardware.

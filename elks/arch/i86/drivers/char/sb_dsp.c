@@ -1,12 +1,12 @@
 /*
  * 8-bit ISA DMA only: primary 8237, channels 1 or 3, memory-to-I/O playback.
- * OSS /dev/dsp ioctls; mono U8 by default. No 16-bit ISA DMA (channels 5–7),
+ * OSS /dev/dsp ioctls; mono U8 by default. No 16-bit ISA DMA (channels 5-7),
  * no SB16 high-DMA mode. Uses the classic SB 2.0-style DSP 0x14 /
  * time-constant path.
  *
- * Tested-class compatibles: Sound Blaster 2.0/Pro layout; OPTi 82C929 (MAD16 Pro)
- * in Sound Blaster Pro mode (same DSP ports; use SET BLASTER=A220 I5 D1 or
- * vendor SNDINIT, then matching sb= or kernel SB_* config).
+ * Tested-class compatibles: Sound Blaster 2.0/Pro layout; OPTi 82C929
+ * (MAD16 Pro) in Sound Blaster Pro mode. Use /bootopts mad16=on to make
+ * the kernel program the OPTi control registers before probing the SB DSP.
  *
  * SNDCTL_DSP_SPEED: pass *arg==0 to read current Hz without changing it.
  *
@@ -58,6 +58,13 @@ static unsigned char sb_cfg_from_bootopts;
 static unsigned int sb_cfg_port;
 static unsigned char sb_cfg_irq;
 static unsigned char sb_cfg_dma;
+
+/* Optional /bootopts mad16=on or mad16=port,irq,dma; default off for real SBs. */
+static unsigned char mad16_cfg_enable;
+static unsigned char mad16_cfg_from_bootopts;
+static unsigned int mad16_cfg_port;
+static unsigned char mad16_cfg_irq;
+static unsigned char mad16_cfg_dma;
 
 static unsigned int sb_base;
 static unsigned char sb_dma;
@@ -157,6 +164,13 @@ static jiff_t sb_play_ticks(unsigned int len)
 	return (ticks < 1) ? 1 : ticks;
 }
 
+static unsigned long sb_boot_num(char *s)
+{
+	if (s[0] == '0' && (s[1] == 'x' || s[1] == 'X'))
+		return (unsigned long)simple_strtol(s + 2, 16);
+	return (unsigned long)simple_strtol(s, 10);
+}
+
 static int sb_get_arg(char *arg, void *dst, size_t len)
 {
 	if (!arg)
@@ -181,7 +195,6 @@ static int sb_put_arg32(char *arg, oss_int32_t v)
 	return sb_put_arg(arg, &v, sizeof(v));
 }
 
-#ifdef CONFIG_SB_OPTI82C929
 /*
  * OPTi 82C929 MC registers (Linux opti9xx map): password 0xE3 at 0xF8F,
  * MC1..MC6 at 0xF8D..0xF92.
@@ -292,6 +305,18 @@ static unsigned char opti929_mc3_for_sb(unsigned int sb_port, unsigned char irq,
 		mc3 = (unsigned char)((mc3 & ~OPTI929_MC3_DMA_MASK) |
 				      OPTI929_MC3_DMA_MASK);
 	return mc3;
+}
+
+static int opti929_valid_route(unsigned int sb_port, unsigned char irq,
+			       unsigned char dma)
+{
+	if (sb_port != 0x220U && sb_port != 0x240U)
+		return 0;
+	if (irq != 5U && irq != 7U)
+		return 0;
+	if (dma != 1U && dma != 3U)
+		return 0;
+	return 1;
 }
 
 static int opti929_codec_wait(unsigned int base)
@@ -409,19 +434,15 @@ static unsigned char opti929_wss_dma_cfg(unsigned char dma)
 	return (dma == 3U) ? 0x03U : 0x02U;
 }
 
-static void opti82c929_early_init(unsigned int sb_port, unsigned char irq,
-				  unsigned char dma)
+static int opti82c929_early_init(unsigned int sb_port, unsigned char irq,
+				 unsigned char dma)
 {
 	unsigned char mc1, mc2, mc3, mc4, mc5, mc6, mc5_extra = 0;
 
-	if (sb_port != 0x220U && sb_port != 0x240U)
-		return;
-	if (irq != 5U && irq != 7U)
-		return;
-	if (dma != 1U && dma != 3U)
-		return;
+	if (!opti929_valid_route(sb_port, irq, dma))
+		return -EINVAL;
 	if (!opti929_detect())
-		return;
+		return -ENODEV;
 
 	mc1 = OPTI929_MC1_DEFAULT;
 	mc2 = OPTI929_MC2_DEFAULT;
@@ -462,8 +483,8 @@ static void opti82c929_early_init(unsigned int sb_port, unsigned char irq,
 	opti929_wr(OPTI929_MC4, mc4);
 	opti929_wr(OPTI929_MC5, mc5);
 	opti929_wr(OPTI929_MC6, mc6);
+	return 0;
 }
-#endif /* CONFIG_SB_OPTI82C929 */
 
 static int sb_reset(unsigned base)
 {
@@ -1049,7 +1070,7 @@ static struct file_operations sb_dsp_fops = {
 
 /*
  * /bootopts: sb=0x220,5,1  or  sb=544,5,1
- * sb=off | sb=no | sb=0  — skip SB init (kernel built with driver, no hardware).
+ * sb=off | sb=no | sb=0 - skip SB init (kernel built with driver, no hardware).
  * Overrides CONFIG_SB_PORT, CONFIG_SB_IRQ, CONFIG_SB_DMA when present.
  */
 void INITPROC sb_bootopts_parse(char *line)
@@ -1072,10 +1093,7 @@ void INITPROC sb_bootopts_parse(char *line)
 	if (!p)
 		return;
 	*p++ = '\0';
-	if (line[0] == '0' && line[1] == 'x')
-		port = (unsigned long)simple_strtol(line + 2, 16);
-	else
-		port = (unsigned long)simple_strtol(line, 10);
+	port = sb_boot_num(line);
 
 	q = strchr(p, ',');
 	if (!q)
@@ -1102,8 +1120,82 @@ void INITPROC sb_bootopts_parse(char *line)
 	sb_cfg_from_bootopts = 1;
 }
 
+/*
+ * /bootopts:
+ *   mad16=on          enable OPTi/MAD16 bring-up using active sb= route
+ *   mad16=off         leave OPTi registers untouched (default)
+ *   mad16=5,1         force MAD16 IRQ/DMA; SB port follows active sb= route
+ *   mad16=0x220,5,1   force MAD16 SB port/IRQ/DMA
+ *
+ * The SB DSP driver still uses sb= or CONFIG_SB_*; forced MAD16 routing must
+ * match it or playback IRQ/DMA will not line up.
+ */
+void INITPROC mad16_bootopts_parse(char *line)
+{
+	char *p, *q;
+	unsigned long port;
+	unsigned int irq, dma;
+
+	while (*line == ' ' || *line == '\t')
+		line++;
+
+	if (!strcmp(line, "on") || !strcmp(line, "yes") || !strcmp(line, "1")) {
+		mad16_cfg_enable = 1;
+		mad16_cfg_from_bootopts = 0;
+		return;
+	}
+	if (!strcmp(line, "off") || !strcmp(line, "no") || !strcmp(line, "0")) {
+		mad16_cfg_enable = 0;
+		mad16_cfg_from_bootopts = 0;
+		printk("mad16: disabled by bootopts\n");
+		return;
+	}
+
+	p = strchr(line, ',');
+	if (!p)
+		return;
+	*p++ = '\0';
+	q = strchr(p, ',');
+	if (q) {
+		*q++ = '\0';
+		port = sb_boot_num(line);
+		if (port == 220UL)
+			port = 0x220UL;
+		if (port == 240UL)
+			port = 0x240UL;
+		irq = (unsigned int)simple_strtol(p, 10);
+		dma = (unsigned int)simple_strtol(q, 10);
+	} else {
+		port = 0UL;
+		irq = (unsigned int)simple_strtol(line, 10);
+		dma = (unsigned int)simple_strtol(p, 10);
+	}
+
+	if (port != 0UL && port != 0x220UL && port != 0x240UL) {
+		printk("mad16: bootopts port must be 0x220 or 0x240\n");
+		return;
+	}
+	if (irq != 5U && irq != 7U) {
+		printk("mad16: bootopts irq must be 5 or 7\n");
+		return;
+	}
+	if (dma != 1U && dma != 3U) {
+		printk("mad16: bootopts dma must be 1 or 3\n");
+		return;
+	}
+	mad16_cfg_port = (unsigned int)port;
+	mad16_cfg_irq = (unsigned char)irq;
+	mad16_cfg_dma = (unsigned char)dma;
+	mad16_cfg_from_bootopts = 1;
+	mad16_cfg_enable = 1;
+}
+
 void INITPROC sb_dsp_init(void)
 {
+	unsigned int mad16_port;
+	unsigned char mad16_irq, mad16_dma;
+	int mad16_rc;
+
 	if (sb_cfg_disable)
 		return;
 
@@ -1128,9 +1220,27 @@ void INITPROC sb_dsp_init(void)
 		printk("sb: dma buffer crosses 64k\n");
 		return;
 	}
-#ifdef CONFIG_SB_OPTI82C929
-	opti82c929_early_init(sb_base, sb_irq_line, sb_dma);
-#endif
+	if (mad16_cfg_enable) {
+		mad16_port = sb_base;
+		mad16_irq = sb_irq_line;
+		mad16_dma = sb_dma;
+		if (mad16_cfg_from_bootopts) {
+			if (mad16_cfg_port != 0U)
+				mad16_port = mad16_cfg_port;
+			mad16_irq = mad16_cfg_irq;
+			mad16_dma = mad16_cfg_dma;
+		}
+		mad16_rc = opti82c929_early_init(mad16_port, mad16_irq,
+						 mad16_dma);
+		if (mad16_rc == 0)
+			printk("mad16: sb 0x%x irq %u dma %u\n",
+			       mad16_port, mad16_irq, mad16_dma);
+		else if (mad16_rc == -ENODEV)
+			printk("mad16: 82c929 not detected\n");
+		else
+			printk("mad16: bad route 0x%x irq %u dma %u\n",
+			       mad16_port, mad16_irq, mad16_dma);
+	}
 	if (sb_reset(sb_base) < 0) {
 		printk("sb: not at 0x%x\n", sb_base);
 		return;

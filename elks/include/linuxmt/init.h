@@ -40,6 +40,7 @@ extern int  INITPROC xms_init(void);
 
 #ifdef CONFIG_CHAR_DEV_DSP
 extern void INITPROC sb_bootopts_parse(char *line);
+extern void INITPROC mad16_bootopts_parse(char *line);
 #endif
 
 extern void INITPROC device_init(void);

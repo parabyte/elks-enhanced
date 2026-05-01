@@ -56,6 +56,9 @@ int ata_mode = -1;              /* =AUTO default set ATA CF driver mode automati
 #ifdef CONFIG_BLK_DEV_MFMHD
 extern int mfmhd_slow_profile;  /* /bootopts mfm=slow */
 #endif
+#ifdef CONFIG_BLK_DEV_ATA_CF
+extern int ata_slow_profile;    /* /bootopts ata=slow */
+#endif
 char running_qemu;
 static int boot_console;
 static segext_t umbtotal;
@@ -80,7 +83,7 @@ static int args = 2;    /* room for argc and av[0] */
 static int envs;
 static int argv_slen;
 static kdev_t boot_source_dev;
-static char no_mfm_root;
+static char no_local_root;
 #if ENV
 static char *envp_init[MAX_INIT_ENVS];
 #endif
@@ -98,7 +101,7 @@ extern int boot_rootdev;
 static int INITPROC parse_options(void);
 static void INITPROC finalize_options(void);
 static char * INITPROC option(char *s);
-static int INITPROC is_mfm_dev(kdev_t dev);
+static int INITPROC is_local_block_dev(kdev_t dev);
 #endif /* CONFIG_BOOTOPTS */
 
 static void FARPROC far_start_kernel(void);
@@ -431,9 +434,19 @@ int INITPROC dev_disabled(int dev)
 }
 
 #ifdef CONFIG_BOOTOPTS
-static int INITPROC is_mfm_dev(kdev_t dev)
+static int INITPROC is_local_block_dev(kdev_t dev)
 {
-    return MAJOR(dev) == MFMHD_MAJOR;
+    switch (MAJOR(dev)) {
+    case RAM_MAJOR:
+    case SSD_MAJOR:
+    case BIOSHD_MAJOR:
+    case FLOPPY_MAJOR:
+    case ATHD_MAJOR:
+    case ROMFLASH_MAJOR:
+    case MFMHD_MAJOR:
+        return 1;
+    }
+    return 0;
 }
 
 /*
@@ -632,11 +645,15 @@ static int INITPROC parse_options(void)
             boot_rootdev = dev;    /* stop translation in device_setup*/
             continue;
         }
-        if (!strncmp(line,"noroot=",7)) {
-            char *root = line + 7;
+        if (!strncmp(line,"nolocalroot=",12)) {
+            char *arg = line + 12;
 
-            if (!strcmp(root, "mfm") || !strcmp(root, "mfmhd"))
-                no_mfm_root = 1;
+            if (!strcmp(arg, "on") || !strcmp(arg, "yes") ||
+                    !strcmp(arg, "1"))
+                no_local_root = 1;
+            else if (!strcmp(arg, "off") || !strcmp(arg, "no") ||
+                    !strcmp(arg, "0"))
+                no_local_root = 0;
             continue;
         }
         if (!strncmp(line,"console=",8)) {
@@ -707,6 +724,10 @@ static int INITPROC parse_options(void)
             sb_bootopts_parse(line + 3);
             continue;
         }
+        if (!strncmp(line, "mad16=", 6)) {
+            mad16_bootopts_parse(line + 6);
+            continue;
+        }
 #endif
         if (!strncmp(line,"debug=", 6)) {
             debug_level = (int)simple_strtol(line+6, 10);
@@ -729,6 +750,19 @@ static int INITPROC parse_options(void)
             ata_mode = (int)simple_strtol(line+6, 10);
             continue;
         }
+#ifdef CONFIG_BLK_DEV_ATA_CF
+        if (!strncmp(line,"ata=",4) || !strncmp(line,"ide=",4)) {
+            char *arg = line + 4;
+
+            if (!strcmp(arg, "slow") || !strcmp(arg, "1") ||
+                    !strcmp(arg, "on"))
+                ata_slow_profile = 1;
+            else if (!strcmp(arg, "fast") || !strcmp(arg, "0") ||
+                    !strcmp(arg, "off"))
+                ata_slow_profile = 0;
+            continue;
+        }
+#endif
 #ifdef CONFIG_BLK_DEV_MFMHD
         if (!strncmp(line,"mfm=",4)) {
             if (!strcmp(line+4, "slow") || !strcmp(line+4, "1") ||
@@ -793,8 +827,8 @@ static int INITPROC parse_options(void)
         }
 #endif
     }
-    if (no_mfm_root && is_mfm_dev(ROOT_DEV)) {
-        printk("root: MFM root disabled, using boot source\n");
+    if (no_local_root && is_local_block_dev(ROOT_DEV)) {
+        printk("root: local root disabled, using boot source\n");
         ROOT_DEV = boot_source_dev;
         boot_rootdev = 0;  /* allow BIOS boot-drive translation */
     }

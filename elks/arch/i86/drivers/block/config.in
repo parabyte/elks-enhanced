@@ -38,6 +38,7 @@ mainmenu_option next_comment
 		hex '  SOLO/86 ATA base I/O port' CONFIG_ATA_SOLO86_BASE_PORT 0x40
 		bool '  ATAPI CD-ROM packet support' CONFIG_ATA_ATAPI y
 		bool '  Flush ATA write cache on final close' CONFIG_ATA_FLUSH_CACHE y
+		bool '  Slow ATA/XTIDE timing profile by default' CONFIG_ATA_SLOW n
 	fi
 
 	bool 'XT MFM hard drive support' CONFIG_BLK_DEV_MFMHD n

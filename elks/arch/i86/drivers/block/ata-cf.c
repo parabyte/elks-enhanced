@@ -200,24 +200,21 @@ static void do_ata_cf_request(void)
         }
         start += part[minor].start_sect;
 
-        while (count > 0) {
-            if (req->rq_cmd == WRITE) {
-                debug_blk("cf%c: writing sector %lu\n", drive+'a', start);
-                ret = ata_write(drive, start, buf, req->rq_seg);
-                if (start == 0)
-                    mbr_modified = 1;
-            } else {
-                debug_blk("cf%c: reading sector %lu\n", drive+'a', start);
-                ret = ata_read(drive, start, buf, req->rq_seg);
-            }
-            if (ret != 0) {         /* I/O error */
-                debug_blk("cf%c: I/O error %d cmd %d\n", drive+'a', ret, req->rq_cmd);
-                end_request(0);
-                return;
-            }
-            buf += ATA_SECTOR_SIZE;
-            start++;
-            count--;
+        if (req->rq_cmd == WRITE) {
+            debug_blk("cf%c: writing sector %lu count %d\n",
+                drive+'a', start, count);
+            ret = ata_write(drive, start, buf, req->rq_seg, count);
+            if (start == 0)
+                mbr_modified = 1;
+        } else {
+            debug_blk("cf%c: reading sector %lu count %d\n",
+                drive+'a', start, count);
+            ret = ata_read(drive, start, buf, req->rq_seg, count);
+        }
+        if (ret != 0) {         /* I/O error */
+            debug_blk("cf%c: I/O error %d cmd %d\n", drive+'a', ret, req->rq_cmd);
+            end_request(0);
+            return;
         }
         end_request(1);
         return;                     /* synchronous I/O */

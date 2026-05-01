@@ -10,8 +10,9 @@ Sound
 
   sound_blaster_setup.txt
 
-Sound Blaster compatible ISA audio, /dev/dsp, /dev/audio, boot-time sb=
-options, and OPTi 82C929 / MAD16 Pro cards forced into Sound Blaster mode.
+Sound Blaster compatible ISA audio, /dev/dsp, /dev/audio, boot-time sb= and
+mad16= options, and OPTi 82C929 / MAD16 Pro cards forced into Sound Blaster
+mode.
 
 Storage
 -------
@@ -19,9 +20,11 @@ Storage
   mfm_setup.txt
 
 XT-class WD1002A-WX1, Xebec command-block, Seagate ST11, and FileCard-class
-MFM hard disk setup using the direct MFM driver and /dev/mfma devices.
+MFM hard disk setup using the direct MFM driver, /dev/mfma devices, mfm=slow,
+and nolocalroot=on for installer images.
 
   ide_xtide_setup.txt
 
 Direct ATA-CF/IDE setup for standard ATA, XT-IDE, XTCF, SOLO/86, real IDE
-hard disks, large LBA28 disks, and ATAPI CD-ROM drives.
+hard disks, large LBA28 disks, ATAPI CD-ROM drives, xtide= mode selection, and
+ata=slow boot-time timing.
