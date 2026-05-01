@@ -22,6 +22,7 @@
 #define EXT2_BITS_PER_BLOCK		(BLOCK_SIZE << 3)
 #define EXT2_GOOD_OLD_FIRST_INO		11
 #define EXT2_ERRORS_CONTINUE		1
+#define EXT2_S_IFMT			0xF000
 
 static const char *progname = "e2fsck";
 static const char *device_name;
@@ -217,6 +218,24 @@ static int inode_is_live(unsigned long ino, const struct ext2_inode *raw)
 	if (ino == EXT2_ROOT_INO)
 		return raw->i_mode != 0;
 	return raw->i_mode != 0 && raw->i_links_count != 0;
+}
+
+static unsigned short inode_file_type(const struct ext2_inode *raw)
+{
+	return raw->i_mode & EXT2_S_IFMT;
+}
+
+static int inode_stores_blocks(const struct ext2_inode *raw)
+{
+	switch (inode_file_type(raw)) {
+	case EXT2_S_IFREG:
+	case EXT2_S_IFDIR:
+		return 1;
+	case EXT2_S_IFLNK:
+		return raw->i_blocks != 0;
+	default:
+		return 0;
+	}
 }
 
 static int dirent_ok(const struct ext2_dir_entry *de, unsigned short off)
@@ -430,6 +449,21 @@ static void scan_inode_pass1(unsigned long ino)
 
 	set_bitmap(expect_inode_map, ino);
 	set_bitmap(live_inode_map, ino);
+
+	if (!inode_stores_blocks(&raw)) {
+		if (raw.i_blocks) {
+			printf("%s: inode %lu i_blocks %lu should be 0\n",
+			       progname, ino, (unsigned long)raw.i_blocks);
+			mark_error();
+			if (repair) {
+				raw.i_blocks = 0;
+				write_inode_raw(ino, &raw);
+				changed = 1;
+			}
+		}
+		return;
+	}
+
 	sectors = 0;
 	dirty = 0;
 
@@ -476,22 +510,19 @@ static void scan_inode_pass1(unsigned long ino)
 }
 
 static void scan_dir_block(unsigned long dir_ino, unsigned long blocknr,
-			   unsigned short limit)
+			   unsigned short limit, int *have_dot,
+			   int *have_dotdot)
 {
 	struct ext2_dir_entry *de;
 	unsigned short off;
 	unsigned short reclen;
 	int dirty;
-	int have_dot;
-	int have_dotdot;
 
 	if (!blocknr)
 		return;
 
 	read_block(blocknr, dir_block);
 	dirty = 0;
-	have_dot = 0;
-	have_dotdot = 0;
 	off = 0;
 	while (off < limit) {
 		de = (struct ext2_dir_entry *)(dir_block + off);
@@ -520,7 +551,7 @@ static void scan_dir_block(unsigned long dir_ino, unsigned long blocknr,
 				}
 			} else {
 				if (de->name_len == 1 && de->name[0] == '.') {
-					have_dot = 1;
+					*have_dot = 1;
 					if (de->inode != dir_ino) {
 						printf("%s: directory inode %lu has bad '.' entry\n",
 						       progname, dir_ino);
@@ -533,7 +564,7 @@ static void scan_dir_block(unsigned long dir_ino, unsigned long blocknr,
 				} else if (de->name_len == 2 &&
 					   de->name[0] == '.' &&
 					   de->name[1] == '.') {
-					have_dotdot = 1;
+					*have_dotdot = 1;
 					if (dir_ino == EXT2_ROOT_INO &&
 					    de->inode != EXT2_ROOT_INO) {
 						printf("%s: root directory has bad '..' entry\n",
@@ -551,12 +582,6 @@ static void scan_dir_block(unsigned long dir_ino, unsigned long blocknr,
 		off += reclen;
 	}
 
-	if (!have_dot || !have_dotdot) {
-		printf("%s: directory inode %lu is missing '.' or '..'\n",
-		       progname, dir_ino);
-		mark_error();
-	}
-
 	if (dirty && repair) {
 		write_block(blocknr, dir_block);
 		changed = 1;
@@ -564,7 +589,8 @@ static void scan_dir_block(unsigned long dir_ino, unsigned long blocknr,
 }
 
 static void consume_dir_block(unsigned long dir_ino, unsigned long blocknr,
-			      unsigned long *remaining)
+			      unsigned long *remaining, int *have_dot,
+			      int *have_dotdot)
 {
 	unsigned short limit;
 
@@ -572,12 +598,13 @@ static void consume_dir_block(unsigned long dir_ino, unsigned long blocknr,
 		return;
 	limit = (*remaining > BLOCK_SIZE) ? BLOCK_SIZE : (unsigned short)*remaining;
 	if (blocknr)
-		scan_dir_block(dir_ino, blocknr, limit);
+		scan_dir_block(dir_ino, blocknr, limit, have_dot, have_dotdot);
 	*remaining -= limit;
 }
 
 static void walk_dir_single(unsigned long dir_ino, unsigned long blocknr,
-			    unsigned long *remaining)
+			    unsigned long *remaining, int *have_dot,
+			    int *have_dotdot)
 {
 	__u32 *entry;
 	unsigned short i;
@@ -587,11 +614,13 @@ static void walk_dir_single(unsigned long dir_ino, unsigned long blocknr,
 	read_block(blocknr, indir1_block);
 	entry = (__u32 *)indir1_block;
 	for (i = 0; i < EXT2_ADDR_PER_BLOCK && *remaining; i++)
-		consume_dir_block(dir_ino, entry[i], remaining);
+		consume_dir_block(dir_ino, entry[i], remaining,
+				  have_dot, have_dotdot);
 }
 
 static void walk_dir_double(unsigned long dir_ino, unsigned long blocknr,
-			    unsigned long *remaining)
+			    unsigned long *remaining, int *have_dot,
+			    int *have_dotdot)
 {
 	__u32 *entry;
 	unsigned short i;
@@ -601,7 +630,8 @@ static void walk_dir_double(unsigned long dir_ino, unsigned long blocknr,
 	read_block(blocknr, indir2_block);
 	entry = (__u32 *)indir2_block;
 	for (i = 0; i < EXT2_ADDR_PER_BLOCK && *remaining; i++)
-		walk_dir_single(dir_ino, entry[i], remaining);
+		walk_dir_single(dir_ino, entry[i], remaining,
+				have_dot, have_dotdot);
 }
 
 static void scan_inode_pass2(unsigned long ino)
@@ -609,20 +639,33 @@ static void scan_inode_pass2(unsigned long ino)
 	struct ext2_inode raw;
 	unsigned long remaining;
 	unsigned short i;
+	int have_dot;
+	int have_dotdot;
 
 	if (!test_bitmap(live_inode_map, ino))
 		return;
 	read_inode_raw(ino, &raw);
-	if ((raw.i_mode & EXT2_S_IFDIR) != EXT2_S_IFDIR)
+	if (inode_file_type(&raw) != EXT2_S_IFDIR)
 		return;
 
+	have_dot = 0;
+	have_dotdot = 0;
 	remaining = raw.i_size;
 	for (i = 0; i < EXT2_NDIR_BLOCKS && remaining; i++)
-		consume_dir_block(ino, raw.i_block[i], &remaining);
+		consume_dir_block(ino, raw.i_block[i], &remaining,
+				  &have_dot, &have_dotdot);
 	if (remaining)
-		walk_dir_single(ino, raw.i_block[EXT2_IND_BLOCK], &remaining);
+		walk_dir_single(ino, raw.i_block[EXT2_IND_BLOCK], &remaining,
+				&have_dot, &have_dotdot);
 	if (remaining)
-		walk_dir_double(ino, raw.i_block[EXT2_DIND_BLOCK], &remaining);
+		walk_dir_double(ino, raw.i_block[EXT2_DIND_BLOCK], &remaining,
+				&have_dot, &have_dotdot);
+
+	if (!have_dot || !have_dotdot) {
+		printf("%s: directory inode %lu is missing '.' or '..'\n",
+		       progname, ino);
+		mark_error();
+	}
 }
 
 static void scan_inode_pass3(unsigned long ino)
