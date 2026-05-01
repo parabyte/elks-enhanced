@@ -201,9 +201,8 @@ static int sb_put_arg32(char *arg, oss_int32_t v)
  *
  * MC1,2,4,5,6 follow the Linux mad16.c C929 bring-up profile, with WSS/CD
  * decode kept off for the ELKS SB-only driver. Linux writes MC4=0xa2,
- * MC5=0xa5|cs4231_mode, MC6=0x03; ELKS uses the base 0xa5 MC5 value because
- * it does not probe the WSS codec here. Only MC3 is rebuilt for the active
- * sb= / SB_* port, IRQ, and DMA instead of Linux's WSS-only MC3=0xf0.
+ * MC5=0xa5|cs4231_mode, MC6=0x03. Only MC3 is rebuilt for the active sb= /
+ * SB_* port, IRQ, and DMA instead of Linux's WSS-only MC3=0xf0.
  */
 #define OPTI929_PWD_PORT 0xF8FU
 #define OPTI929_PASSWORD 0xE3U
@@ -218,9 +217,6 @@ static int sb_put_arg32(char *arg, oss_int32_t v)
 
 #define OPTI929_MC1_DEFAULT 0x00U
 #define OPTI929_MC2_DEFAULT 0x03U
-#define OPTI929_MC4_DEFAULT 0xA2U
-#define OPTI929_MC6_DEFAULT 0x03U
-
 #define OPTI929_MC1_MASK (0x40U | 0x01U)
 #define OPTI929_MC2_OPL4 0x20U
 #define OPTI929_MC2_CDSEL_DISABLED 0x03U
@@ -228,6 +224,9 @@ static int sb_put_arg32(char *arg, oss_int32_t v)
 #define OPTI929_MC3_DMA_MASK 0x30U
 #define OPTI929_MC3_SB_240 0x04U
 #define OPTI929_MC3_GP_TIMER 0x02U /* write GPMODE; read overlaps REV bit 1 */
+#define OPTI929_MC4_ADPCM 0x80U
+#define OPTI929_MC4_TIMEOUT 0x20U
+#define OPTI929_MC4_SBVER_3 0x02U
 #define OPTI929_MC5_MUST1_7 0x80U
 #define OPTI929_MC5_MUST0_6 0x40U
 #define OPTI929_MC5_SHPASS 0x20U
@@ -239,9 +238,23 @@ static int sb_put_arg32(char *arg, oss_int32_t v)
 #define OPTI929_MC6_MPU_ENABLE 0x80U
 #define OPTI929_MC6_MPU_IRQ 0x18U
 #define OPTI929_MC6_MPU_OFF_MASK 0x07U
+#define OPTI929_MC6_WAVE 0x02U
+#define OPTI929_MC6_ATTN 0x01U
+
+#define OPTI929_MC4_DEFAULT (OPTI929_MC4_ADPCM | OPTI929_MC4_TIMEOUT | \
+			     OPTI929_MC4_SBVER_3)
 
 #define OPTI929_MC5_DEFAULT (OPTI929_MC5_MUST1_7 | OPTI929_MC5_SHPASS | \
 			     OPTI929_MC5_MUST1_2 | OPTI929_MC5_MUST1_0)
+#define OPTI929_MC6_DEFAULT (OPTI929_MC6_WAVE | OPTI929_MC6_ATTN)
+
+static unsigned char opti929_sb_profile_valid;
+static unsigned char opti929_sb_mc1;
+static unsigned char opti929_sb_mc2;
+static unsigned char opti929_sb_mc3;
+static unsigned char opti929_sb_mc4;
+static unsigned char opti929_sb_mc5;
+static unsigned char opti929_sb_mc6;
 
 static unsigned char opti929_rd(unsigned port)
 {
@@ -265,6 +278,27 @@ static void opti929_wr(unsigned port, unsigned char val)
 	outb(OPTI929_PASSWORD, OPTI929_PWD_PORT);
 	outb(val, port);
 	restore_flags(flags);
+}
+
+static void opti929_write_sb_profile(unsigned char mc1, unsigned char mc2,
+				     unsigned char mc3, unsigned char mc4,
+				     unsigned char mc5, unsigned char mc6)
+{
+	opti929_wr(OPTI929_MC1, mc1);
+	opti929_wr(OPTI929_MC2, mc2);
+	opti929_wr(OPTI929_MC3, mc3);
+	opti929_wr(OPTI929_MC4, mc4);
+	opti929_wr(OPTI929_MC5, mc5);
+	opti929_wr(OPTI929_MC6, mc6);
+}
+
+static void opti929_restore_sb_profile(void)
+{
+	if (!opti929_sb_profile_valid)
+		return;
+	opti929_write_sb_profile(opti929_sb_mc1, opti929_sb_mc2,
+				 opti929_sb_mc3, opti929_sb_mc4,
+				 opti929_sb_mc5, opti929_sb_mc6);
 }
 
 static int opti929_detect(void)
@@ -439,6 +473,7 @@ static int opti82c929_early_init(unsigned int sb_port, unsigned char irq,
 {
 	unsigned char mc1, mc2, mc3, mc4, mc5, mc6, mc5_extra = 0;
 
+	opti929_sb_profile_valid = 0;
 	if (!opti929_valid_route(sb_port, irq, dma))
 		return -EINVAL;
 	if (!opti929_detect())
@@ -477,12 +512,14 @@ static int opti82c929_early_init(unsigned int sb_port, unsigned char irq,
 	(void)opti929_codec_init(OPTI929_CODEC_BASE, &mc5_extra);
 
 	mc5 |= mc5_extra;
-	opti929_wr(OPTI929_MC1, mc1);
-	opti929_wr(OPTI929_MC2, mc2);
-	opti929_wr(OPTI929_MC3, mc3);
-	opti929_wr(OPTI929_MC4, mc4);
-	opti929_wr(OPTI929_MC5, mc5);
-	opti929_wr(OPTI929_MC6, mc6);
+	opti929_write_sb_profile(mc1, mc2, mc3, mc4, mc5, mc6);
+	opti929_sb_mc1 = mc1;
+	opti929_sb_mc2 = mc2;
+	opti929_sb_mc3 = mc3;
+	opti929_sb_mc4 = mc4;
+	opti929_sb_mc5 = mc5;
+	opti929_sb_mc6 = mc6;
+	opti929_sb_profile_valid = 1;
 	return 0;
 }
 
@@ -606,6 +643,7 @@ static void sb_halt(void)
 	clr_irq();
 	outb(sb_dma_mask, DMA1_MASK_REG);
 	sb_active = 0;
+	sb_active_len = 0;
 	sb_dma_done = 0;
 	set_irq();
 }
@@ -672,13 +710,18 @@ static void sb_mixer_voice_apply(void)
 	sb_mixer_write(0x04, sb_mixer_lr_byte(sb_vol_l, sb_vol_r));
 }
 
-static void sb_mixer_init_default(void)
+static void sb_mixer_output_apply(void)
 {
-	sb_vol_l = sb_vol_r = SB_DEFAULT_PLAYVOL;
 	if (sb_dsp_ver_major != 0 && sb_dsp_ver_major < 3)
 		return;
 	sb_mixer_write(0x22, sb_mixer_lr_byte(100, 100));
 	sb_mixer_voice_apply();
+}
+
+static void sb_mixer_init_default(void)
+{
+	sb_vol_l = sb_vol_r = SB_DEFAULT_PLAYVOL;
+	sb_mixer_output_apply();
 }
 
 /*
@@ -739,6 +782,7 @@ static int sb_wait_complete(unsigned int len)
 	clr_irq();
 	outb(sb_dma_mask, DMA1_MASK_REG);
 	sb_active = 0;
+	sb_active_len = 0;
 	sb_dma_done = 0;
 	set_irq();
 	sb_dsp_irq_ack();
@@ -764,23 +808,25 @@ static unsigned int sb_output_delay(void)
 	return rem;
 }
 
-/* Returns 0, or negative errno. */
-static int sb_play_chunk(char *buf, unsigned int len)
+/* Queue one copied DMA chunk; completion is drained by the next write or SYNC. */
+static int sb_queue_chunk(char *buf, unsigned int len)
 {
 	int ret;
 
 	if (!len || len > SB_BOUNCE)
 		return 0;
 
+	if (sb_active) {
+		ret = sb_wait_complete(sb_active_len);
+		if (ret < 0)
+			return ret;
+	}
 	if (((sb_bounce_phys & 0xFFFFUL) + (unsigned long)len) > 0x10000UL)
 		return -EIO;
 	if (verified_memcpy_fromfs(sb_bounce, buf, len) != 0)
 		return -EFAULT;
 
-	ret = sb_start(len);
-	if (ret < 0)
-		return ret;
-	return sb_wait_complete(len);
+	return sb_start(len);
 }
 
 static int sb_open(struct inode *inode, struct file *file)
@@ -791,10 +837,14 @@ static int sb_open(struct inode *inode, struct file *file)
 		return -ENODEV;
 	if (sb_opened)
 		return -EBUSY;
+	opti929_restore_sb_profile();
+	(void)dsp_cmd(0xD1);
+	sb_mixer_output_apply();
 	sb_bytes_played = 0;
 	sb_play_underruns = 0;
 	sb_trig = PCM_ENABLE_OUTPUT;
 	sb_active = 0;
+	sb_active_len = 0;
 	sb_dma_done = 0;
 #ifdef CONFIG_SB_STEREO
 	sb_channels = 1;
@@ -809,6 +859,8 @@ static void sb_release(struct inode *inode, struct file *file)
 {
 	(void)inode;
 	(void)file;
+	if (sb_active)
+		(void)sb_wait_complete(sb_active_len);
 	sb_halt();
 	sb_opened = 0;
 }
@@ -825,27 +877,24 @@ static size_t sb_read(struct inode *inode, struct file *file, char *buf, size_t 
 
 static size_t sb_write(struct inode *inode, struct file *file, char *buf, size_t count)
 {
-	size_t total = 0;
+	unsigned int chunk;
 	int ret;
 
 	(void)inode;
 
 	if (!(file->f_mode & FMODE_WRITE))
 		return -EINVAL;
+	if (!count)
+		return 0;
 
-	while (total < count) {
-		unsigned int chunk = (unsigned int)(count - total);
+	if (!(sb_trig & PCM_ENABLE_OUTPUT))
+		return count;
 
-		if (chunk > SB_BOUNCE)
-			chunk = SB_BOUNCE;
-		ret = 0;
-		if (sb_trig & PCM_ENABLE_OUTPUT)
-			ret = sb_play_chunk(buf + total, chunk);
-		if (ret < 0)
-			return (size_t)ret;
-		total += chunk;
-	}
-	return total;
+	chunk = (count > (size_t)SB_BOUNCE) ? SB_BOUNCE : (unsigned int)count;
+	ret = sb_queue_chunk(buf, chunk);
+	if (ret < 0)
+		return (size_t)ret;
+	return (size_t)chunk;
 }
 
 static int sb_ioctl(struct inode *inode, struct file *file, int cmd, char *arg)
@@ -877,7 +926,7 @@ static int sb_ioctl(struct inode *inode, struct file *file, int cmd, char *arg)
 		sb_halt();
 		return 0;
 	case SNDCTL_DSP_SYNC:
-		return 0;
+		return sb_active ? sb_wait_complete(sb_active_len) : 0;
 	case SNDCTL_DSP_SPEED:
 		ret = sb_get_arg32(arg, &v);
 		if (ret < 0)
@@ -1026,7 +1075,7 @@ static int sb_ioctl(struct inode *inode, struct file *file, int cmd, char *arg)
 	case SNDCTL_DSP_HALT_INPUT:
 		return 0;
 	case SNDCTL_DSP_NONBLOCK:
-		/* Playback is always synchronous; ioctl succeeds like Linux OSS no-op. */
+		/* No nonblocking mode yet; writes still wait when the DMA buffer is full. */
 		return 0;
 	case SNDCTL_DSP_COOKEDMODE:
 		return sb_get_arg32(arg, &v);

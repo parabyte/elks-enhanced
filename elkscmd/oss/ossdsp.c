@@ -25,7 +25,11 @@
 #define O_RDWR 2
 #endif
 
-#define DSP_BUFSIZE 8192
+/*
+ * Match the default /dev/dsp DMA block.  With the SB driver queuing one block
+ * asynchronously, this lets the next MFM read overlap the current playback.
+ */
+#define DSP_BUFSIZE 4096
 
 static char buf[DSP_BUFSIZE];
 static unsigned char hdr[12];
