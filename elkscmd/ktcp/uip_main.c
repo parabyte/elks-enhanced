@@ -32,7 +32,7 @@ static char *serdev = "/dev/ttyS0";
 static speed_t baudrate = 57600;
 static int intfd;
 static unsigned char arp_timer_ticks;
-static int tracefd = -1;
+int uip_tracefd = -1;
 static ipaddr_t static_dns_ip;
 static int dhcp_enabled;
 static int network_configured;
@@ -77,7 +77,7 @@ u16_t uip_link_mss(void)
 u16_t uip_link_window(void)
 {
 	if (linkprotocol != LINK_ETHER)
-		return uip_link_mss() * 2;
+		return uip_link_mss();
 	return UIP_RECEIVE_WINDOW;
 }
 
@@ -219,14 +219,11 @@ static void apply_dns_server(ipaddr_t ip)
 	start_resolver_query();
 }
 
-void uip_tracef(const char *fmt, ...)
+void uip_tracef_impl(const char *fmt, ...)
 {
 	char buf[128];
 	va_list ap;
 	int len;
-
-	if (tracefd < 0)
-		return;
 
 	va_start(ap, fmt);
 	len = vsnprintf(buf, sizeof(buf), fmt, ap);
@@ -235,7 +232,7 @@ void uip_tracef(const char *fmt, ...)
 		return;
 	if (len > (int)sizeof(buf))
 		len = sizeof(buf);
-	write(tracefd, buf, len);
+	write(uip_tracefd, buf, len);
 	sync();
 }
 
@@ -371,6 +368,8 @@ void ktcp_periodic(void)
 	int i;
 
 	for (i = 0; i < UIP_CONNS; i++) {
+		if (!uip_conn_active(i))
+			continue;
 		uip_periodic(i);
 		if (uip_len > 0)
 			ktcp_send_uip_output(0);
@@ -397,7 +396,6 @@ void ktcp_periodic(void)
 
 void uip_stack_init(void)
 {
-	uip_ipaddr_t addr;
 	struct uip_eth_addr eaddr;
 
 	memset(ktcp_slots, 0, sizeof(ktcp_slots));
@@ -437,6 +435,8 @@ void uip_stack_init(void)
 		write_resolv_cfg();
 		uip_write_runtime_state();
 #if UIP_CONF_DHCPC
+		uip_ipaddr_t addr;
+
 		uip_ipaddr(addr, 0, 0, 0, 0);
 		uip_sethostaddr(&addr);
 		uip_setdraddr(&addr);
@@ -458,11 +458,7 @@ void uip_daemon_run(void)
 	struct timeval tv;
 	int maxfd;
 	int count;
-	int loopagain;
-	int had_activity;
 	int udp_pending;
-
-	loopagain = 0;
 
 	while (1) {
 		udp_pending = 0;
@@ -478,7 +474,7 @@ void uip_daemon_run(void)
 		maxfd = intfd > netdevfd ? intfd : netdevfd;
 
 		tv.tv_sec = 0;
-		tv.tv_usec = loopagain ? 0 : 500000L;
+		tv.tv_usec = 500000L;
 		count = select(maxfd + 1, &fdset, udp_pending ? &wfds : NULL, NULL, &tv);
 		if (count < 0) {
 			if (errno == EINTR)
@@ -487,39 +483,27 @@ void uip_daemon_run(void)
 			return;
 		}
 
-		Now = get_time();
-
 		if (count == 0) {
-			if (loopagain) {
-				loopagain = 0;
-				continue;
-			}
+			Now = get_time();
 			ktcp_periodic();
 			continue;
 		}
 
-		had_activity = 0;
 		if (FD_ISSET(intfd, &fdset)) {
 			if (linkprotocol == LINK_ETHER)
 				eth_process();
 			else
 				slip_process();
-			had_activity = 1;
 		}
 
-		if (FD_ISSET(netdevfd, &fdset)) {
+		if (FD_ISSET(netdevfd, &fdset))
 			netdev_process();
-			had_activity = 1;
-		}
 
 #if UIP_CONF_UDP
 		if (udp_pending && FD_ISSET(netdevfd, &wfds)) {
 			kudp_periodic();
-			had_activity = 1;
 		}
 #endif
-		ktcp_cleanup_slots();
-		loopagain = had_activity;
 	}
 }
 
@@ -631,6 +615,14 @@ int main(int argc, char **argv)
 
 	if (timer_init() < 0)
 		exit(1);
+	Now = get_time();
+
+#if !CSLIP
+	if (linkprotocol == LINK_CSLIP) {
+		printf("uip: CSLIP support not built\n");
+		exit(1);
+	}
+#endif
 
 	if (dhcp_enabled && linkprotocol != LINK_ETHER) {
 		printf("uip: DHCP requires an ethernet link\n");
@@ -659,7 +651,7 @@ int main(int argc, char **argv)
 	if (!p)
 		p = getenv("KTCP_TRACE");
 	if (p)
-		tracefd = open(p, O_WRONLY | O_CREAT | O_TRUNC, 0666);
+		uip_tracefd = open(p, O_WRONLY | O_CREAT | O_TRUNC, 0666);
 	if (resolv_query_name[0] == '\0') {
 		p = getenv("UIP_RESOLV_QUERY");
 		if (p != NULL) {

@@ -2,17 +2,19 @@
 #define CONFIG_H
 
 /* compile time options*/
+#ifndef CSLIP
 #define CSLIP		1	/* compile in CSLIP support*/
+#endif
 #define VERBOSE         0       /* =1 compile in more verbose status messages */
 
 /* turn these on for ELKS debugging*/
-#define USE_DEBUG_EVENT 1	/* use CTRLP to toggle debug output*/
+#define USE_DEBUG_EVENT 0	/* use CTRLP to toggle debug output*/
 #define DEBUG_STARTDEF	0	/* default startup debug display*/
 #define DEBUG_TCP	0	/* TCP ops*/
 #define DEBUG_TCPPKT	0	/* TCP packets info*/
-#define DEBUG_TCPDATA	1	/* TCP packet data display*/
+#define DEBUG_TCPDATA	0	/* TCP packet data display*/
 #define DEBUG_CWND	0	/* TCP congestion control*/
-#define DEBUG_TUNE	1	/* tuning options*/
+#define DEBUG_TUNE	0	/* tuning options*/
 #define DEBUG_RETRANS	0	/* TCP retransmissions*/
 #define DEBUG_WINDOW	0	/* TCP window size*/
 #define DEBUG_ACCEPT	0	/* TCP accept*/

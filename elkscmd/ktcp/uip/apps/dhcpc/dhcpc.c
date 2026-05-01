@@ -10,8 +10,7 @@
 
 #include "uip.h"
 #include "dhcpc.h"
-
-extern void uip_tracef(const char *fmt, ...);
+#include "uip-glue.h"
 
 #define STATE_INITIAL         0
 #define STATE_SENDING         1

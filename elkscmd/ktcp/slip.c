@@ -10,9 +10,38 @@
 
 static unsigned char sbuf[SERIAL_BUFFER_SIZE];
 static unsigned char packet[SLIP_MTU + SLIP_HEADROOM];
-static unsigned char lastchar;
+static unsigned char slip_escaped;
+static unsigned char drop_packet;
 static unsigned int packpos;
 static int devfd;
+
+static int slip_write_all(const unsigned char *buf, int len)
+{
+	int off;
+	int ret;
+	fd_set wfds;
+
+	off = 0;
+	while (off < len) {
+		ret = write(devfd, buf + off, len - off);
+		if (ret > 0) {
+			off += ret;
+			continue;
+		}
+		if (ret < 0 && errno == EINTR)
+			continue;
+		if (ret == 0 || (ret < 0 && (errno == EAGAIN || errno == EWOULDBLOCK))) {
+			FD_ZERO(&wfds);
+			FD_SET(devfd, &wfds);
+			if (select(devfd + 1, NULL, &wfds, NULL, NULL) < 0 &&
+					errno != EINTR)
+				return -1;
+			continue;
+		}
+		return -1;
+	}
+	return 0;
+}
 
 static speed_t convert_baudrate(speed_t baudrate)
 {
@@ -163,70 +192,96 @@ int slip_init(char *fdev, speed_t baudrate)
 	}
 
 	packpos = SLIP_HEADROOM;
-	lastchar = 0;
+	slip_escaped = 0;
+	drop_packet = 0;
 	return devfd;
 }
 
 void slip_process(void)
 {
 	unsigned char *payload;
+	unsigned char ch;
+	unsigned char escaped;
+	unsigned char drop;
 	size_t psize;
+	unsigned int pos;
 	int i;
 	int len;
 
+	pos = packpos;
+	escaped = slip_escaped;
+	drop = drop_packet;
+
 	while ((len = read(devfd, sbuf, sizeof(sbuf))) > 0) {
 		for (i = 0; i < len; i++) {
-			if (lastchar == ESC) {
-				switch (sbuf[i]) {
-				case ESC_END:
-					packet[packpos++] = END;
-					break;
-				case ESC_ESC:
-					packet[packpos++] = ESC;
-					break;
-				default:
-					packet[packpos++] = sbuf[i];
-					break;
-				}
-			} else {
-				switch (sbuf[i]) {
-				case ESC:
-					break;
-				case END:
-					if (packpos == SLIP_HEADROOM)
+			ch = sbuf[i];
+			if (escaped) {
+				if (!drop && pos < sizeof(packet)) {
+					switch (ch) {
+					case ESC_END:
+						packet[pos++] = END;
 						break;
-
-					payload = packet;
-					psize = packpos - SLIP_HEADROOM;
-#if CSLIP
-					if (linkprotocol == LINK_CSLIP)
-						cslip_decompress(&payload, &psize);
-					else
-#endif
-						payload += SLIP_HEADROOM;
-
-					if (psize > 0) {
-						netstats.sliprcvcnt++;
-						ktcp_process_slip_packet(payload, psize);
+					case ESC_ESC:
+						packet[pos++] = ESC;
+						break;
+					default:
+						packet[pos++] = ch;
+						break;
 					}
+				} else {
+					drop = 1;
+				}
+				escaped = 0;
+				continue;
+			}
 
-					packpos = SLIP_HEADROOM;
-					lastchar = 0;
-					continue;
-				default:
-					if (packpos < sizeof(packet))
-						packet[packpos++] = sbuf[i];
+			switch (ch) {
+			case ESC:
+				escaped = 1;
+				break;
+			case END:
+				if (pos == SLIP_HEADROOM || drop) {
+					pos = SLIP_HEADROOM;
+					drop = 0;
+					escaped = 0;
 					break;
 				}
+
+				payload = packet;
+				psize = pos - SLIP_HEADROOM;
+#if CSLIP
+				if (linkprotocol == LINK_CSLIP)
+					cslip_decompress(&payload, &psize);
+				else
+#endif
+					payload += SLIP_HEADROOM;
+
+				pos = SLIP_HEADROOM;
+				drop = 0;
+				escaped = 0;
+				if (psize > 0) {
+					netstats.sliprcvcnt++;
+					ktcp_process_slip_packet(payload, psize);
+				}
+				break;
+			default:
+				if (pos < sizeof(packet))
+					packet[pos++] = ch;
+				else
+					drop = 1;
+				break;
 			}
-			lastchar = sbuf[i];
 		}
 	}
+
+	packpos = pos;
+	slip_escaped = escaped;
+	drop_packet = drop;
 }
 
 void slip_send(unsigned char *packet, int len)
 {
-	unsigned char buf[SLIP_MTU + 2];
+	static unsigned char buf[SLIP_MTU + 2];
 	unsigned char *p;
 	unsigned char *q;
 
@@ -255,11 +310,13 @@ void slip_send(unsigned char *packet, int len)
 		}
 		p++;
 		if (q - buf >= (int)sizeof(buf) - 2) {
-			write(devfd, buf, q - buf);
+			if (slip_write_all(buf, q - buf) < 0)
+				return;
 			q = buf;
 		}
 	}
 	*q++ = END;
-	write(devfd, buf, q - buf);
+	if (slip_write_all(buf, q - buf) < 0)
+		return;
 	netstats.slipsndcnt++;
 }

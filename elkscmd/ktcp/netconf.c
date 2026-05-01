@@ -198,6 +198,7 @@ int ktcp_netconf_response(unsigned char *buf, unsigned int buflen,
 	case NS_NETSTATS:
 		if (buflen < sizeof(netstats))
 			return -1;
+#if UIP_STATISTICS == 1
 		netstats.ipbadhdr = uip_stat.ip.vhlerr + uip_stat.ip.hblenerr +
 			uip_stat.ip.lblenerr + uip_stat.ip.fragerr +
 			uip_stat.ip.protoerr;
@@ -211,6 +212,7 @@ int ktcp_netconf_response(unsigned char *buf, unsigned int buflen,
 		netstats.tcpsndcnt = uip_stat.tcp.sent;
 		netstats.tcpdropcnt = uip_stat.tcp.drop + uip_stat.tcp.syndrop;
 		netstats.tcpretranscnt = uip_stat.tcp.rexmit;
+#endif
 		memcpy(buf, &netstats, sizeof(netstats));
 		return sizeof(netstats);
 	case NS_ARP:

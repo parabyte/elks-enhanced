@@ -145,7 +145,12 @@ void ktcp_process_slip_packet(const unsigned char *packet, int len);
 int netdev_init(char *fdev);
 int netdev_write_msg(const void *buf, unsigned int len);
 void netdev_process(void);
-void uip_tracef(const char *fmt, ...);
+extern int uip_tracefd;
+void uip_tracef_impl(const char *fmt, ...);
+#define uip_tracef(...) do { \
+	if (uip_tracefd >= 0) \
+		uip_tracef_impl(__VA_ARGS__); \
+} while (0)
 void uip_write_runtime_state(void);
 
 #if UIP_CONF_UDP
@@ -156,7 +161,6 @@ void kudp_periodic(void);
 #endif
 
 struct ktcp_slot *ktcp_find_sock(void *sock);
-struct ktcp_slot *ktcp_find_uconn(struct uip_conn *conn);
 struct ktcp_slot *ktcp_alloc_slot(void);
 void ktcp_free_slot(struct ktcp_slot *slot);
 void ktcp_cleanup_slots(void);

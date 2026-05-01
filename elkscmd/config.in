@@ -56,6 +56,8 @@ mainmenu_option next_comment
 			int 'uIP packet buffer size' CONFIG_UIP_BUFFER_SIZE 1514
 			int 'uIP TCP connections' CONFIG_UIP_MAX_CONNECTIONS 16
 			int 'uIP listen ports' CONFIG_UIP_MAX_LISTENPORTS 10
+			bool 'uIP packet statistics counters' CONFIG_UIP_STATISTICS y
+			bool 'CSLIP TCP/IP header compression' CONFIG_CSLIP y
 			bool 'uIP UDP support' CONFIG_UIP_UDP y
 			if [ "$CONFIG_UIP_UDP" == "y" ]; then
 				bool 'uIP IP broadcast receive' CONFIG_UIP_BROADCAST y

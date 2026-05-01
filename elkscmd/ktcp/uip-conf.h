@@ -58,7 +58,9 @@ typedef void *uip_udp_appstate_t;
 #define UIP_CONF_BYTE_ORDER 3412
 #define UIP_CONF_LLH_LEN 14
 #define UIP_CONF_UDP_CHECKSUMS 0
+#ifndef UIP_CONF_STATISTICS
 #define UIP_CONF_STATISTICS 1
+#endif
 #define UIP_CONF_LOGGING 0
 
 #define UIP_APPCALL uip_appcall

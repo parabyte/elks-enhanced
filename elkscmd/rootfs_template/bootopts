@@ -6,6 +6,7 @@ console=ttyS1,115200
 root=boot
 nolocalroot=on
 noatime
+# Boot from serdrive/BIOS source while leaving the MFM disk writable as /dev/mfma.
 mfm=slow
 sb=0x220,5,1
 mad16=on

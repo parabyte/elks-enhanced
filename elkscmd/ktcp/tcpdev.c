@@ -108,12 +108,18 @@ static void discard_released_buffers(struct ktcp_slot *slot)
 int netdev_write_msg(const void *buf, unsigned int len)
 {
 	fd_set wfds;
+	const unsigned char *p;
+	unsigned int written;
 	int ret;
 
-	while (1) {
-		ret = write(netdevfd, buf, len);
-		if (ret == (int)len)
-			return 0;
+	p = buf;
+	written = 0;
+	while (written < len) {
+		ret = write(netdevfd, p + written, len - written);
+		if (ret > 0) {
+			written += ret;
+			continue;
+		}
 		if (ret < 0 && errno == EINTR)
 			continue;
 		if (ret < 0 && (errno == EAGAIN || errno == EWOULDBLOCK)) {
@@ -122,13 +128,17 @@ int netdev_write_msg(const void *buf, unsigned int len)
 			if (select(netdevfd + 1, NULL, &wfds, NULL, NULL) < 0) {
 				if (errno == EINTR)
 					continue;
+				uip_tracef("netdev select fail done=%u errno=%d\n",
+					written, errno);
+				return -1;
 			}
 			continue;
 		}
-		uip_tracef("netdev write fail len=%u ret=%d errno=%d\n",
-			len, ret, errno);
+		uip_tracef("netdev write fail len=%u done=%u ret=%d errno=%d\n",
+			len, written, ret, errno);
 		return -1;
 	}
+	return 0;
 }
 
 static void retval_to_sock(void *sock, int retval)
@@ -177,6 +187,18 @@ static void clear_uconn(struct ktcp_slot *slot)
 	if (slot->uconn->appstate == slot)
 		slot->uconn->appstate = NULL;
 	slot->uconn = NULL;
+}
+
+static struct ktcp_slot *slot_from_uconn(struct uip_conn *conn)
+{
+	struct ktcp_slot *slot;
+
+	if (!conn)
+		return NULL;
+	slot = conn->appstate;
+	if (!slot || !slot->used || slot->uconn != conn)
+		return NULL;
+	return slot;
 }
 
 static void assign_accept(struct ktcp_slot *listener, struct ktcp_slot *child,
@@ -281,17 +303,6 @@ struct ktcp_slot *ktcp_find_sock(void *sock)
 
 	for (i = 0; i < KTCP_MAX_SOCKETS; i++) {
 		if (ktcp_slots[i].used && ktcp_slots[i].sock == sock)
-			return &ktcp_slots[i];
-	}
-	return NULL;
-}
-
-struct ktcp_slot *ktcp_find_uconn(struct uip_conn *conn)
-{
-	int i;
-
-	for (i = 0; i < KTCP_MAX_SOCKETS; i++) {
-		if (ktcp_slots[i].used && ktcp_slots[i].uconn == conn)
 			return &ktcp_slots[i];
 	}
 	return NULL;
@@ -903,7 +914,7 @@ void uip_appcall(void)
 	}
 #endif
 
-	slot = ktcp_find_uconn(uip_conn);
+	slot = slot_from_uconn(uip_conn);
 	remote_addr = uip_ipaddr_to_ip(uip_conn->ripaddr);
 	remote_port = KTCP_NTOHS(uip_conn->rport);
 	local_port = KTCP_NTOHS(uip_conn->lport);

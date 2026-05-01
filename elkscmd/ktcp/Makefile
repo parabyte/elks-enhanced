@@ -19,6 +19,30 @@ ifeq ($(UIP_BUFFER_SIZE),)
 UIP_BUFFER_SIZE = 1514
 endif
 
+UIP_STATISTICS_CFG := $(strip $(CONFIG_UIP_STATISTICS))
+ifeq ($(UIP_STATISTICS_CFG),)
+UIP_STATISTICS_CFG = y
+endif
+
+ifeq ($(UIP_STATISTICS_CFG),y)
+UIP_STATISTICS_ENABLED = 1
+else
+UIP_STATISTICS_ENABLED = 0
+endif
+
+CSLIP_CFG := $(strip $(CONFIG_CSLIP))
+ifeq ($(CSLIP_CFG),)
+CSLIP_CFG = y
+endif
+
+ifeq ($(CSLIP_CFG),y)
+CSLIP_ENABLED = 1
+CSLIP_SRCS = vjhc.c
+else
+CSLIP_ENABLED = 0
+CSLIP_SRCS =
+endif
+
 UIP_UDP_CFG := $(strip $(CONFIG_UIP_UDP))
 ifeq ($(UIP_UDP_CFG),)
 UIP_UDP_CFG = y
@@ -109,6 +133,8 @@ LOCALFLAGS	= -I. -Iuip -Iuip/apps/dhcpc -Iuip/apps/resolv \
 		  -DUIP_CONF_MAX_CONNECTIONS=$(UIP_MAX_CONNECTIONS) \
 		  -DUIP_CONF_MAX_LISTENPORTS=$(UIP_MAX_LISTENPORTS) \
 		  -DUIP_CONF_BUFFER_SIZE=$(UIP_BUFFER_SIZE) \
+		  -DUIP_CONF_STATISTICS=$(UIP_STATISTICS_ENABLED) \
+		  -DCSLIP=$(CSLIP_ENABLED) \
 		  -DUIP_CONF_UDP=$(UIP_UDP_ENABLED) \
 		  -DUIP_CONF_BROADCAST=$(UIP_BROADCAST_ENABLED) \
 		  -DUIP_CONF_UDP_EXTERNAL_CONNS=$(UIP_UDP_CONNS) \
@@ -119,7 +145,7 @@ LOCALFLAGS	= -I. -Iuip -Iuip/apps/dhcpc -Iuip/apps/resolv \
 		  $(UIP_DHCP_LIGHT_FLAG)
 
 CFILES		= uip_main.c slip.c tcpdev.c udpdev.c netconf.c deveth.c \
-		  timer.c vjhc.c uip/uip.c uip/uip_arp.c \
+		  timer.c $(CSLIP_SRCS) uip/uip.c uip/uip_arp.c \
 		  $(UIP_DHCPC_SRCS) $(UIP_RESOLV_SRCS)
 
 OBJS		= $(CFILES:.c=.o)
@@ -135,7 +161,7 @@ install: uipd
 	$(INSTALL) uipd $(DESTDIR)/bin/uip
 
 clean: 
-	$(RM) $(OBJS) uipd
+	$(RM) $(OBJS) vjhc.o uipd
 
 dep:
 	makedepend $(CFILES)
