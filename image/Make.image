@@ -60,7 +60,10 @@ ifdef CONFIG_IMG_SKIP_CDAUDIO
 endif
 	$(MAKE) -C $(ELKSCMD_DIR) -f Make.install install "CONFIG=$(CONFIG)"
 ifdef CONFIG_IMG_INCLUDE_ESD
-	@if [ -f "$(abspath $(TOPDIR)/../esd-elks/Makefile)" ]; then \
+	@if [ -f "$(TOPDIR)/extapps/esd-elks/Makefile" ]; then \
+		$(MAKE) -C "$(TOPDIR)/extapps/esd-elks" \
+			ELKS_TOP="$(TOPDIR)" DESTDIR="$(DESTDIR)" install; \
+	elif [ -f "$(abspath $(TOPDIR)/../esd-elks/Makefile)" ]; then \
 		$(MAKE) -C "$(abspath $(TOPDIR)/../esd-elks)" \
 			ELKS_TOP="$(TOPDIR)" DESTDIR="$(DESTDIR)" install; \
 	fi

@@ -61,6 +61,13 @@ ifeq ($(CONFIG_APP_PC1640_NVR), y)
 IA16DIRS += ../extapps/amstrad-1640-bios-config
 endif
 
+NANOXDIR =
+ifeq ($(CONFIG_APP_NANOX), y)
+ifneq ($(wildcard $(BASEDIR)/../extapps/microwindows/src/Makefile.elks),)
+NANOXDIR = ../extapps/microwindows/src
+endif
+endif
+
 OWCDIRS =       \
     basic       \
     fsck_dos    \
@@ -83,6 +90,7 @@ ia16:
 	@if [ ! -e $(TOPDIR)/include/autoconf.h ]; \
 	then echo -e "\n*** ERROR: You must configure ELKS first ***\n" >&2; exit 1; fi
 	for DIR in $(IA16DIRS); do $(MAKE) -C $$DIR all || exit 1; done
+	@if [ -n "$(NANOXDIR)" ]; then $(MAKE) -C $(NANOXDIR) -f Makefile.elks all || exit 1; fi
 
 owc:
 	for DIR in $(OWCDIRS); do $(MAKE) -C $$DIR -f Makefile.owc all || exit 1; done
@@ -92,6 +100,7 @@ c86:
 
 clean: owclean c86clean
 	for DIR in $(IA16DIRS); do $(MAKE) -C $$DIR clean || exit 1; done
+	@if [ -n "$(NANOXDIR)" ]; then $(MAKE) -C $(NANOXDIR) -f Makefile.elks clean || exit 1; fi
 
 owclean:
 	for DIR in $(OWCDIRS); do $(MAKE) -C $$DIR -f Makefile.owc clean || exit 1; done

@@ -187,6 +187,10 @@ ifdef CONFIG_APP_PC1640_NVR
 	TAGS += :pc1640nvr|
 endif
 
+ifdef CONFIG_APP_NANOX
+	TAGS += :nanox|
+endif
+
 ifdef CONFIG_APP_MAD16CFG
 	TAGS += :mad16cfg|
 endif

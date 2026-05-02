@@ -76,7 +76,8 @@ struct gendisk * INITPROC ata_cf_init(void)
         return NULL;
     blk_dev[MAJOR_NR].request_fn = DEVICE_REQUEST;
 
-    ata_reset();
+    if (!ata_raw_probe || ata_probe_biosless())
+        ata_reset();
 
     // ATA drive detect
 

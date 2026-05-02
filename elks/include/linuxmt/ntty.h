@@ -15,7 +15,7 @@
 #define RSINQ_SIZE	1024	/* serial input queue SLIP_MTU+128+8*/
 #define RSOUTQ_SIZE	80	/* serial output queue size*/
 
-#define MOUSEINQ_SIZE   64      /* PS/2 mouse input queue size */
+#define MOUSEINQ_SIZE   64      /* mouse input queue size */
 
 /*
  * Note: don't mess with NR_PTYS until you understand the tty minor
@@ -60,7 +60,7 @@
 #define NR_SERIAL	0
 #endif
 
-#ifdef CONFIG_MOUSE_PS2
+#if defined(CONFIG_MOUSE_PS2) || defined(CONFIG_MOUSE_AMSTRAD)
 #define NR_MOUSE 	1
 #else
 #define NR_MOUSE 	0

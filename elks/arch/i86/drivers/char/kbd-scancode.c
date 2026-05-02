@@ -56,6 +56,9 @@ char kbd_name[] = "scan";
 #include "KeyMaps/keymaps.h"
 
 extern int kraw;
+#ifdef CONFIG_MOUSE_AMSTRAD
+extern int amstrad_mouse_button(unsigned char code, int released);
+#endif
 /*
  *	Keyboard state - the poor little keyboard controller hasnt
  *	got the brains to remember itself.
@@ -206,6 +209,11 @@ static void keyboard_irq(int irq, struct pt_regs *regs)
     /* high bit set when key released */
     keyReleased = code & 0x80;
     code &= 0x7F;
+
+#ifdef CONFIG_MOUSE_AMSTRAD
+    if (amstrad_mouse_button((unsigned char)code, keyReleased))
+        return;
+#endif
 
     /*
      * Three tables and seven steps are used to get from scancode to returned keyboard character:

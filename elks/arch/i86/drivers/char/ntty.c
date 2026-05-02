@@ -28,6 +28,7 @@
 #include <linuxmt/debug.h>
 #include <linuxmt/heap.h>
 #include <arch/irq.h>
+#include <arch/system.h>
 
 #ifndef CONFIG_DEF_BAUD
 #define CONFIG_DEF_BAUD B9600   /* default baud rate */
@@ -471,6 +472,7 @@ extern struct tty_ops ttyp_ops;         /* CONFIG_PSEUDO_TTY*/
 extern struct tty_ops i8018xcon_ops;    /* CONFIG_CONSOLE_8018X*/
 extern struct tty_ops necv25con_ops;    /* CONFIG_CONSOLE_NECV25*/
 extern struct tty_ops ps2_mouse_ops;    /* CONFIG_MOUSE_PS2*/
+extern struct tty_ops amstrad_mouse_ops;/* CONFIG_MOUSE_AMSTRAD*/
 
 void INITPROC tty_init(void)
 {
@@ -516,9 +518,14 @@ void INITPROC tty_init(void)
     }
 #endif
 
-#ifdef CONFIG_MOUSE_PS2
+#if defined(CONFIG_MOUSE_PS2)
         ttyp->ops = &ps2_mouse_ops;
         (ttyp++)->minor = MOUSE_MINOR_OFFSET;   /* psaux = PS/2 mouse */
+#elif defined(CONFIG_MOUSE_AMSTRAD)
+    if (!(sys_caps & CAP_PC_AT)) {
+        ttyp->ops = &amstrad_mouse_ops;
+        (ttyp++)->minor = MOUSE_MINOR_OFFSET;   /* psaux = Amstrad mouse */
+    }
 #endif
 
     register_chrdev(TTY_MAJOR, "tty", &tty_fops);

@@ -53,6 +53,11 @@ int ata_mode = CONFIG_ATA_MODE_DEFAULT; /* /bootopts xtide= overrides this */
 #else
 int ata_mode = -1;              /* =AUTO default set ATA CF driver mode automatically */
 #endif
+#ifdef CONFIG_ATA_BIOSLESS_PROBE
+int ata_raw_probe = 1;          /* probe raw ATA/XTIDE hardware without BIOS */
+#else
+int ata_raw_probe;
+#endif
 #ifdef CONFIG_BLK_DEV_MFMHD
 extern int mfmhd_slow_profile;  /* /bootopts mfm=slow */
 #endif
@@ -374,7 +379,7 @@ static struct dev_name_struct {
 	{ "hdb",     DEV_HDB },
 	{ "hdc",     DEV_HDC },
 	{ "hdd",     DEV_HDD },
-	{ "cfa",     DEV_CFA },
+	{ "cfa",     DEV_CFA },         /* direct ATA/IDE/CF */
 	{ "cfb",     DEV_CFB },
 	{ "mfma",    DEV_MFMA },
 	{ "mfmb",    DEV_MFMB },
@@ -389,6 +394,8 @@ static struct dev_name_struct {
 	{ "tty2",    DEV_TTY2 },
 	{ "tty3",    DEV_TTY3 },
 	{ "tty4",    DEV_TTY4 },
+	{ "ata",     DEV_CFA },         /* media-neutral aliases for cfa/cfb */
+	{ "atb",     DEV_CFB },
 	{ NULL,           0 }
 };
 
@@ -747,7 +754,16 @@ static int INITPROC parse_options(void)
             continue;
         }
         if (!strncmp(line,"xtide=",6)) {
-            ata_mode = (int)simple_strtol(line+6, 10);
+            char *arg = line + 6;
+
+            if (!strcmp(arg, "probe") || !strcmp(arg, "raw") ||
+                    !strcmp(arg, "biosless")) {
+                ata_raw_probe = 1;
+            } else if (!strcmp(arg, "noprobe")) {
+                ata_raw_probe = 0;
+            } else {
+                ata_mode = (int)simple_strtol(arg, 10);
+            }
             continue;
         }
 #ifdef CONFIG_BLK_DEV_ATA_CF

@@ -25,20 +25,9 @@
 #define ESD_DEF_HOST "127.0.0.1"
 #define ESD_DEF_PORT 16001
 
-static char io_buf[1024];
+#define ESD_IO_CHUNK 256
 
-static int write_full(int fd, const char *buf, int len)
-{
-	int off = 0;
-
-	while (off < len) {
-		int w = write(fd, buf + off, (unsigned)(len - off));
-		if (w <= 0)
-			return -1;
-		off += w;
-	}
-	return 0;
-}
+static char io_buf[ESD_IO_CHUNK];
 
 int main(int argc, char **argv)
 {
@@ -46,7 +35,6 @@ int main(int argc, char **argv)
 	int port = ESD_DEF_PORT;
 	int in = 0;
 	int s;
-	struct sockaddr_in local;
 	struct sockaddr_in addr;
 	int n;
 
@@ -65,7 +53,7 @@ int main(int argc, char **argv)
 			port = (int)p;
 	}
 
-	s = socket(AF_INET, SOCK_STREAM, 0);
+	s = socket(AF_INET, SOCK_DGRAM, 0);
 	if (s < 0) {
 		perror("esdplay: socket");
 		if (in != 0)
@@ -73,18 +61,6 @@ int main(int argc, char **argv)
 		return 1;
 	}
 	memset(&addr, 0, sizeof(addr));
-	memset(&local, 0, sizeof(local));
-	local.sin_family = AF_INET;
-	local.sin_port = PORT_ANY;
-	local.sin_addr.s_addr = INADDR_ANY;
-	if (bind(s, (struct sockaddr *)&local, sizeof(local)) < 0) {
-		perror("esdplay: bind");
-		close(s);
-		if (in != 0)
-			close(in);
-		return 1;
-	}
-
 	addr.sin_family = AF_INET;
 	addr.sin_port = htons((unsigned short)port);
 	addr.sin_addr.s_addr = in_gethostbyname((char *)host);
@@ -104,7 +80,7 @@ int main(int argc, char **argv)
 	}
 
 	while ((n = read(in, io_buf, sizeof(io_buf))) > 0) {
-		if (write_full(s, io_buf, n) < 0) {
+		if (write(s, io_buf, n) != n) {
 			perror("esdplay: write");
 			close(s);
 			if (in != 0)

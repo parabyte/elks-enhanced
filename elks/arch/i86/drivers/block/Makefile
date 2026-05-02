@@ -104,6 +104,7 @@ endif
 all:	blk_drv.a
 
 blk_drv.a: $(OBJS)
+	rm -f blk_drv.a
 	$(AR) rcs blk_drv.a $(OBJS)
 
 #########################################################################

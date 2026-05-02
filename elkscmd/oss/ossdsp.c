@@ -25,6 +25,9 @@
 #define O_RDWR 2
 #endif
 
+#define OSSDSP_MIN_RATE 4000UL
+#define OSSDSP_MAX_RATE 20000UL
+
 /*
  * Match the default /dev/dsp DMA block.  With the SB driver queuing one block
  * asynchronously, this lets the next MFM read overlap the current playback.
@@ -207,7 +210,7 @@ main(int argc, char **argv)
 	if (argc > 2) {
 		long rr = atol(argv[2]);
 
-		if (rr >= 4000L && rr <= 48000L)
+		if (rr >= (long)OSSDSP_MIN_RATE && rr <= (long)OSSDSP_MAX_RATE)
 			rate = (unsigned long)rr;
 	}
 
@@ -217,6 +220,13 @@ main(int argc, char **argv)
 		wav = find_wav_data(in, &rate);
 	if (wav < 0) {
 		fprintf(stderr, "ossdsp: unsupported WAV (need PCM U8 mono)\n");
+		close(dsp);
+		if (in != 0)
+			close(in);
+		return 1;
+	}
+	if (rate < OSSDSP_MIN_RATE || rate > OSSDSP_MAX_RATE) {
+		fprintf(stderr, "ossdsp: unsupported rate (4000-20000)\n");
 		close(dsp);
 		if (in != 0)
 			close(in);

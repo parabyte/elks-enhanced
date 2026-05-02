@@ -63,6 +63,10 @@ struct console {
     unsigned int vseg;          /* vram for this console page */
     unsigned int vseg_offset;   /* vram offset of vseg for this console page */
     unsigned short crtc_base;   /* 6845 CRTC base I/O address */
+#ifdef CONFIG_CONSOLE_AMSTRAD_IGA
+    unsigned int vseg_base;     /* fixed word offset of this page */
+    unsigned short page_words;  /* words decoded by this display bank */
+#endif
 #ifdef CONFIG_EMUL_ANSI
     int savex, savey;           /* saved cursor position */
     unsigned char *parmptr;     /* ptr to params */
@@ -94,9 +98,32 @@ static void SetDisplayPage(Console * C)
     outw((C->vseg_offset << 8) | 0x0d, C->crtc_base);
 }
 
+static unsigned int WrapVideoWord(Console * C, unsigned int cell)
+{
+#ifdef CONFIG_CONSOLE_AMSTRAD_IGA
+    if (C->page_words && cell >= C->page_words)
+        cell -= C->page_words;
+#endif
+    return cell;
+}
+
+static unsigned int CrtcWord(Console * C, unsigned int cell)
+{
+    return WrapVideoWord(C, cell + C->vseg_offset);
+}
+
+static unsigned int VideoWord(Console * C, unsigned int cell)
+{
+#ifdef CONFIG_CONSOLE_AMSTRAD_IGA
+    return WrapVideoWord(C, cell + C->vseg_offset - C->vseg_base);
+#else
+    return cell;
+#endif
+}
+
 static void PositionCursor(Console * C)
 {
-    unsigned int Pos = C->cx + C->Width * C->cy + C->vseg_offset;
+    unsigned int Pos = CrtcWord(C, C->cx + C->Width * C->cy);
 
     outb(14, C->crtc_base);
     outb(Pos >> 8, C->crtc_base + 1);
@@ -121,24 +148,60 @@ static void DisplayCursor(Console * C, int onoff)
 
 static void VideoWrite(Console * C, int c)
 {
-    pokew((C->cx + C->cy * C->Width) << 1, (seg_t) C->vseg,
+    pokew(VideoWord(C, C->cx + C->cy * C->Width) << 1, (seg_t) C->vseg,
           (C->attr << 8) | (c & 255));
 }
 
+static void VideoFill(Console * C, unsigned int cell, int count)
+{
+    unsigned int vp = VideoWord(C, cell) << 1;
+
+    while (count--) {
+        pokew(vp, (seg_t) C->vseg, (C->attr << 8) | ' ');
+        vp += 2;
+#ifdef CONFIG_CONSOLE_AMSTRAD_IGA
+        if (C->page_words && vp >= (C->page_words << 1))
+            vp = 0;
+#endif
+    }
+}
+
+#ifdef CONFIG_CONSOLE_AMSTRAD_IGA
+static void VideoCopyLine(Console * C, int dstrow, int srcrow)
+{
+    int x;
+
+    for (x = 0; x < C->Width; x++) {
+        unsigned int dst = VideoWord(C, x + dstrow * C->Width) << 1;
+        unsigned int src = VideoWord(C, x + srcrow * C->Width) << 1;
+
+        pokew(dst, (seg_t) C->vseg, peekw(src, (seg_t) C->vseg));
+    }
+}
+#endif
+
 static void ClearRange(Console * C, int x, int y, int x2, int y2)
 {
-    int vp;
-
     x2 = x2 - x + 1;
-    vp = (x + y * C->Width) << 1;
     do {
-        for (x = 0; x < x2; x++) {
-            pokew(vp, (seg_t) C->vseg, (C->attr << 8) | ' ');
-            vp += 2;
-        }
-        vp += (C->Width - x2) << 1;
+        VideoFill(C, x + y * C->Width, x2);
     } while (++y <= y2);
 }
+
+#ifdef CONFIG_CONSOLE_AMSTRAD_IGA
+static int CanHwScroll(Console * C, int y)
+{
+    return y == 0 && C->type == OT_MDA && C->page_words >= C->Width * C->Height;
+}
+
+static void HwScrollUp(Console * C)
+{
+    C->vseg_offset = WrapVideoWord(C, C->vseg_offset + C->Width);
+    if (C == Visible[C->display])
+        SetDisplayPage(C);
+    ClearRange(C, 0, C->Height - 1, C->Width - 1, C->Height - 1);
+}
+#endif
 
 static void ScrollUp(Console * C, int y)
 {
@@ -146,10 +209,29 @@ static void ScrollUp(Console * C, int y)
     int MaxRow = C->Height - 1;
     int MaxCol = C->Width - 1;
 
-    vp = y * (C->Width << 1);
+#ifdef CONFIG_CONSOLE_AMSTRAD_IGA
+    if (CanHwScroll(C, y)) {
+        HwScrollUp(C);
+        return;
+    }
+#endif
+
+#ifdef CONFIG_CONSOLE_AMSTRAD_IGA
+    if (C->vseg_offset) {
+        while (y < MaxRow) {
+            VideoCopyLine(C, y, y + 1);
+            y++;
+        }
+        ClearRange(C, 0, MaxRow, MaxCol, MaxRow);
+        return;
+    }
+#endif
+
+    vp = VideoWord(C, y * C->Width) << 1;
     if ((unsigned int)y < MaxRow)
         fmemcpyw((void *)vp, C->vseg,
-                 (void *)(vp + (C->Width << 1)), C->vseg, (MaxRow - y) * C->Width);
+                 (void *)(VideoWord(C, (y + 1) * C->Width) << 1), C->vseg,
+                 (MaxRow - y) * C->Width);
     ClearRange(C, 0, MaxRow, MaxCol, MaxRow);
 }
 
@@ -158,6 +240,17 @@ static void ScrollDown(Console * C, int y)
 {
     int vp;
     int yy = C->Height - 1;
+
+#ifdef CONFIG_CONSOLE_AMSTRAD_IGA
+    if (C->vseg_offset) {
+        while (yy > y) {
+            VideoCopyLine(C, yy, yy - 1);
+            yy--;
+        }
+        ClearRange(C, 0, y, C->Width - 1, y);
+        return;
+    }
+#endif
 
     vp = yy * (C->Width << 1);
     while (--yy >= y) {
@@ -241,6 +334,10 @@ void INITPROC console_init(void)
         C->Width = Width;
         C->Height = Height;
         C->crtc_base = boot_crtc;
+#ifdef CONFIG_CONSOLE_AMSTRAD_IGA
+        C->vseg_base = C->vseg_offset;
+        C->page_words = output_type == OT_MDA ? 0x0800 : PageSizeW;
+#endif
 
 #ifdef CONFIG_EMUL_ANSI
         C->savex = C->savey = 0;
@@ -304,6 +401,10 @@ void INITPROC console_init(void)
             C->Width = crtc_params[dev].w;
             C->Height = crtc_params[dev].h;
             C->crtc_base = crtc_params[dev].crtc_base;
+#ifdef CONFIG_CONSOLE_AMSTRAD_IGA
+            C->vseg_base = C->vseg_offset;
+            C->page_words = crtc_params[dev].vseg_bytes >> 1;
+#endif
 #ifdef CONFIG_EMUL_ANSI
             C->savex = C->savey = 0;
 #endif

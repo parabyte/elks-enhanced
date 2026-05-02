@@ -2,14 +2,15 @@
 #TZ=MDT6
 #LOCALIP=10.0.2.16
 #HOSTNAME=elks16
-console=ttyS1,115200
+console=tty1,ttyS1,9600
 root=boot
 nolocalroot=on
 noatime
-# Boot from serdrive/BIOS source while leaving the MFM disk writable as /dev/mfma.
-mfm=slow
+# Probe raw Glitch Works XT-IDE/ATA hardware; no option ROM required.
+xtide=probe
+ata=slow
 sb=0x220,5,1
-mad16=on
+mad16=off
 #mad16=0x220,5,1 # force OPTi 82C929/MAD16 SB-mode route
 #net=slip
 #ne0=12,0x300,,0x80
@@ -17,6 +18,8 @@ mad16=on
 #3c0=11,0x330,,0x80
 comirq=4,3
 hma=kernel
+# SerDrive owns COM1 during XTIDE smoke; use tty1 plus COM2 serial terminal.
+6
 #xms=on
 #xms=int15
 #xmsbuf=0

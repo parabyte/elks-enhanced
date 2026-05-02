@@ -19,6 +19,9 @@ mainmenu_option next_comment
 		fi
 		bool '  Scancode keyboard driver'	CONFIG_KEYBOARD_SCANCODE y
 		bool '  Dual-screen console support'    CONFIG_CONSOLE_DUAL n
+		if [ "$CONFIG_ARCH_IBMPC" = "y" ]; then
+			bool '  Amstrad PC1640 IGA hardware scroll' CONFIG_CONSOLE_AMSTRAD_IGA n
+		fi
 	fi
 	bool 'Serial Console'	CONFIG_CONSOLE_SERIAL		n
 	if [[ "$CONFIG_CONSOLE_DIRECT" = "y" || "$CONFIG_CONSOLE_BIOS" = "y" ]]; then
@@ -45,6 +48,10 @@ mainmenu_option next_comment
 			int '  SB DMA bounce buffer bytes' CONFIG_SB_BOUNCE 4096
 			bool '  SB Pro 8-bit stereo playback' CONFIG_SB_STEREO n
 		fi
+		choice 'Mouse driver' \
+			"None       CONFIG_MOUSE_NONE     \
+			 PS2        CONFIG_MOUSE_PS2      \
+			 Amstrad    CONFIG_MOUSE_AMSTRAD" None
 	fi
 	#bool 'CGA text mode videobuffer'	CONFIG_CHAR_DEV_CGATEXT	  n
 	bool 'Memory character devices'		CONFIG_CHAR_DEV_MEM	  y

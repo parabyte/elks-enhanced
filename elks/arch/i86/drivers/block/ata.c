@@ -21,7 +21,9 @@
  * DEVCTL                      0x307
  *
  * This code assumes only supports one ATA controller, and sets XTCF operation
- * on 8088/8086 CPUs, unless overriden using xtide= in /bootopts.
+ * on 8088/8086 CPUs, unless overridden using xtide= in /bootopts.  The
+ * BIOS-less raw probe path tries the direct ATA/XTIDE register layouts itself
+ * and does not require an XTIDE option ROM.
  *
  * This code uses LBA addressing for the disks. Any disks without
  * LBA support (they'd need to be pretty old) are simply ignored.
@@ -136,6 +138,7 @@ static unsigned int ata_sectors[2];
 static sector_t ata_total_sectors[2];
 static unsigned char ata_last_status;
 static unsigned char ata_last_error;
+static unsigned char ata_probe_quiet;
 #ifdef CONFIG_ATA_SLOW
 int ata_slow_profile = 1;
 #else
@@ -206,6 +209,27 @@ static int ATPROC ata_valid_chs(unsigned short *buffer)
     return buffer[ATA_INFO_CYLS] != 0 && buffer[ATA_INFO_CYLS] <= 0x7F00 &&
         buffer[ATA_INFO_HEADS] != 0 && buffer[ATA_INFO_HEADS] <= 16 &&
         buffer[ATA_INFO_SPT] != 0 && buffer[ATA_INFO_SPT] <= 63;
+}
+
+static int ATPROC ata_valid_identify(unsigned short *buffer)
+{
+    sector_t total = ata_get_lba28_total(buffer);
+
+    if (total != 0 && (buffer[ATA_INFO_CAPS] & ATA_CAPS_LBA))
+        return 1;
+    return ata_valid_chs(buffer);
+}
+
+static const char *ata_mode_name(int mode)
+{
+    switch (mode) {
+    case MODE_ATA:      return "ATA";
+    case MODE_XTIDEv1:  return "XTIDEv1";
+    case MODE_XTIDEv2:  return "XTIDEv2";
+    case MODE_XTCF:     return "XTCF";
+    case MODE_SOLO86:   return "SOLO86";
+    }
+    return "auto";
 }
 
 static sector_t ATPROC ata_get_chs_total(unsigned short *buffer)
@@ -475,11 +499,13 @@ static int ATPROC ata_set8bitmode(void)
 
     if (status & ATA_STATUS_ERR)
     {
-        printk("cfa: can't set 8-bit xfer\n");
+        if (!ata_probe_quiet)
+            printk("cfa: can't set 8-bit xfer\n");
         return -EINVAL;
     }
 
-    printk("cfa: 8-bit xfer on\n");
+    if (!ata_probe_quiet)
+        printk("cfa: 8-bit xfer on\n");
     return 0;
 }
 
@@ -806,10 +832,7 @@ static int ATPROC atapi_read_512(unsigned int drive, sector_t sector,
  * ATA exported functions
  **********************************************************************/
 
-/**
- * reset the ATA interface
- */
-int ATPROC ata_reset(void)
+static int ATPROC ata_reset_controller(void)
 {
     unsigned char byte;
 
@@ -868,8 +891,10 @@ int ATPROC ata_reset(void)
     delay_10ms();
     if (INB(ATA_REG_SELECT) != 0xA0)    // probe fail doesn't stop driver reset for now
     {
-        printk("cf:  ATA at %x/%x xtide=%d,%d probe fail (%x)\n",
-            ata_base_port, ata_ctrl_port, ata_mode, xfer_mode, byte);
+        if (!ata_probe_quiet)
+            printk("ata: %s at %x/%x xtide=%d,%d probe fail (%x)\n",
+                ata_mode_name(ata_mode), ata_base_port, ata_ctrl_port,
+                ata_mode, xfer_mode, byte);
         OUTB(byte, ATA_REG_SELECT);
         //return -ENODEV;
     }
@@ -893,6 +918,80 @@ int ATPROC ata_reset(void)
             xfer_mode = XFER_16;
     }
 #endif
+    return 0;
+}
+
+/**
+ * reset the ATA interface
+ */
+int ATPROC ata_reset(void)
+{
+    return ata_reset_controller();
+}
+
+static int ATPROC ata_try_probe_mode(int mode, unsigned short *buffer)
+{
+    int drive;
+    int error;
+
+    ata_mode = mode;
+    xfer_mode = AUTO;
+    ata_probe_quiet = 1;
+    ata_reset_controller();
+    ata_probe_quiet = 0;
+
+    for (drive = 0; drive < 2; drive++) {
+        error = ata_identify_cmd(drive, ATA_CMD_ID,
+            (unsigned char __far *)buffer);
+        if (!error && ata_valid_identify(buffer)) {
+            printk("ata: raw BIOS-less %s probe found drive %c at %x/%x xfer=%d\n",
+                ata_mode_name(ata_mode), drive + 'a',
+                ata_base_port, ata_ctrl_port, xfer_mode);
+            return 0;
+        }
+    }
+    return -ENODEV;
+}
+
+/**
+ * probe raw ATA/XTIDE hardware without relying on an option ROM or BIOS map.
+ */
+int ATPROC ata_probe_biosless(void)
+{
+    static unsigned char modes[] = {
+        MODE_XTIDEv2, MODE_XTIDEv1, MODE_XTCF, MODE_ATA
+    };
+    unsigned short *buffer;
+    int saved_mode = ata_mode;
+    int saved_xfer = xfer_mode;
+    int i;
+
+    buffer = (unsigned short *) heap_alloc(ATA_SECTOR_SIZE,
+        HEAP_TAG_DRVR|HEAP_TAG_CLEAR);
+    if (!buffer)
+        return -ENOMEM;
+
+    if (saved_mode >= MODE_ATA && saved_mode <= MODE_MAX) {
+        if (!ata_try_probe_mode(saved_mode, buffer))
+            goto found;
+    }
+
+    for (i = 0; i < (int)(sizeof(modes) / sizeof(modes[0])); i++) {
+        if (modes[i] == saved_mode)
+            continue;
+        if (!ata_try_probe_mode(modes[i], buffer))
+            goto found;
+    }
+
+    heap_free(buffer);
+    ata_mode = saved_mode;
+    xfer_mode = saved_xfer;
+    printk("ata: raw BIOS-less probe found no ATA/IDE/CF device\n");
+    return -ENODEV;
+
+found:
+    heap_free(buffer);
+    ata_raw_probe = 1;
     return 0;
 }
 
@@ -940,7 +1039,7 @@ int ATPROC ata_init(int drive, struct drive_infot *drivep)
         } else if (ata_valid_chs(buffer)) {
             total = ata_get_chs_total(buffer);
             ata_set_chs_geometry(drivep, buffer);
-            ata_use_lba[drive] =
+            ata_use_lba[drive] = !ata_raw_probe &&
                 (ata_mode == MODE_XTIDEv1 || ata_mode == MODE_XTIDEv2);
         } else {
             printk("cf%c: ATA identify unsupported format VER %x/%d xtide=%d,%d\n",
@@ -995,7 +1094,7 @@ int ATPROC ata_init(int drive, struct drive_infot *drivep)
 #endif
     else
     {
-        printk("cf%c: ATA at %x/%x xtide=%d,%d not found (%d)\n",
+        printk("cf%c: ATA/IDE/CF at %x/%x xtide=%d,%d not found (%d)\n",
             drive+'a', ata_base_port, ata_ctrl_port, ata_mode, xfer_mode,
             error);
     }

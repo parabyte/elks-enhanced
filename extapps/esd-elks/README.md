@@ -3,9 +3,9 @@
 `esd-elks` is a standalone ELKS package providing a minimal Enlightened Sound
 Daemon subset:
 
-- `esd`: a small TCP listener that writes raw unsigned 8-bit mono PCM to
+- `esd`: a small UDP listener that writes raw unsigned 8-bit mono PCM to
   `/dev/dsp` or `/dev/audio`
-- `esdplay`: a matching client that streams a file or stdin to the daemon
+- `esdplay`: a matching client that sends a file or stdin to the daemon
 
 This package is intentionally separate from the main ELKS build and image.
 

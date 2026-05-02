@@ -133,7 +133,12 @@ ifdef CONFIG_CHAR_DEV_RS
 endif
 
 ifdef CONFIG_ARCH_IBMPC
-  OBJS += mouse-ps2.o
+  ifdef CONFIG_MOUSE_PS2
+    OBJS += mouse-ps2.o
+  endif
+  ifdef CONFIG_MOUSE_AMSTRAD
+    OBJS += mouse-amstrad.o
+  endif
 endif
 
 ifdef CONFIG_CHAR_DEV_CGATEXT

@@ -81,10 +81,12 @@
 #define ATA_SECTOR_SIZE     512
 #define ATAPI_SECTOR_SIZE   2048
 
-extern int ata_mode;        /* ATA CF driver operating mode, /bootopts xtide= */
+extern int ata_mode;        /* ATA/XTIDE driver operating mode, /bootopts xtide= */
+extern int ata_raw_probe;   /* probe raw ATA/XTIDE hardware without BIOS */
 extern int ata_slow_profile;/* conservative ATA timing, /bootopts ata=slow */
 
 int ATPROC ata_reset(void);
+int ATPROC ata_probe_biosless(void);
 struct drive_infot;
 int ATPROC ata_init(int drive, struct drive_infot *drivep);
 int ATPROC ata_read(unsigned int drive, sector_t sector, char *buf, ramdesc_t seg,

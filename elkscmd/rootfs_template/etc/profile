@@ -4,8 +4,9 @@ umask 022
 #FAT permissions fix
 #if test "$USER" = "root"; then chmod 777 /tmp; fi
 #uname -v
-#export MOUSE_PORT=none
-#export MOUSE_TYPE=ps2
+export MOUSE_TYPE=ps2
+export MOUSE_PORT=/dev/psaux
+export EGAMODE=1
 #export MANPATH=/root/man:/lib
 #export TZ=GMT0
 # if TZ= set in /bootopts or above it overrides CONFIG_TIME_TZ, so don't set TZ= below

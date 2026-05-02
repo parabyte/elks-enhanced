@@ -49,6 +49,9 @@
  */
 #define SB_BOUNCE       CONFIG_SB_BOUNCE
 #define SB_DEFAULT_PLAYVOL 50
+#define SB_MIN_RATE     4000U
+/* 20 kHz is below half-CD and divides the SB 1 MHz time-constant clock. */
+#define SB_MAX_RATE     20000U
 
 #define SB_LINADDR(seg, offs) ((unsigned long)(((unsigned long)(seg) << 4) + (unsigned)(offs)))
 
@@ -936,7 +939,7 @@ static int sb_ioctl(struct inode *inode, struct file *file, int cmd, char *arg)
 			v = (oss_int32_t)sb_rate;
 			return sb_put_arg32(arg, v);
 		}
-		if (v < 4000 || v > 48000)
+		if (v < (oss_int32_t)SB_MIN_RATE || v > (oss_int32_t)SB_MAX_RATE)
 			return -EINVAL;
 		sb_rate_cache((unsigned int)v);
 		return sb_put_arg32(arg, v);

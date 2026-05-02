@@ -30,8 +30,9 @@ mainmenu_option next_comment
       bool 'Interface SD card with hardware SPI'	CONFIG_HW_SPI	y
 	fi
 
-	bool 'ATA-CF/IDE drive support'	        CONFIG_BLK_DEV_ATA_CF	n
+	bool 'ATA/IDE/XTIDE drive support'	CONFIG_BLK_DEV_ATA_CF	n
 	if [ "$CONFIG_BLK_DEV_ATA_CF" == "y" ]; then
+		bool '  BIOS-less raw ATA/XTIDE hardware probe' CONFIG_ATA_BIOSLESS_PROBE n
 		int '  ATA/XTIDE default mode (-1 auto, 0 ATA, 1 XTIDEv1, 2 XTIDEv2, 3 XTCF, 4 SOLO86)' CONFIG_ATA_MODE_DEFAULT -1
 		hex '  Standard ATA base I/O port' CONFIG_ATA_BASE_PORT 0x1F0
 		hex '  XTIDE/XTCF base I/O port' CONFIG_ATA_XTIDE_BASE_PORT 0x300

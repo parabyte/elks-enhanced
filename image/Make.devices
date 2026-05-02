@@ -98,11 +98,24 @@ endif
 	$(MKDEV) /dev/cfa5 b 5 5
 	$(MKDEV) /dev/cfa6 b 5 6
 	$(MKDEV) /dev/cfa7 b 5 7
+	$(MKDEV) /dev/ata  b 5 0
+	$(MKDEV) /dev/ata1 b 5 1
+	$(MKDEV) /dev/ata2 b 5 2
+	$(MKDEV) /dev/ata3 b 5 3
+	$(MKDEV) /dev/ata4 b 5 4
+	$(MKDEV) /dev/ata5 b 5 5
+	$(MKDEV) /dev/ata6 b 5 6
+	$(MKDEV) /dev/ata7 b 5 7
 	$(MKDEV) /dev/cfb  b 5 8
 	$(MKDEV) /dev/cfb1 b 5 9
 	$(MKDEV) /dev/cfb2 b 5 10
 	$(MKDEV) /dev/cfb3 b 5 11
 	$(MKDEV) /dev/cfb4 b 5 12
+	$(MKDEV) /dev/atb  b 5 8
+	$(MKDEV) /dev/atb1 b 5 9
+	$(MKDEV) /dev/atb2 b 5 10
+	$(MKDEV) /dev/atb3 b 5 11
+	$(MKDEV) /dev/atb4 b 5 12
 
 #	$(MKDEV) /dev/dha  b 5 0
 #	$(MKDEV) /dev/dhb  b 5 8
