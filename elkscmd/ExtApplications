@@ -31,6 +31,7 @@
 esd-elks/esd                                        :esd
 esd-elks/esdplay                                    :esd
 sbvol/sbvol                                        :sbvol
+amstrad-1640-bios-config/nvr                       :pc1640nvr
 microwindows/src/bin/nano-x                         :nanox  :1232c :1440k
 microwindows/src/bin/nxcalc                         :nanox  :1232c :1440k
 microwindows/src/bin/nxclock                        :nanox  :1232c :1440k

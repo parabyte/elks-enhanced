@@ -26,6 +26,7 @@ mainmenu_option next_comment
 		busyelks 'miscutils'	CONFIG_APP_MISC_UTILS	y
 		bool 'oss (OSS userland; 8-bit ISA DMA audio)'	CONFIG_APP_OSS		n
 		bool 'sbvol (TUI SB volume control; needs /dev/dsp)' CONFIG_APP_SBVOL n
+		bool 'nvr (Amstrad PC1640 BIOS/CMOS config; direct I/O)' CONFIG_APP_PC1640_NVR n
 		if [ "$CONFIG_INET" == "y" ]; then
 			bool 'esd-elks (TCP audio daemon/client; needs /dev/dsp)' CONFIG_APP_ESD_ELKS n
 		else

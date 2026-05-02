@@ -57,6 +57,10 @@ ifeq ($(CONFIG_APP_SBVOL), y)
 IA16DIRS += ../extapps/sbvol
 endif
 
+ifeq ($(CONFIG_APP_PC1640_NVR), y)
+IA16DIRS += ../extapps/amstrad-1640-bios-config
+endif
+
 OWCDIRS =       \
     basic       \
     fsck_dos    \
